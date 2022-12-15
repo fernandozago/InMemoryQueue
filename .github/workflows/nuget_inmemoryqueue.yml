@@ -9,8 +9,7 @@ env:
   PROJECT_PATH_MemoryQueue: 'MemoryQueue/MemoryQueue.csproj'
   PROJECT_PATH_Client_Grpc: 'MemoryQueue.Client.Grpc/MemoryQueue.Client.Grpc.csproj'
 
-  PACKAGE_OUTPUT_DIRECTORY_SVC: ${{ github.workspace }}\output
-  PACKAGE_OUTPUT_DIRECTORY_GRPC_CLIENT: ${{ github.workspace }}\output
+  PACKAGE_OUTPUT_DIRECTORY: ${{ github.workspace }}\output
   NUGET_SOURCE_URL: 'https://api.nuget.org/v3/index.json'
 
 jobs:
@@ -26,30 +25,27 @@ jobs:
       with:
         dotnet-version: '7.0.x'
 
-    - name: 'Restore packages Memory Queue'
+    - name: 'Restore packages MemoryQueue'
       run: dotnet restore ${{ env.PROJECT_PATH_MemoryQueue }}
 
-    - name: 'Restore packages Client Grpc'
-      run: dotnet restore ${{ env.PROJECT_PATH_Client_Grpc }}
-
-    - name: 'Build project Memory Queue'
+    - name: 'Build project MemoryQueue'
       run: dotnet build ${{ env.PROJECT_PATH_MemoryQueue }} --no-restore --configuration Release
 
-    - name: 'Build project Client Grpc'
+    - name: 'Restore packages MemoryQueue.Client.Grpc'
+      run: dotnet restore ${{ env.PROJECT_PATH_Client_Grpc }}
+
+    - name: 'Build project MemoryQueue.Client.Grpc'
       run: dotnet build ${{ env.PROJECT_PATH_Client_Grpc }} --no-restore --configuration Release
 
     - name: 'Get Version'
       id: version
       uses: battila7/get-version-action@v2
 
-    - name: 'Pack project'
-      run: dotnet pack ${{ env.PROJECT_PATH_MemoryQueue }} --no-restore --no-build --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY_SVC }}
+    - name: 'Pack project MemoryQueue'
+      run: dotnet pack ${{ env.PROJECT_PATH_MemoryQueue }} --no-restore --no-build --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
 
-    - name: 'Pack project'
-      run: dotnet pack ${{ env.PROJECT_PATH_Client_Grpc }} --no-restore --no-build --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY_GRPC_CLIENT }}
+    - name: 'Pack project MemoryQueue.Client.Grpc'
+      run: dotnet pack ${{ env.PROJECT_PATH_Client_Grpc }} --no-restore --no-build --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
 
-    - name: 'Push package'
-      run: dotnet nuget push ${{ env.PACKAGE_OUTPUT_DIRECTORY_SVC }}\*.symbols.nupkg -k ${{ secrets.NUGET_AUTH_TOKEN }} -s ${{ env.NUGET_SOURCE_URL }}
-
-    - name: 'Push package'
-      run: dotnet nuget push ${{ env.PACKAGE_OUTPUT_DIRECTORY_GRPC_CLIENT }}\*.symbols.nupkg -k ${{ secrets.NUGET_AUTH_TOKEN }} -s ${{ env.NUGET_SOURCE_URL }}
+    - name: 'Push packages'
+      run: dotnet nuget push ${{ env.PACKAGE_OUTPUT_DIRECTORY }}\*.symbols.nupkg -k ${{ secrets.NUGET_AUTH_TOKEN }} -s ${{ env.NUGET_SOURCE_URL }}
