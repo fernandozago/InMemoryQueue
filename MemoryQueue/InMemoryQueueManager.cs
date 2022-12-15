@@ -54,6 +54,7 @@ namespace MemoryQueue
             name = name?.Trim();
             if (string.IsNullOrWhiteSpace(name))
             {
+                _logger.LogTrace("Using default queueName {defaultQueueName}", DEFAULT_QUEUE_NAME);
                 return DEFAULT_QUEUE_NAME;
             }
             else if (!REGEX_ONLY_LETTERS().IsMatch(name))
