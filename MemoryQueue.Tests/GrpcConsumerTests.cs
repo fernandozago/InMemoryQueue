@@ -45,21 +45,29 @@ namespace MemoryQueue.Tests
             _server = new SimpleGrpcServer(_grpcConsumer.GetServerServiceDefinition());
         }
 
-        [TestMethod]
-        public async Task AssertQueueContainsConsumers()
+        [DataTestMethod]
+        [DataRow(null)]
+        [DataRow("")]
+        [DataRow("   ")]
+        [DataRow("QueueName")]
+        [DataRow("  QueueName  ")]
+        public async Task AssertQueueContainsConsumers(string queueName)
         {
-            await using (_server)
-            {
-                using CancellationTokenSource cts = new();
-                _server.Start();
+            using CancellationTokenSource cts = new();
+            
+                await using (_server)
+                {
+                try
+                {
+                    _server.Start();
 
-                var consumerClient = new GrpcQueueConsumer("127.0.0.1:12345", "TestQueue1");
-                await consumerClient.PublishAsync(new() { Message = "teste" }).ConfigureAwait(false);
-                await consumerClient.PublishAsync(new() { Message = "teste" }).ConfigureAwait(false);
-                await consumerClient.PublishAsync(new() { Message = "teste" }).ConfigureAwait(false);
+                    var consumerClient = new GrpcQueueConsumer("127.0.0.1:12345", queueName);
+                    await consumerClient.PublishAsync(new() { Message = "teste" }).ConfigureAwait(false);
+                    await consumerClient.PublishAsync(new() { Message = "teste" }).ConfigureAwait(false);
+                    await consumerClient.PublishAsync(new() { Message = "teste" }).ConfigureAwait(false);
 
-                int counter = 0;
-                var consumers = new List<Task>()
+                    int counter = 0;
+                    var consumers = new List<Task>()
                 {
                     consumerClient.Consume("Consumer1", (item, token) =>
                     {
@@ -90,36 +98,51 @@ namespace MemoryQueue.Tests
                     }, cts.Token)
                 };
 
-                do
-                {
-                    var queueInfo = await consumerClient.QueueInfoAsync().ConfigureAwait(false);
-                    if (queueInfo.MainQueueSize == 0)
+                    do
                     {
-                        break;
+                        var queueInfo = await consumerClient.QueueInfoAsync().ConfigureAwait(false);
+                        if (queueInfo.MainQueueSize == 0)
+                        {
+                            break;
+                        }
+                        await Task.Delay(200);
+                    } while (true);
+
+                    var queueInfoReply = await consumerClient.QueueInfoAsync().ConfigureAwait(false);
+
+                    if (string.IsNullOrWhiteSpace(queueName))
+                    {
+                        Assert.AreEqual("Default", queueInfoReply.QueueName);
                     }
-                    await Task.Delay(200);
-                } while (true);
+                    else
+                    {
+                        Assert.AreEqual(queueName.Trim(), queueInfoReply.QueueName);
+                    }
 
-                var queueInfoReply = await consumerClient.QueueInfoAsync().ConfigureAwait(false);
+                    Assert.AreEqual(3, counter);
+                    Assert.AreEqual(3, queueInfoReply.Consumers.Count);
+                    Assert.IsNotNull(queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
+                    Assert.IsNotNull(queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer2"));
+                    Assert.IsNotNull(queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer3"));
 
-                Assert.AreEqual(3, counter);
-                Assert.AreEqual(3, queueInfoReply.Consumers.Count);
-                Assert.IsNotNull(queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
-                Assert.IsNotNull(queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer2"));
-                Assert.IsNotNull(queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer3"));
+                    Assert.AreEqual(QueueConsumerType.GRPC.ToString(), queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer1")!.Type);
+                    Assert.AreEqual(QueueConsumerType.GRPC.ToString(), queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer2")!.Type);
+                    Assert.AreEqual(QueueConsumerType.GRPC.ToString(), queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer3")!.Type);
 
-                Assert.AreEqual(QueueConsumerType.GRPC.ToString(), queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer1")!.Type);
-                Assert.AreEqual(QueueConsumerType.GRPC.ToString(), queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer2")!.Type);
-                Assert.AreEqual(QueueConsumerType.GRPC.ToString(), queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer3")!.Type);
+                    cts.Cancel();
+                    await Task.WhenAll(consumers).ConfigureAwait(false);
 
-                cts.Cancel();
-                await Task.WhenAll(consumers).ConfigureAwait(false);
-                
-                queueInfoReply = await consumerClient.QueueInfoAsync().ConfigureAwait(false);
-                Assert.AreEqual(0, queueInfoReply.Consumers.Count);
-                Assert.IsNull(queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
-                Assert.IsNull(queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer2"));
-                Assert.IsNull(queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer3"));
+                    queueInfoReply = await consumerClient.QueueInfoAsync().ConfigureAwait(false);
+                    Assert.AreEqual(0, queueInfoReply.Consumers.Count);
+                    Assert.IsNull(queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
+                    Assert.IsNull(queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer2"));
+                    Assert.IsNull(queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer3"));
+                }
+                catch
+                {
+                    cts.Cancel();
+                    throw;
+                }
             }
         }
     }

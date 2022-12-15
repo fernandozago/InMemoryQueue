@@ -43,7 +43,7 @@ namespace MemoryQueue.Transports.GRPC.Services
         {
             try
             {
-                var inMemoryQueue = _queueManager.GetOrCreateQueue(context.RequestHeaders.SingleOrDefault(x => x.Key == GRPC_HEADER_QUEUENAME)?.Value);
+                var inMemoryQueue = _queueManager.GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
                 await inMemoryQueue.EnqueueAsync(request.Message).ConfigureAwait(false);
                 return _ackTrue;
             }
@@ -58,7 +58,7 @@ namespace MemoryQueue.Transports.GRPC.Services
         {
             try
             {
-                var inMemoryQueue = (InMemoryQueue)_queueManager.GetOrCreateQueue(context.RequestHeaders.SingleOrDefault(x => x.Key == GRPC_HEADER_QUEUENAME)?.Value);
+                var inMemoryQueue = (InMemoryQueue)_queueManager.GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
                 int mainQueueSize = inMemoryQueue.MainChannelCount;
                 int retryQueueSize = inMemoryQueue.RetryChannelCount;
 
@@ -116,7 +116,7 @@ namespace MemoryQueue.Transports.GRPC.Services
         {
             try
             {
-                var inMemoryQueue = _queueManager.GetOrCreateQueue(context.RequestHeaders.SingleOrDefault(x => x.Key == GRPC_HEADER_QUEUENAME)?.Value);
+                var inMemoryQueue = _queueManager.GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
                 inMemoryQueue.Counters.ResetCounters();
                 return Task.FromResult(_empty);
             }
@@ -139,7 +139,7 @@ namespace MemoryQueue.Transports.GRPC.Services
             InMemoryQueue? memoryQueue = default;
             try
             {
-                memoryQueue = (InMemoryQueue)_queueManager.GetOrCreateQueue(context.RequestHeaders.SingleOrDefault(x => x.Key == GRPC_HEADER_QUEUENAME)?.Value);
+                memoryQueue = (InMemoryQueue)_queueManager.GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
             }
             catch (Exception ex) 
             {
