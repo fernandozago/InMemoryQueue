@@ -7,7 +7,7 @@ using System.Threading.Channels;
 
 namespace MemoryQueue
 {
-    internal sealed class InMemoryQueueReader : /*IInMemoryQueueReader, */IAsyncDisposable
+    internal sealed class InMemoryQueueReader : IAsyncDisposable
     {
         #region Constants
         private const string RETRYCHANNEL_DESCRIPTION = "Retry Channel";

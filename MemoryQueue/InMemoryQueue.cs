@@ -6,20 +6,6 @@ using System.Threading.Channels;
 
 namespace MemoryQueue
 {
-    public interface IInMemoryQueue
-    {
-        string Name { get; }
-        int MainChannelCount { get; }
-        int RetryChannelCount { get; }
-        int ConsumersCount { get; }
-        ConsumptionCounter Counters { get; }
-        IReadOnlyCollection<QueueConsumer> Consumers { get; }
-
-        ValueTask EnqueueAsync(string item);
-        bool TryPeekMainQueue(out QueueItem? item);
-        bool TryPeekRetryQueue(out QueueItem? item);
-    }
-
     internal sealed class InMemoryQueue : IInMemoryQueue
     {
         #region Constants
