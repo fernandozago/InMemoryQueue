@@ -141,7 +141,7 @@ namespace MemoryQueue.Tests
             var manager = SubjectUnderTestFactory.CreateInMemoryQueueManager();
             var queue = manager.GetOrCreateQueue("Queue1");
 
-            using CancellationTokenSource cts = new CancellationTokenSource();
+            using CancellationTokenSource cts = new ();
 
             try
             {

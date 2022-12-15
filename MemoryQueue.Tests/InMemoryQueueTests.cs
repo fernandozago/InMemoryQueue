@@ -24,7 +24,7 @@ namespace MemoryQueue.Tests
             Assert.IsFalse(itemMain!.Retrying);
             Assert.AreEqual(0, itemMain!.RetryCount);
 
-            Assert.IsFalse(queue.TryPeekRetryQueue(out var itemRetry));
+            Assert.IsFalse(queue.TryPeekRetryQueue(out _));
 
             Assert.AreEqual(0, queue.Consumers.Count);
             Assert.AreEqual(0, queue.ConsumersCount);
