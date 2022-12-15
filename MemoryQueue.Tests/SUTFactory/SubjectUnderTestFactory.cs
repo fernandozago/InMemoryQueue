@@ -12,7 +12,6 @@ namespace MemoryQueue.Tests.SUTFactory
 
             Mock<ILogger> loggerMock = new();
             Mock<ILoggerFactory> loggerFactoryMock = new();
-            Mock<ILogger<InMemoryQueueManager>> specificLoggerMock = new();
             loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(loggerMock.Object);
 
             return new(loggerFactoryMock.Object);
@@ -23,8 +22,7 @@ namespace MemoryQueue.Tests.SUTFactory
             Mock<IConfiguration> configurationMock = new();
             Mock<ILogger> loggerMock = new();
             Mock<ILoggerFactory> loggerFactoryMock = new();
-            Mock<ILogger<InMemoryQueueManager>> specificLoggerMock = new();
-            loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(loggerMock.Object);
+            loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(loggerMock.Object);           
 
             InMemoryQueueManager queueManager = new(loggerFactoryMock.Object);
             return new ConsumerServiceImpl(queueManager, configurationMock.Object, loggerFactoryMock.Object);
