@@ -77,10 +77,17 @@ var producer = Task.Run(async () =>
     while (!cts.Token.IsCancellationRequested)
     {
         await Task.Delay(TimeSpan.FromSeconds(1));
-        await queueConsumer.PublishAsync(new QueueItemReply()
+        try
         {
-            Message = "teste"
-        });
+            await queueConsumer.PublishAsync(new QueueItemReply()
+            {
+                Message = "teste"
+            });
+        }
+        catch (Exception)
+        {
+            //Ignore any exception -- server may not be available
+        }
     }
 });
 
