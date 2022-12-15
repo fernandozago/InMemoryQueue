@@ -4,8 +4,8 @@ namespace MemoryQueue.Extensions
 {
     internal static class QueueNameHashesGenerator
     {
-        private static ConcurrentDictionary<string, int> _cachedHashes = new ConcurrentDictionary<string, int>();
-        private static object _locker = new object();
+        private static readonly ConcurrentDictionary<string, int> _cachedHashes = new ();
+        private static readonly object _locker = new ();
 
         /// <summary>
         /// Generates (or get cached) a stable hashcode from a string

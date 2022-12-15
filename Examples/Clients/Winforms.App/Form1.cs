@@ -10,14 +10,13 @@ namespace GrpcClient2
     public partial class Form1 : Form
     {
         private readonly IProgress<QueueInfoReply> _progress;
-        private readonly Task _timer;
-        private Task _randomPub = Task.CompletedTask;
 
         //private readonly GrpcQueueConsumer _consumer = new("192.168.2.10:1111");
         private readonly GrpcQueueConsumer _consumer;
         //private readonly GrpcQueueConsumer _consumer = new("127.0.0.1:5000");
         private readonly Dictionary<Task, CancellationTokenSource> _consumers = new();
         private readonly PersonNameGenerator _personNameGenerator = new();
+        private readonly string _queueName;
 
         double chartYMax = 0;
         const int time = 30;
@@ -45,7 +44,7 @@ namespace GrpcClient2
             //btnAddConsumer_Click(btnAddConsumer, EventArgs.Empty);
             //btnAddConsumer_Click(btnAddConsumer, EventArgs.Empty);
 
-            _timer = StartTimer();
+            _ = StartTimer();
             InitializeComponent();
             Text = $"[{_queueName}] - {host}";
 
@@ -146,24 +145,7 @@ namespace GrpcClient2
             //txtCurrent.Text = pbQueueSize.Value.ToString();
         }
 
-        long maxPubPerSecond = 0;
-        long maxQueueSize = 0;
         private bool _playPause;
-        private string _queueName;
-
-        private int CalculatePercentage(long queueSize, long pubPerSecond)
-        {
-            maxPubPerSecond = Math.Max(maxPubPerSecond, pubPerSecond);
-            maxQueueSize = Math.Max(maxQueueSize, queueSize);
-
-            if (maxQueueSize > 0 && queueSize > 0)
-            {
-                return (int)(100d * queueSize / maxQueueSize);
-            }
-
-            maxQueueSize = maxPubPerSecond;
-            return 0;
-        }
 
         private async Task StartTimer()
         {
@@ -247,7 +229,7 @@ namespace GrpcClient2
         private void button2_Click(object sender, EventArgs e)
         {
             _playPause = !_playPause;
-            _randomPub = RandomPub();
+            _ = RandomPub();
             if (_playPause)
             {
                 button2.Text = "Stop";
