@@ -56,9 +56,24 @@ namespace MemoryQueue.Tests
                 await queue.EnqueueAsync("teste").ConfigureAwait(false);
                 await queue.EnqueueAsync("teste").ConfigureAwait(false);
                 await queue.EnqueueAsync("teste").ConfigureAwait(false);
-                while (queue.MainChannelCount > 0)
+
+                int retryCount = 0;
+                while (true)
                 {
-                    await Task.Delay(100).ConfigureAwait(false);
+                    retryCount++;
+                    if (queue.MainChannelCount > 0 || queue.Counters.AckCounter < 3 || queue.Counters.PubCounter < 3)
+                    {
+                        await Task.Delay(200).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        break;
+                    }
+
+                    if (retryCount > 10)
+                    {
+                        Assert.Fail("Fail to validate queue consumer");
+                    }
                 }
 
                 Assert.AreEqual(3, counter);
@@ -112,12 +127,26 @@ namespace MemoryQueue.Tests
 
                 for (int i = 0; i < 30; i++)
                 {
-                    await queue.EnqueueAsync(data);
+                    await queue.EnqueueAsync(data).ConfigureAwait(false);
                 }
 
-                while (queue.MainChannelCount > 0)
+                int retryCount = 0;
+                while (true)
                 {
-                    await Task.Delay(100);
+                    retryCount++;
+                    if (queue.MainChannelCount > 0 || queue.Counters.AckCounter < 30 || queue.Counters.PubCounter < 30)
+                    {
+                        await Task.Delay(200).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        break;
+                    }
+
+                    if (retryCount > 10)
+                    {
+                        Assert.Fail("Fail to validate queue consumer");
+                    }
                 }
 
                 cts.Cancel();
@@ -167,9 +196,23 @@ namespace MemoryQueue.Tests
                     await queue.EnqueueAsync(data);
                 }
 
-                while (queue.MainChannelCount > 0)
+                int retryCount = 0;
+                while (true)
                 {
-                    await Task.Delay(100);
+                    retryCount++;
+                    if (queue.MainChannelCount > 0 || queue.Counters.AckCounter < 30 || queue.Counters.PubCounter < 30)
+                    {
+                        await Task.Delay(200).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        break;
+                    }
+
+                    if (retryCount > 10)
+                    {
+                        Assert.Fail("Fail to validate queue consumer");
+                    }
                 }
 
                 cts.Cancel();

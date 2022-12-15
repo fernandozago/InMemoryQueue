@@ -54,9 +54,9 @@ namespace MemoryQueue.Tests
         public async Task AssertQueueContainsConsumers(string queueName)
         {
             using CancellationTokenSource cts = new();
-            
-                await using (_server)
-                {
+
+            await using (_server)
+            {
                 try
                 {
                     _server.Start();
@@ -68,45 +68,55 @@ namespace MemoryQueue.Tests
 
                     int counter = 0;
                     var consumers = new List<Task>()
-                {
-                    consumerClient.Consume("Consumer1", (item, token) =>
                     {
-                        if (item.Message.Equals("teste"))
+                        consumerClient.Consume("Consumer1", (item, token) =>
                         {
-                            Interlocked.Increment(ref counter);
-                            return Task.FromResult(true);
-                        }
-                        return Task.FromResult(false);
-                    }, cts.Token),
-                    consumerClient.Consume("Consumer2", (item, token) =>
-                    {
-                        if (item.Message.Equals("teste"))
+                            if (item.Message.Equals("teste"))
+                            {
+                                Interlocked.Increment(ref counter);
+                                return Task.FromResult(true);
+                            }
+                            return Task.FromResult(false);
+                        }, cts.Token),
+                        consumerClient.Consume("Consumer2", (item, token) =>
                         {
-                            Interlocked.Increment(ref counter);
-                            return Task.FromResult(true);
-                        }
-                        return Task.FromResult(false);
-                    }, cts.Token),
-                    consumerClient.Consume("Consumer3", (item, token) =>
-                    {
-                        if (item.Message.Equals("teste"))
+                            if (item.Message.Equals("teste"))
+                            {
+                                Interlocked.Increment(ref counter);
+                                return Task.FromResult(true);
+                            }
+                            return Task.FromResult(false);
+                        }, cts.Token),
+                        consumerClient.Consume("Consumer3", (item, token) =>
                         {
-                            Interlocked.Increment(ref counter);
-                            return Task.FromResult(true);
-                        }
-                        return Task.FromResult(false);
-                    }, cts.Token)
-                };
+                            if (item.Message.Equals("teste"))
+                            {
+                                Interlocked.Increment(ref counter);
+                                return Task.FromResult(true);
+                            }
+                            return Task.FromResult(false);
+                        }, cts.Token)
+                    };
 
-                    do
+                    int retryCount = 0;
+                    while (true)
                     {
+                        retryCount++;
                         var queueInfo = await consumerClient.QueueInfoAsync().ConfigureAwait(false);
-                        if (queueInfo.MainQueueSize == 0)
+                        if (queueInfo.MainQueueSize > 0 || queueInfo.AckCounter < 3 || queueInfo.PubCounter < 3)
+                        {
+                            await Task.Delay(200).ConfigureAwait(false);
+                        }
+                        else
                         {
                             break;
                         }
-                        await Task.Delay(200);
-                    } while (true);
+
+                        if (retryCount > 10)
+                        {
+                            Assert.Fail("Fail to validate queue consumer");
+                        }
+                    }
 
                     var queueInfoReply = await consumerClient.QueueInfoAsync().ConfigureAwait(false);
 
