@@ -10,10 +10,7 @@ namespace GrpcClient2
     public partial class Form1 : Form
     {
         private readonly IProgress<QueueInfoReply> _progress;
-
-        //private readonly GrpcQueueConsumer _consumer = new("192.168.2.10:1111");
         private readonly GrpcQueueConsumer _consumer;
-        //private readonly GrpcQueueConsumer _consumer = new("127.0.0.1:5000");
         private readonly Dictionary<Task, CancellationTokenSource> _consumers = new();
         private readonly PersonNameGenerator _personNameGenerator = new();
         private readonly string _queueName;
@@ -30,19 +27,8 @@ namespace GrpcClient2
         {
             _queueName = queueName;
             string host = $"127.0.0.1:{port}";
-             _consumer = new(host, queueName);
+            _consumer = new(host, queueName);
             _progress = new Progress<QueueInfoReply>(UpdateForm);
-
-            //btnAddConsumer_Click(btnAddConsumer, EventArgs.Empty);
-            //btnAddConsumer_Click(btnAddConsumer, EventArgs.Empty);
-            //btnAddConsumer_Click(btnAddConsumer, EventArgs.Empty);
-            //btnAddConsumer_Click(btnAddConsumer, EventArgs.Empty);
-            //btnAddConsumer_Click(btnAddConsumer, EventArgs.Empty);
-            //btnAddConsumer_Click(btnAddConsumer, EventArgs.Empty);
-            //btnAddConsumer_Click(btnAddConsumer, EventArgs.Empty);
-            //btnAddConsumer_Click(btnAddConsumer, EventArgs.Empty);
-            //btnAddConsumer_Click(btnAddConsumer, EventArgs.Empty);
-            //btnAddConsumer_Click(btnAddConsumer, EventArgs.Empty);
 
             _ = StartTimer();
             InitializeComponent();
@@ -52,9 +38,6 @@ namespace GrpcClient2
             formsPlot1.Plot.Legend(true, ScottPlot.Alignment.UpperLeft);
             formsPlot1.Plot.Title("Queue Data p/ Second");
             formsPlot1.Plot.YAxis.Grid(true);
-            //formsPlot1.Padding = new Padding(0, 0, 0, 0);
-            //formsPlot1.Plot.YAxis.Layout(20, 0, 0);
-            //formsPlot1.Plot.YAxis.Edge = ScottPlot.Renderable.Edge.Right;
 
             var plotLine = formsPlot1.Plot.AddSignal(pubPerSecond);
             plotLine.Label = "Incoming";
@@ -90,9 +73,8 @@ namespace GrpcClient2
         {
             while (_playPause)
             {
-                //await Task.Delay(TimeSpan.FromSeconds(Random.Shared.Next(1, 60)));
                 await Task.Delay(TimeSpan.FromSeconds(.5));
-                await Parallel.ForEachAsync(Enumerable.Range(0, Random.Shared.Next(1, 30_000))/*, new ParallelOptions() { MaxDegreeOfParallelism = 1 }*/, async (a, t) =>
+                await Parallel.ForEachAsync(Enumerable.Range(0, Random.Shared.Next(1, 30_000)), async (a, t) =>
                 {
                     try
                     {
@@ -137,12 +119,6 @@ namespace GrpcClient2
                 obj.Convert(ref objRef);
                 propertyGrid1.Refresh();
             }
-
-            //if (obj.AckCounter != 0)
-            //{
-            //    pbQueueSize.Value = (int)(obj.AckCounter * 100d / obj.PubCounter);
-            //}
-            //txtCurrent.Text = pbQueueSize.Value.ToString();
         }
 
         private bool _playPause;
@@ -243,23 +219,20 @@ namespace GrpcClient2
         private async void btnPub_Click(object sender, EventArgs e)
         {
             btnPub.Enabled = false;
-            //if (false)
+            await Parallel.ForEachAsync(Enumerable.Range(0, qtd), async (a, t) =>
             {
-                await Parallel.ForEachAsync(Enumerable.Range(0, qtd)/*, new ParallelOptions() { MaxDegreeOfParallelism = 1 }*/, async (a, t) =>
+                try
                 {
-                    try
+                    await _consumer.PublishAsync(new QueueItemRequest()
                     {
-                        await _consumer.PublishAsync(new QueueItemRequest()
-                        {
-                            Message = JsonSerializer.Serialize(new Data(Guid.NewGuid(), DateTime.Now, "A"))
-                        });
-                    }
-                    catch (Exception)
-                    {
-                        //
-                    }
-                });
-            }
+                        Message = JsonSerializer.Serialize(new Data(Guid.NewGuid(), DateTime.Now, "A"))
+                    });
+                }
+                catch (Exception)
+                {
+                    //
+                }
+            });
             btnPub.Enabled = true;
         }
 
