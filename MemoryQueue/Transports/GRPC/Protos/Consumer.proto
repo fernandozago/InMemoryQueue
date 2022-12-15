@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+option csharp_namespace = "MemoryQueue.Transports.GRPC";
+
+package Consumer;
+
+// The greeting service definition.
+service ConsumerService {
+  // Sends a greeting
+	rpc BindConsumer(stream QueueItemAck) returns (stream QueueItemReply);
+
+	rpc Publish(QueueItemReply) returns (QueueItemAck);
+
+	rpc QueueInfo(google.protobuf.Empty) returns (QueueInfoReply);
+
+	rpc ResetCounters(google.protobuf.Empty) returns (google.protobuf.Empty);
+}
+
+message QueueItemAck {
+	bool ack = 1;
+}
+
+message QueueItemReply {
+	string message = 1;
+	bool retrying = 2;
+	int32 retryCount = 3;
+}
+
+message QueueInfoReply {
+	int64 queueSize = 1;
+	int64 mainQueueSize = 2;
+	int64 retryQueueSize = 3;
+
+	int32 concurrentConsumers = 4;
+	
+	int64 ackCounter = 5;
+	int64 ackPerSecond = 6;
+
+	int64 pubCounter = 7;
+	int64 pubPerSecond = 8;
+
+	int64 nackCounter = 9;
+	int64 nackPerSecond = 10;
+
+	int64 redeliverCounter = 11;
+	int64 redeliverPerSecond = 12;
+
+	int64 deliverCounter = 13;
+	int64 deliverPerSecond = 14;
+
+	double avgAckTimeMilliseconds = 15;
+
+	string queueName = 16;
+
+	repeated ConsumerInfoReply consumers = 17;
+}
+
+message ConsumerInfoReply {
+	string id = 1;
+	string name = 2;
+	string ip = 3;
+	string host = 4;
+	string type = 5;
+}

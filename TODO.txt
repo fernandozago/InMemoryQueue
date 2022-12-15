@@ -1,0 +1,4 @@
+Pending Clients:
+
+- MemoryQueue.Client.WebSocket
+- ? (Others)

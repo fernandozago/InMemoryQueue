@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Counters\**" />
+    <Compile Remove="Protos\**" />
+    <Compile Remove="Services\**" />
+    <Compile Remove="Utils\**" />
+    <Content Remove="Counters\**" />
+    <Content Remove="Protos\**" />
+    <Content Remove="Services\**" />
+    <Content Remove="Utils\**" />
+    <EmbeddedResource Remove="Counters\**" />
+    <EmbeddedResource Remove="Protos\**" />
+    <EmbeddedResource Remove="Services\**" />
+    <EmbeddedResource Remove="Utils\**" />
+    <None Remove="Counters\**" />
+    <None Remove="Protos\**" />
+    <None Remove="Services\**" />
+    <None Remove="Utils\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="ChannelManager.cs" />
+    <Compile Remove="ChannelManagerConsumer.cs" />
+    <Compile Remove="QueueItem.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc.AspNetCore" Version="2.50.0" />
+    <PackageReference Include="Grpc.AspNetCore.Server.Reflection" Version="2.50.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MemoryQueue\MemoryQueue.csproj" />
+  </ItemGroup>
+
+</Project>
