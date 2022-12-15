@@ -19,7 +19,7 @@ namespace MemoryQueue.Tests.SUTFactory
             return new(loggerFactoryMock.Object, specificLoggerMock.Object);
         }
 
-        public static (ConsumerServiceImpl grpcConsumer, InMemoryQueueManager inMemoryQueueManager) CreateGrpcConsumer()
+        public static ConsumerServiceImpl CreateGrpcConsumer()
         {
             Mock<IConfiguration> configurationMock = new();
             Mock<ILogger> loggerMock = new();
@@ -30,7 +30,7 @@ namespace MemoryQueue.Tests.SUTFactory
 
             InMemoryQueueManager queueManager = new(loggerFactoryMock.Object, specificLoggerMock.Object);
 
-            return (new ConsumerServiceImpl(queueManager, configurationMock.Object, loggerFactoryMock.Object), queueManager);
+            return new ConsumerServiceImpl(queueManager, configurationMock.Object, loggerFactoryMock.Object);
         }
     }
 }
