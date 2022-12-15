@@ -103,3 +103,7 @@ Task<bool> CallBack(QueueItemReply queueItem, CancellationToken arg2)
     return Task.FromResult(true);
 }
 ```
+
+# Running Example:
+
+![Example](https://github.com/fernandozago/InMemoryQueue/blob/main/InMemoryQueue.png?raw=true)
