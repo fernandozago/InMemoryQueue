@@ -106,4 +106,11 @@ Task<bool> CallBack(QueueItemReply queueItem, CancellationToken arg2)
 
 # Running Example:
 
+1. Clone Repo
+2. Run Visual Studio (Loading solution InMemoryQueue.sln)
+3. Run Examples\Hosts\DirectSocket\GrpcService2
+4. Run Examples\Clients\Winforms.App
+5. At the winforms app click on `Start` (This will start a background thread to random publish items to the queue)
+6. At the winforms app click on `Add` to add consumers (this will add consumers to the queue)
+
 ![Example](https://github.com/fernandozago/InMemoryQueue/blob/main/InMemoryQueue.png?raw=true)
