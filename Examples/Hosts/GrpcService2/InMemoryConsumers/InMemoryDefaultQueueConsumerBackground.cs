@@ -1,7 +1,6 @@
 ﻿using MemoryQueue;
 using MemoryQueue.Models;
 using MemoryQueue.Transports.InMemoryConsumer;
-using Microsoft.Extensions.Hosting;
 
 namespace GrpcService2.Services
 {
