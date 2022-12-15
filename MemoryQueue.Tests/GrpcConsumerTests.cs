@@ -2,7 +2,6 @@
 using MemoryQueue.Client.Grpc;
 using MemoryQueue.Models;
 using MemoryQueue.Tests.SUTFactory;
-using MemoryQueue.Transports.GRPC;
 using MemoryQueue.Transports.GRPC.Services;
 
 namespace MemoryQueue.Tests
@@ -93,7 +92,7 @@ namespace MemoryQueue.Tests
 
                 do
                 {
-                    var queueInfo = await consumerClient.QueueInfoAsync();
+                    var queueInfo = await consumerClient.QueueInfoAsync().ConfigureAwait(false);
                     if (queueInfo.MainQueueSize == 0)
                     {
                         break;
@@ -101,7 +100,7 @@ namespace MemoryQueue.Tests
                     await Task.Delay(200);
                 } while (true);
 
-                var queueInfoReply = await consumerClient.QueueInfoAsync();
+                var queueInfoReply = await consumerClient.QueueInfoAsync().ConfigureAwait(false);
 
                 Assert.AreEqual(3, counter);
                 Assert.AreEqual(3, queueInfoReply.Consumers.Count);
@@ -116,7 +115,7 @@ namespace MemoryQueue.Tests
                 cts.Cancel();
                 await Task.WhenAll(consumers).ConfigureAwait(false);
                 
-                queueInfoReply = await consumerClient.QueueInfoAsync();
+                queueInfoReply = await consumerClient.QueueInfoAsync().ConfigureAwait(false);
                 Assert.AreEqual(0, queueInfoReply.Consumers.Count);
                 Assert.IsNull(queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
                 Assert.IsNull(queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer2"));
