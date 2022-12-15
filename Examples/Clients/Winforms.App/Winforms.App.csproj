@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MemoryQueue.Client.Grpc\MemoryQueue.Client.Grpc.csproj" />
+	  <ProjectReference Include="..\..\..\MemoryQueue.Client.Grpc\MemoryQueue.Client.Grpc.csproj" />
   </ItemGroup>
 
 </Project>

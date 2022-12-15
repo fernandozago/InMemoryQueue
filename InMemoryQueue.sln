@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrpcService1", "GrpcService1\GrpcService1.csproj", "{E48B80C8-121B-4C85-9F9B-EF18276FE6A7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrpcService1", "Examples\Hosts\GrpcService1\GrpcService1.csproj", "{E48B80C8-121B-4C85-9F9B-EF18276FE6A7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrpcService2", "GrpcService2\GrpcService2.csproj", "{6AC6D688-1BEE-4355-9A89-462FD66BA323}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrpcService2", "Examples\Hosts\GrpcService2\GrpcService2.csproj", "{6AC6D688-1BEE-4355-9A89-462FD66BA323}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Kestrel", "Kestrel", "{6F668A74-2077-4D42-A61F-B905D71629BB}"
 EndProject
@@ -24,9 +24,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MemoryQueue.Client.Grpc", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MemoryQueue", "MemoryQueue\MemoryQueue.csproj", "{3CF86101-D7F3-46B8-A26B-C4979D896875}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Winforms.App", "Winforms.App\Winforms.App.csproj", "{3F9B02BA-FDF5-49A2-ADFD-F6B7F673F680}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Winforms.App", "Examples\Clients\Winforms.App\Winforms.App.csproj", "{3F9B02BA-FDF5-49A2-ADFD-F6B7F673F680}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Console.App", "Console.App\Console.App.csproj", "{7E81524B-41AB-4556-8C17-B7267A24D87F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Console.App", "Examples\Clients\Console.App\Console.App.csproj", "{7E81524B-41AB-4556-8C17-B7267A24D87F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Clients", "Clients", "{9A35E823-9EBE-49A1-A7B0-9024CADBD265}"
 EndProject
@@ -36,7 +36,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MemoryQueue.Tests", "Memory
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Console", "Console", "{17D0C8D1-60A7-4A81-8A60-EF0199390B71}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console.Host", "Console.Host\Console.Host.csproj", "{BEAAB249-9076-4CA9-A5C8-2B5A03F1CDA0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console.Host", "Examples\Hosts\Console.Host\Console.Host.csproj", "{BEAAB249-9076-4CA9-A5C8-2B5A03F1CDA0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
