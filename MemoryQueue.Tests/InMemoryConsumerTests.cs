@@ -93,8 +93,10 @@ namespace MemoryQueue.Tests
             int counter = 0;
             var consumer = queue.CreateInMemoryConsumer((item) =>
             {
-                Assert.AreEqual(data, item.Message);
-                counter++;
+                if (item.Message.Equals(data))
+                {
+                    counter++;
+                }               
                 return Task.FromResult(true);
             }, "Consumer1", cts.Token);
 
@@ -135,8 +137,10 @@ namespace MemoryQueue.Tests
                     return Task.FromResult(false);
                 }
 
-                Assert.AreEqual(data, item.Message);
-                retryCounter++;
+                if (item.Message.Equals(data))
+                {
+                    retryCounter++;
+                }                
                 return Task.FromResult(true);
             }, "Consumer1", "Queue1", cts.Token);
 

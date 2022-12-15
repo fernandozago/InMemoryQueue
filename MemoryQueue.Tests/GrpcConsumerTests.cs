@@ -57,35 +57,35 @@ namespace MemoryQueue.Tests
                 var consumerClient = new GrpcQueueConsumer("127.0.0.1:12345", "TestQueue1");
                 int counter = 0;
                 var consumers = new List<Task>()
-            {
-                consumerClient.Consume("Consumer1", (item, token) =>
                 {
-                    if (item.Message.Equals("teste"))
+                    consumerClient.Consume("Consumer1", (item, token) =>
                     {
-                        Interlocked.Increment(ref counter);
-                        return Task.FromResult(true);
-                    }
-                    return Task.FromResult(false);
-                }, cts.Token),
-                consumerClient.Consume("Consumer2", (item, token) =>
-                {
-                    if (item.Message.Equals("teste"))
+                        if (item.Message.Equals("teste"))
+                        {
+                            Interlocked.Increment(ref counter);
+                            return Task.FromResult(true);
+                        }
+                        return Task.FromResult(false);
+                    }, cts.Token),
+                    consumerClient.Consume("Consumer2", (item, token) =>
                     {
-                        Interlocked.Increment(ref counter);
-                        return Task.FromResult(true);
-                    }
-                    return Task.FromResult(false);
-                }, cts.Token),
-                consumerClient.Consume("Consumer3", (item, token) =>
-                {
-                    if (item.Message.Equals("teste"))
+                        if (item.Message.Equals("teste"))
+                        {
+                            Interlocked.Increment(ref counter);
+                            return Task.FromResult(true);
+                        }
+                        return Task.FromResult(false);
+                    }, cts.Token),
+                    consumerClient.Consume("Consumer3", (item, token) =>
                     {
-                        Interlocked.Increment(ref counter);
-                        return Task.FromResult(true);
-                    }
-                    return Task.FromResult(false);
-                }, cts.Token)
-            };
+                        if (item.Message.Equals("teste"))
+                        {
+                            Interlocked.Increment(ref counter);
+                            return Task.FromResult(true);
+                        }
+                        return Task.FromResult(false);
+                    }, cts.Token)
+                };
 
                 var queue = _inMemoryQueueManager.GetOrCreateQueue("TestQueue1");
                 await queue.EnqueueAsync("teste").ConfigureAwait(false);
