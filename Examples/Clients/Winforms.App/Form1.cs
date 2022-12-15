@@ -151,7 +151,7 @@ namespace GrpcClient2
         {
             await Task.Yield();
             var perTimer = new PeriodicTimer(TimeSpan.FromSeconds(1));
-            while (await perTimer.WaitForNextTickAsync().ConfigureAwait(false))
+            while (await perTimer.WaitForNextTickAsync().ConfigureAwait(false) && !Disposing)
             {
                 await GetQueueInfoAsync().ConfigureAwait(false);
             }
@@ -265,6 +265,7 @@ namespace GrpcClient2
 
         private async void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
+            _playPause = false;
             await _consumer.DisposeAsync();
         }
 
