@@ -31,3 +31,30 @@ app.MapGrpcReflectionService();
 app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
 app.Run();
 ```
+
+`appsettings.json`
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "GrpcHostedOnKestrel": true,
+  "Kestrel": {
+    "Endpoints": {
+      "Http": {
+        "Url": "http://0.0.0.0:5000"
+      },
+      "Https": {
+        "Url": "https://0.0.0.0:5001"
+      }
+    },
+    "EndpointDefaults": {
+      "Protocols": "Http2"
+    }
+  }
+}
+```
