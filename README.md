@@ -79,7 +79,7 @@ var producer = Task.Run(async () =>
         await Task.Delay(TimeSpan.FromSeconds(1));
         try
         {
-            await queueConsumer.PublishAsync(new QueueItemReply()
+            await queueConsumer.PublishAsync(new QueueItemRequest()
             {
                 Message = "teste"
             });
