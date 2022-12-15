@@ -16,12 +16,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<GrpcServer>();
 builder.Services.AddSingleton<InMemoryQueueManager>();
 builder.Services.AddSingleton<ConsumerServiceImpl>();
-builder.Services.AddSingleton<InMemoryDefaultQueueConsumerBackground>();
+builder.Services.AddHostedService<InMemoryDefaultQueueConsumerBackground>();
 
 var app = builder.Build();
 
 app.Services.GetRequiredService<GrpcServer>().Start();
-app.Services.GetRequiredService<InMemoryDefaultQueueConsumerBackground>();
 
 // Configure the HTTP request pipeline.
 //app.MapGrpcService<GreeterService>();

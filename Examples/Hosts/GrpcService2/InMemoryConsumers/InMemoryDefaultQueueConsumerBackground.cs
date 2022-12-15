@@ -1,19 +1,23 @@
 ﻿using MemoryQueue;
 using MemoryQueue.Models;
 using MemoryQueue.Transports.InMemoryConsumer;
+using Microsoft.Extensions.Hosting;
 
 namespace GrpcService2.Services
 {
-    public class InMemoryDefaultQueueConsumerBackground
+    public class InMemoryDefaultQueueConsumerBackground : BackgroundService
     {
-        public InMemoryDefaultQueueConsumerBackground(IHostApplicationLifetime hostApplicationLifetime, InMemoryQueueManager inMemoryQueueManager)
+        private readonly InMemoryQueueManager _inMemoryQueueManager;
+
+        public InMemoryDefaultQueueConsumerBackground(InMemoryQueueManager inMemoryQueueManager)
         {
-            _ = inMemoryQueueManager.CreateInMemoryConsumer(ProcessItem, nameof(InMemoryDefaultQueueConsumerBackground), "InMemoryConsumerQueue", hostApplicationLifetime.ApplicationStopping);
+            _inMemoryQueueManager = inMemoryQueueManager;
         }
 
-        private Task<bool> ProcessItem(QueueItem arg)
-        {
-            return Task.FromResult(true);
-        }
+        protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
+            _inMemoryQueueManager.CreateInMemoryConsumer(ProcessItem, nameof(InMemoryDefaultQueueConsumerBackground), "InMemoryConsumerQueue", stoppingToken);
+
+        private Task<bool> ProcessItem(QueueItem queueItem) =>
+            Task.FromResult(true);
     }
 }
