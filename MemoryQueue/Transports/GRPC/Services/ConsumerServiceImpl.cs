@@ -1,6 +1,7 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using MemoryQueue.Models;
+using MemoryQueue.Transports.InMemoryConsumer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -19,6 +20,9 @@ namespace MemoryQueue.Transports.GRPC.Services
         private const string GRPC_TRAIL_SERVER_EXCEPTION = "serverexception";
 
         #endregion
+
+        public static ServerServiceDefinition Bind(ConsumerServiceImpl impl) =>
+            ConsumerService.BindService(impl);
 
         private readonly QueueItemAck _ackTrue = new() { Ack = true };
         private readonly Empty _empty = new();

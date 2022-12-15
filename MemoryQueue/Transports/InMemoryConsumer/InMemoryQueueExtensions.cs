@@ -7,7 +7,7 @@ namespace MemoryQueue.Transports.InMemoryConsumer
         private const string IN_MEMORY_CONSUMER_NA = "N/A";
 
         public static async Task CreateInMemoryConsumer(this IInMemoryQueue inMemoryQueue,
-            Func<QueueItem, Task<bool>> callBack, string? consumerName = null, string? queueName = null, CancellationToken cancellationToken = default)
+            Func<QueueItem, Task<bool>> callBack, string? consumerName = null, CancellationToken cancellationToken = default)
         {
             var id = Guid.NewGuid().ToString();
             await using var reader = ((InMemoryQueue)inMemoryQueue).AddQueueReader(new QueueConsumer(QueueConsumerType.InMemory)
@@ -24,6 +24,6 @@ namespace MemoryQueue.Transports.InMemoryConsumer
 
         public static Task CreateInMemoryConsumer(this InMemoryQueueManager inMemoryQueueManager,
             Func<QueueItem, Task<bool>> callBack, string? consumerName = null, string? queueName = null, CancellationToken cancellationToken = default) =>
-                inMemoryQueueManager.GetOrCreateQueue(queueName).CreateInMemoryConsumer(callBack, consumerName, queueName, cancellationToken);
+                inMemoryQueueManager.GetOrCreateQueue(queueName).CreateInMemoryConsumer(callBack, consumerName, cancellationToken);
     }
 }

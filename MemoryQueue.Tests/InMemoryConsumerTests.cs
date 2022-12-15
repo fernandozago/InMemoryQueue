@@ -1,7 +1,6 @@
 ﻿using MemoryQueue.Models;
 using MemoryQueue.Tests.SUTFactory;
 using MemoryQueue.Transports.InMemoryConsumer;
-using System.ComponentModel.DataAnnotations;
 
 namespace MemoryQueue.Tests
 {
@@ -17,27 +16,50 @@ namespace MemoryQueue.Tests
                 .CreateInMemoryQueueManager()
                 .GetOrCreateQueue("Queue1");
 
+            int counter = 0;
             var consumers = new List<Task>()
             {
                 queue.CreateInMemoryConsumer((item) =>
                 {
-                    Assert.AreEqual("teste", item.Message);
-                    return Task.FromResult(true);
-                }, "Consumer1", "Queue1", cts.Token),
+                    if (item.Message.Equals("teste"))
+                    {
+                        Interlocked.Increment(ref counter);
+                        return Task.FromResult(true);
+                    }
+                    return Task.FromResult(false);
+                }, "Consumer1", cts.Token),
 
                 queue.CreateInMemoryConsumer((item) =>
                 {
-                    Assert.AreEqual("teste", item.Message);
-                    return Task.FromResult(true);
-                }, "Consumer2", "Queue1", cts.Token),
+                    if (item.Message.Equals("teste"))
+                    {
+                        Interlocked.Increment(ref counter);
+                        return Task.FromResult(true);
+                    }
+                    return Task.FromResult(false);
+                }, "Consumer2", cts.Token),
 
                 queue.CreateInMemoryConsumer((item) =>
                 {
-                    Assert.AreEqual("teste", item.Message);
-                    return Task.FromResult(true);
-                }, "Consumer3", "Queue1", cts.Token)
+                    if (item.Message.Equals("teste"))
+                    {
+                        Interlocked.Increment(ref counter);
+                        return Task.FromResult(true);
+                    }
+                    return Task.FromResult(false);
+                }, "Consumer3", cts.Token)
             };
 
+
+            await queue.EnqueueAsync("teste").ConfigureAwait(false);
+            await queue.EnqueueAsync("teste").ConfigureAwait(false);
+            await queue.EnqueueAsync("teste").ConfigureAwait(false);
+            while (queue.MainChannelCount > 0)
+            {
+                await Task.Delay(100).ConfigureAwait(false);
+            }
+
+            Assert.AreEqual(3, counter);
             Assert.AreEqual(3, queue.Consumers.Count);
             Assert.IsNotNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
             Assert.IsNotNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer2"));
@@ -49,7 +71,6 @@ namespace MemoryQueue.Tests
 
             cts.Cancel();
             await Task.WhenAll(consumers);
-            await Task.Delay(1000);
 
             Assert.AreEqual(0, queue.Consumers.Count);
             Assert.IsNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
@@ -75,7 +96,7 @@ namespace MemoryQueue.Tests
                 Assert.AreEqual(data, item.Message);
                 counter++;
                 return Task.FromResult(true);
-            }, "Consumer1", "Queue1", cts.Token);
+            }, "Consumer1", cts.Token);
 
             for (int i = 0; i < 30; i++)
             {
