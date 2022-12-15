@@ -96,7 +96,7 @@ namespace GrpcClient2
                 {
                     try
                     {
-                        await _consumer.PublishAsync(new QueueItemReply()
+                        await _consumer.PublishAsync(new QueueItemRequest()
                         {
                             Message = JsonSerializer.Serialize(new Data(Guid.Empty, DateTime.Now, "A"))
                         });
@@ -249,7 +249,7 @@ namespace GrpcClient2
                 {
                     try
                     {
-                        await _consumer.PublishAsync(new QueueItemReply()
+                        await _consumer.PublishAsync(new QueueItemRequest()
                         {
                             Message = JsonSerializer.Serialize(new Data(Guid.NewGuid(), DateTime.Now, "A"))
                         });

@@ -34,7 +34,7 @@ namespace MemoryQueue.Client.Grpc
             };
         }
 
-        public AsyncUnaryCall<QueueItemAck> PublishAsync(QueueItemReply item)
+        public AsyncUnaryCall<QueueItemAck> PublishAsync(QueueItemRequest item)
         {
             return _client.PublishAsync(item, headers: _headers, deadline: DateTime.UtcNow.AddSeconds(1));
         }

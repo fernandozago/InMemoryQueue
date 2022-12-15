@@ -11,11 +11,15 @@ service ConsumerService {
   // Sends a greeting
 	rpc BindConsumer(stream QueueItemAck) returns (stream QueueItemReply);
 
-	rpc Publish(QueueItemReply) returns (QueueItemAck);
+	rpc Publish(QueueItemRequest) returns (QueueItemAck);
 
 	rpc QueueInfo(google.protobuf.Empty) returns (QueueInfoReply);
 
 	rpc ResetCounters(google.protobuf.Empty) returns (google.protobuf.Empty);
+}
+
+message QueueItemRequest {
+	string message = 1;
 }
 
 message QueueItemAck {

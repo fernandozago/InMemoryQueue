@@ -39,7 +39,7 @@ namespace MemoryQueue.Transports.GRPC.Services
         /// <param name="request"></param>
         /// <param name="context"></param>
         /// <returns></returns>
-        public override async Task<QueueItemAck> Publish(QueueItemReply request, ServerCallContext context)
+        public override async Task<QueueItemAck> Publish(QueueItemRequest request, ServerCallContext context)
         {
             try
             {
