@@ -12,12 +12,14 @@ namespace MemoryQueue.Tests
         {
             using CancellationTokenSource cts = new();
 
-            var queue = SubjectUnderTestFactory
-                .CreateInMemoryQueueManager()
-                .GetOrCreateQueue("Queue1");
+            try
+            {
+                var queue = SubjectUnderTestFactory
+                        .CreateInMemoryQueueManager()
+                        .GetOrCreateQueue("Queue1");
 
-            int counter = 0;
-            var consumers = new List<Task>()
+                int counter = 0;
+                var consumers = new List<Task>()
             {
                 queue.CreateInMemoryConsumer((item) =>
                 {
@@ -51,31 +53,37 @@ namespace MemoryQueue.Tests
             };
 
 
-            await queue.EnqueueAsync("teste").ConfigureAwait(false);
-            await queue.EnqueueAsync("teste").ConfigureAwait(false);
-            await queue.EnqueueAsync("teste").ConfigureAwait(false);
-            while (queue.MainChannelCount > 0)
-            {
-                await Task.Delay(100).ConfigureAwait(false);
+                await queue.EnqueueAsync("teste").ConfigureAwait(false);
+                await queue.EnqueueAsync("teste").ConfigureAwait(false);
+                await queue.EnqueueAsync("teste").ConfigureAwait(false);
+                while (queue.MainChannelCount > 0)
+                {
+                    await Task.Delay(100).ConfigureAwait(false);
+                }
+
+                Assert.AreEqual(3, counter);
+                Assert.AreEqual(3, queue.Consumers.Count);
+                Assert.IsNotNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
+                Assert.IsNotNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer2"));
+                Assert.IsNotNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer3"));
+
+                Assert.AreEqual(QueueConsumerType.InMemory, queue.Consumers.SingleOrDefault(x => x.Name == "Consumer1")!.ConsumerType);
+                Assert.AreEqual(QueueConsumerType.InMemory, queue.Consumers.SingleOrDefault(x => x.Name == "Consumer2")!.ConsumerType);
+                Assert.AreEqual(QueueConsumerType.InMemory, queue.Consumers.SingleOrDefault(x => x.Name == "Consumer3")!.ConsumerType);
+
+                cts.Cancel();
+                await Task.WhenAll(consumers);
+
+                Assert.AreEqual(0, queue.Consumers.Count);
+                Assert.IsNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
+                Assert.IsNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer2"));
+                Assert.IsNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer3"));
             }
-
-            Assert.AreEqual(3, counter);
-            Assert.AreEqual(3, queue.Consumers.Count);
-            Assert.IsNotNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
-            Assert.IsNotNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer2"));
-            Assert.IsNotNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer3"));
-
-            Assert.AreEqual(QueueConsumerType.InMemory, queue.Consumers.SingleOrDefault(x => x.Name == "Consumer1")!.ConsumerType);
-            Assert.AreEqual(QueueConsumerType.InMemory, queue.Consumers.SingleOrDefault(x => x.Name == "Consumer2")!.ConsumerType);
-            Assert.AreEqual(QueueConsumerType.InMemory, queue.Consumers.SingleOrDefault(x => x.Name == "Consumer3")!.ConsumerType);
-
-            cts.Cancel();
-            await Task.WhenAll(consumers);
-
-            Assert.AreEqual(0, queue.Consumers.Count);
-            Assert.IsNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
-            Assert.IsNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer2"));
-            Assert.IsNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer3"));
+            catch
+            {
+                cts.Cancel();
+                throw;
+            }
         }
 
         [DataTestMethod]
@@ -90,30 +98,38 @@ namespace MemoryQueue.Tests
 
             using CancellationTokenSource cts = new ();
 
-            int counter = 0;
-            var consumer = queue.CreateInMemoryConsumer((item) =>
+            try
             {
-                if (item.Message.Equals(data))
+                int counter = 0;
+                var consumer = queue.CreateInMemoryConsumer((item) =>
                 {
-                    counter++;
-                }               
-                return Task.FromResult(true);
-            }, "Consumer1", cts.Token);
+                    if (item.Message.Equals(data))
+                    {
+                        counter++;
+                    }
+                    return Task.FromResult(true);
+                }, "Consumer1", cts.Token);
 
-            for (int i = 0; i < 30; i++)
-            {
-                await queue.EnqueueAsync(data); 
+                for (int i = 0; i < 30; i++)
+                {
+                    await queue.EnqueueAsync(data);
+                }
+
+                while (queue.MainChannelCount > 0)
+                {
+                    await Task.Delay(100);
+                }
+
+                cts.Cancel();
+                await consumer;
+
+                Assert.AreEqual(30, counter);
             }
-
-            while (queue.MainChannelCount > 0)
+            catch
             {
-                await Task.Delay(100);
+                cts.Cancel();
+                throw;
             }
-
-            cts.Cancel();
-            await consumer;
-
-            Assert.AreEqual(30, counter);
         }
 
         [DataTestMethod]
@@ -127,38 +143,46 @@ namespace MemoryQueue.Tests
 
             using CancellationTokenSource cts = new CancellationTokenSource();
 
-            int totalCounter = 0;
-            int retryCounter = 0;
-            var consumer = manager.CreateInMemoryConsumer((item) =>
+            try
             {
-                totalCounter++;
-                if (!item.Retrying)
+                int totalCounter = 0;
+                int retryCounter = 0;
+                var consumer = manager.CreateInMemoryConsumer((item) =>
                 {
-                    return Task.FromResult(false);
+                    totalCounter++;
+                    if (!item.Retrying)
+                    {
+                        return Task.FromResult(false);
+                    }
+
+                    if (item.Message.Equals(data))
+                    {
+                        retryCounter++;
+                    }
+                    return Task.FromResult(true);
+                }, "Consumer1", "Queue1", cts.Token);
+
+                for (int i = 0; i < 30; i++)
+                {
+                    await queue.EnqueueAsync(data);
                 }
 
-                if (item.Message.Equals(data))
+                while (queue.MainChannelCount > 0)
                 {
-                    retryCounter++;
-                }                
-                return Task.FromResult(true);
-            }, "Consumer1", "Queue1", cts.Token);
+                    await Task.Delay(100);
+                }
 
-            for (int i = 0; i < 30; i++)
-            {
-                await queue.EnqueueAsync(data);
+                cts.Cancel();
+                await consumer;
+
+                Assert.AreEqual(30, retryCounter);
+                Assert.AreEqual(60, totalCounter);
             }
-
-            while (queue.MainChannelCount > 0)
+            catch
             {
-                await Task.Delay(100);
+                cts.Cancel();
+                throw;
             }
-
-            cts.Cancel();
-            await consumer;
-
-            Assert.AreEqual(30, retryCounter);
-            Assert.AreEqual(60, totalCounter);
         }
     }
 }
