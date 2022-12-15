@@ -11,7 +11,7 @@
 		<Authors>Fernando Zago</Authors>
 		<PackageProjectUrl>https://github.com/fernandozago/InMemoryQueue</PackageProjectUrl>
 		<Copyright>Apache License 2.0</Copyright>
-		<Description>Creates a in memory queue system in .net</Description>
+		<Description>Creates a in memory queue service in .net</Description>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<RepositoryUrl>https://github.com/fernandozago/InMemoryQueue</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
