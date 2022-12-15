@@ -1,5 +1,5 @@
 # InMemoryQueue
-Creates a in memory queue system in .net
+Creates a in memory queue service in .net
 
 
 
