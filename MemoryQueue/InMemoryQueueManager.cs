@@ -27,10 +27,10 @@ namespace MemoryQueue
         public IReadOnlyCollection<IInMemoryQueue> ActiveQueues => 
             (IReadOnlyCollection<IInMemoryQueue>)_queues.Values;
 
-        public InMemoryQueueManager(ILoggerFactory loggerFactory, ILogger<InMemoryQueueManager> logger)
+        public InMemoryQueueManager(ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
-            _logger = logger;
+            _logger = loggerFactory.CreateLogger<InMemoryQueueManager>();
         }
 
         public IInMemoryQueue GetOrCreateQueue(string? name = null)

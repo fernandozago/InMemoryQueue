@@ -11,7 +11,7 @@ using var loggerFactory = LoggerFactory.Create(builder =>
 
 var _logger = loggerFactory.CreateLogger<Program>();
 
-InMemoryQueueManager InMemoryQueueManager = new(loggerFactory, loggerFactory.CreateLogger<InMemoryQueueManager>());
+InMemoryQueueManager InMemoryQueueManager = new(loggerFactory);
 _ = Task.Run(async () =>
 {
     var queue = InMemoryQueueManager.GetOrCreateQueue();

@@ -15,7 +15,7 @@ namespace MemoryQueue.Tests.SUTFactory
             Mock<ILogger<InMemoryQueueManager>> specificLoggerMock = new();
             loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(loggerMock.Object);
 
-            return new(loggerFactoryMock.Object, specificLoggerMock.Object);
+            return new(loggerFactoryMock.Object);
         }
 
         public static ConsumerServiceImpl CreateGrpcConsumer()
@@ -26,7 +26,7 @@ namespace MemoryQueue.Tests.SUTFactory
             Mock<ILogger<InMemoryQueueManager>> specificLoggerMock = new();
             loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(loggerMock.Object);
 
-            InMemoryQueueManager queueManager = new(loggerFactoryMock.Object, specificLoggerMock.Object);
+            InMemoryQueueManager queueManager = new(loggerFactoryMock.Object);
             return new ConsumerServiceImpl(queueManager, configurationMock.Object, loggerFactoryMock.Object);
         }
     }
