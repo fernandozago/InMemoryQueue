@@ -19,11 +19,11 @@ namespace MemoryQueue.Tests
         {
             private readonly Server _server;
 
-            public SimpleGrpcServer(ConsumerServiceImpl service)
+            public SimpleGrpcServer(ServerServiceDefinition serviceDefinition)
             {
                 _server = new Server()
                 {
-                    Services = { ConsumerServiceImpl.Bind(service) },
+                    Services = { serviceDefinition },
                     Ports = { new ServerPort("127.0.0.1", 12345, ServerCredentials.Insecure) }
                 };
             }
@@ -42,7 +42,7 @@ namespace MemoryQueue.Tests
         public GrpcConsumerTests()
         {
             _grpcConsumer = SubjectUnderTestFactory.CreateGrpcConsumer();
-            _server = new SimpleGrpcServer(_grpcConsumer);
+            _server = new SimpleGrpcServer(_grpcConsumer.GetServerServiceDefinition());
         }
 
         [TestMethod]

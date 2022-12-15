@@ -153,7 +153,7 @@ namespace MemoryQueue.Counters
             using (_cts)
             {
                 _cts.Cancel();
-                await _task;
+                await _task.ConfigureAwait(false);
             }
         }
     }

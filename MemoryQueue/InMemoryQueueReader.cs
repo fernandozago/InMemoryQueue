@@ -60,7 +60,7 @@ namespace MemoryQueue
                 {
                     if (_token.IsCancellationRequested || !await TryDeliverItemAsync(queueName, item).ConfigureAwait(false))
                     {
-                        await AddToRetryChannel(queueName, item);
+                        await AddToRetryChannel(queueName, item).ConfigureAwait(false);
                     }
                     if (_token.IsCancellationRequested)
                         break;

@@ -14,7 +14,7 @@ namespace GrpcService2.GrpcImpl
             _logger = logger;
             _server = new Server()
             {
-                Services = { ConsumerService.BindService(sp.GetRequiredService<ConsumerServiceImpl>()) },
+                Services = { sp.GetRequiredService<ConsumerServiceImpl>().GetServerServiceDefinition() },
                 Ports = { new ServerPort("0.0.0.0", 1111, ServerCredentials.Insecure) }
             };
             logger.LogInformation("GrpcServer Configured at: 0.0.0.0:1111");
