@@ -1,7 +1,10 @@
 # InMemoryQueue
 Creates a in memory queue service in .net
 
-
+`Disclaimer:
+This project is not intended for replacing any queue broker available on the market.
+Such as Rabbitmq or kafka...
+If you need something that have persistent messages delivery, this is not for you`
 
 # How to use it ? (Server)
 
