@@ -2,8 +2,15 @@
 using MemoryQueue.Transports.GRPC;
 using Microsoft.Extensions.Logging;
 
+using var loggerFactory = LoggerFactory.Create(builder =>
+{
+    builder
+        .SetMinimumLevel(LogLevel.Trace)
+        .AddConsole();
+});
+
 CancellationTokenSource cts = new CancellationTokenSource();
-var queueConsumer = new GrpcQueueConsumer("127.0.0.1:5000");
+var queueConsumer = new GrpcQueueConsumer("127.0.0.1:5000", loggerFactory);
 var consumer = queueConsumer.Consume("MyConsoleConsumer", CallBack, cts.Token);
 var producer = Task.Run(async () =>
 {
