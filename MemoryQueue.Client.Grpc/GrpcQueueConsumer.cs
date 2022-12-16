@@ -34,11 +34,14 @@ namespace MemoryQueue.Client.Grpc
             };
         }
 
-        public AsyncUnaryCall<QueueItemAck> PublishAsync(QueueItemRequest item)
-        {
-            return _client.PublishAsync(item, headers: _headers, deadline: DateTime.UtcNow.AddSeconds(1));
-        }
-            
+        public AsyncUnaryCall<QueueItemAck> PublishAsync(QueueItemRequest item) =>
+            _client.PublishAsync(item, headers: _headers, deadline: DateTime.UtcNow.AddSeconds(1));
+
+        public AsyncUnaryCall<QueueItemAck> PublishAsync(string item) =>
+            PublishAsync(new QueueItemRequest() { Message = item });
+
+        public Task<QueueItemAck[]> PublishAllAsync(IEnumerable<string> items) =>
+            Task.WhenAll(items.Select(i => PublishAsync(i).ResponseAsync));   
 
         public AsyncUnaryCall<QueueInfoReply> QueueInfoAsync() =>
             _client.QueueInfoAsync(_empty, headers: _headers, deadline: DateTime.UtcNow.AddSeconds(1));

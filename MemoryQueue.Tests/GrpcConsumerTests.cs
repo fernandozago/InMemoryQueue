@@ -2,6 +2,7 @@
 using MemoryQueue.Client.Grpc;
 using MemoryQueue.Models;
 using MemoryQueue.Tests.SUTFactory;
+using MemoryQueue.Transports.GRPC;
 using MemoryQueue.Transports.GRPC.Services;
 
 namespace MemoryQueue.Tests
@@ -62,9 +63,8 @@ namespace MemoryQueue.Tests
                     _server.Start();
 
                     var consumerClient = new GrpcQueueConsumer("127.0.0.1:12345", queueName);
-                    await consumerClient.PublishAsync(new() { Message = "teste" }).ConfigureAwait(false);
-                    await consumerClient.PublishAsync(new() { Message = "teste" }).ConfigureAwait(false);
-                    await consumerClient.PublishAsync(new() { Message = "teste" }).ConfigureAwait(false);
+
+                    await consumerClient.PublishAllAsync(Enumerable.Range(0, 3).Select(_ => "teste"));
 
                     int counter = 0;
                     var consumers = new List<Task>()
