@@ -13,6 +13,7 @@ namespace MemoryQueue
         private const string LOGMSG_QUEUE_CREATED = "Queue Created: '{queueName}' -- Hash: '{hash}'";
         private const string EX_INVALID_QUEUE_NAME = "Invalid Queue Name '{0}'";
         private const string LOGMSG_INVALID_QUEUE_NAME = "Failed parsing queuename {queueName}";
+        private const string LOGMS_TRACE_USINGDEFAULT_QUEUENAME = "Using default queueName {defaultQueueName}";
 
         #endregion
 
@@ -54,7 +55,7 @@ namespace MemoryQueue
             name = name?.Trim();
             if (string.IsNullOrWhiteSpace(name))
             {
-                _logger.LogTrace("Using default queueName {defaultQueueName}", DEFAULT_QUEUE_NAME);
+                _logger.LogTrace(LOGMS_TRACE_USINGDEFAULT_QUEUENAME, DEFAULT_QUEUE_NAME);
                 return DEFAULT_QUEUE_NAME;
             }
             else if (!REGEX_ONLY_LETTERS().IsMatch(name))
