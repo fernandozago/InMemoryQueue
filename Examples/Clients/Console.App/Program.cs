@@ -1,5 +1,6 @@
 ﻿using MemoryQueue.Client.Grpc;
 using MemoryQueue.Transports.GRPC;
+using Microsoft.Extensions.Logging;
 
 CancellationTokenSource cts = new CancellationTokenSource();
 var queueConsumer = new GrpcQueueConsumer("127.0.0.1:5000");

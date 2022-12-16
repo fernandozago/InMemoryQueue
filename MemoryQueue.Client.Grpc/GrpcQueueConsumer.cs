@@ -2,19 +2,25 @@
 using Grpc.Core;
 using MemoryQueue.Client.Grpc.Extensions;
 using MemoryQueue.Transports.GRPC;
+using Microsoft.Extensions.Logging;
 
 namespace MemoryQueue.Client.Grpc
 {
     public sealed class GrpcQueueConsumer : IAsyncDisposable
     {
+        private const string LOGGERFACTORY_CATEGORY = $"{nameof(GrpcQueueConsumer)}.{{0}}";
+        private const string GRPC_CALL_HEADER_QUEUENAME = "queuename";
+        private const string GRPC_CALL_HEADER_CLIENTNAME = "clientname";
         private readonly Channel _channel;
         private readonly ConsumerService.ConsumerServiceClient _client;
         private readonly Metadata _headers;
         private readonly Empty _empty = new ();
+        private readonly ILogger? _logger;
         private readonly string? _queueName;
 
-        public GrpcQueueConsumer(string address, string? queueName = default)
+        public GrpcQueueConsumer(string address, ILoggerFactory? loggerFactory = default, string? queueName = default)
         {
+            _logger = loggerFactory?.CreateLogger(string.Format(LOGGERFACTORY_CATEGORY, string.IsNullOrWhiteSpace(queueName) ? "Default" : queueName));
             _queueName = queueName;
             var opts = new List<ChannelOption>
             {
@@ -30,7 +36,7 @@ namespace MemoryQueue.Client.Grpc
             _headers = new Metadata();
             if (queueName is not null)
             {
-                _headers.Add("queuename", queueName);
+                _headers.Add(GRPC_CALL_HEADER_QUEUENAME, queueName);
             };
         }
 
@@ -56,11 +62,11 @@ namespace MemoryQueue.Client.Grpc
                 {
                     var metadata = new Metadata
                     {
-                        { "clientname", name },
+                        { GRPC_CALL_HEADER_CLIENTNAME, name },
                     };
                     if (_queueName is not null)
                     {
-                        metadata.Add("queuename", _queueName);
+                        metadata.Add(GRPC_CALL_HEADER_QUEUENAME, _queueName);
                     }
 
                     using var stream = _client.BindConsumer(headers: metadata, cancellationToken: token);
@@ -89,17 +95,17 @@ namespace MemoryQueue.Client.Grpc
                 {
                     if (ex.Trailers.GetValue("serverexception") is string serverException)
                     {
-                        Console.WriteLine($"Server Exception: {serverException}");
+                        _logger?.LogError(ex, serverException);
                         break;
                     }
                     else
                     {
-                        Console.WriteLine($"Server Exception: {ex}");
+                        _logger?.LogError(ex, "Client got an RPC error");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex);
+                    _logger?.LogError(ex, "Client got an generic error");
                 }
 
                 try

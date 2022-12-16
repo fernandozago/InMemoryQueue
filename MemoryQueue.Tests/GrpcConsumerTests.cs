@@ -1,9 +1,11 @@
-﻿using Grpc.Core;
+﻿using Castle.Core.Logging;
+using Grpc.Core;
 using MemoryQueue.Client.Grpc;
 using MemoryQueue.Models;
 using MemoryQueue.Tests.SUTFactory;
 using MemoryQueue.Transports.GRPC;
 using MemoryQueue.Transports.GRPC.Services;
+using Moq;
 
 namespace MemoryQueue.Tests
 {
@@ -61,8 +63,7 @@ namespace MemoryQueue.Tests
                 try
                 {
                     _server.Start();
-
-                    var consumerClient = new GrpcQueueConsumer("127.0.0.1:12345", queueName);
+                    var consumerClient = new GrpcQueueConsumer("127.0.0.1:12345", SubjectUnderTestFactory.CreateLoggerFactory(), queueName);
 
                     await consumerClient.PublishAllAsync(Enumerable.Range(0, 3).Select(_ => "teste"));
 

@@ -27,7 +27,7 @@ namespace GrpcClient2
         {
             _queueName = queueName;
             string host = $"127.0.0.1:{port}";
-            _consumer = new(host, queueName);
+            _consumer = new(host, queueName: queueName);
             _progress = new Progress<QueueInfoReply>(UpdateForm);
 
             _ = StartTimer();
