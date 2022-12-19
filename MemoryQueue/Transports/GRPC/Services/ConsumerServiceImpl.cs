@@ -188,7 +188,7 @@ namespace MemoryQueue.Transports.GRPC.Services
                 return false;
             }
 
-            return await WriteItemToStreamAsync(item, responseStream, logger, cancellationToken) 
+            return await WriteItemToStreamAsync(item, responseStream, logger, cancellationToken)
                 && await AwaitAckAsync(requestStream, logger, cancellationToken);
         }
 
