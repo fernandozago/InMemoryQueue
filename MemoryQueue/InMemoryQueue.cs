@@ -49,7 +49,6 @@ namespace MemoryQueue
         private static Channel<QueueItem> CreateUnboundedChannel() =>
             Channel.CreateUnbounded<QueueItem>(new UnboundedChannelOptions()
             {
-                AllowSynchronousContinuations = true,
                 SingleWriter = false,
                 SingleReader = false
             });

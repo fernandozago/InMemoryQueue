@@ -15,7 +15,7 @@ namespace MemoryQueue
         private const string LOGGER_CATEGORY = $"{nameof(InMemoryQueueReader)}.{{0}}.{{1}}-[{{2}}]";
 
         private const string LOGMSG_QUEUEREADER_CANCELLED = "QueueReader For: {consumerType} Queue -- Cancelled";
-        private const string LOGMSG_QUEUEREADER_FINISHED_WITH_EX = "QueueReader For: {consumerType} Queue -- Finished With Exception";
+        private const string LOGMSG_QUEUEREADER_FINISHED_WITH_EX = "Finished With Exception";
         private const string LOGMSG_QUEUEREADER_FINISHED = "QueueReader For: {consumerType} Queue -- Finished";
         private const string LOGMSG_TRACE_ITEM_ADDED_TO_RETRY_CANCELLED = "Added Item To Retry Channel from {queueName} ***** READER WAS SHUTTING DOWN ****** {item}";
         private const string LOGMSG_TRACE_ITEM_ADDED_TO_RETRY_ACK_FAILED = "Added Item To Retry Channel from {queueName} ***** FAILED TO ACK ****** {item}";
@@ -26,6 +26,7 @@ namespace MemoryQueue
         #endregion
 
         private readonly CancellationToken _token;
+        private readonly Channel<QueueItem> _mainChannel;
         private readonly Channel<QueueItem> _retryChannel;
         private readonly Task _consumerTask;
         private readonly SemaphoreSlim _semaphoreSlim;
@@ -40,67 +41,53 @@ namespace MemoryQueue
             _counters = counters;
             _logger = loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, queueName, consumerInfo.ConsumerType, consumerInfo.Name));
             _token = token;
+            _mainChannel = mainChannel;
             _retryChannel = retryChannel;
             _channelCallBack = callBack;
 
             Completed = new TaskCompletionSource<bool>();
             _semaphoreSlim = new(1);
 
-            _consumerTask = Task.WhenAll(
-                ChannelConsumerCore(RETRYCHANNEL_DESCRIPTION, retryChannel.Reader),
-                ChannelConsumerCore(MAINCHANNEL_DESCRIPTION, mainChannel.Reader)
-            ).ContinueWith(r => Completed.TrySetResult(true), CancellationToken.None);
+            _consumerTask = ChannelReaderCore();
         }
 
-        private async Task ChannelConsumerCore(string queueName, ChannelReader<QueueItem> reader)
+        private async Task ChannelReaderCore()
         {
             try
             {
-                await foreach (var item in reader.ReadAllAsync(_token).ConfigureAwait(false))
+                while (!_token.IsCancellationRequested && await Task.WhenAny(_mainChannel.Reader.WaitToReadAsync(_token).AsTask(), _retryChannel.Reader.WaitToReadAsync(_token).AsTask()).Unwrap())
                 {
-                    await TryDeliverItemAsync(item.Retrying, item).ConfigureAwait(false);
-                    if (_token.IsCancellationRequested)
-                        break;
+                    if (!_token.IsCancellationRequested && _retryChannel.Reader.TryRead(out var retryItem))
+                    {
+                        await TryDeliverItemAsync(retryItem).ConfigureAwait(false);
+                        continue;
+                    }
+
+                    if (!_token.IsCancellationRequested && _mainChannel.Reader.TryRead(out var mainItem))
+                    {
+                        await TryDeliverItemAsync(mainItem).ConfigureAwait(false);
+                        continue;
+                    }
                 }
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
-                _logger.LogTrace(LOGMSG_QUEUEREADER_CANCELLED, queueName);
-                return;
+                _logger.LogTrace(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX, queueName);
-                return;
+                _logger.LogWarning(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX);
             }
-
-            _logger.LogTrace(LOGMSG_QUEUEREADER_FINISHED, queueName);
-        }
-
-        private ValueTask AddToRetryChannel(string queueName, QueueItem item)
-        {
-            item.Retrying = true;
-            item.RetryCount++;
-            if (_logger.IsEnabled(LogLevel.Trace))
-            {
-                if (_token.IsCancellationRequested)
-                {
-                    _logger.LogTrace(LOGMSG_TRACE_ITEM_ADDED_TO_RETRY_CANCELLED, queueName, item);
-                }
-                else
-                {
-                    _logger.LogTrace(LOGMSG_TRACE_ITEM_ADDED_TO_RETRY_ACK_FAILED, queueName, item);
-                }
-            }
-            return _retryChannel.Writer.WriteAsync(item);
+            Completed.TrySetResult(true);
         }
 
         /// <summary>
         /// Deliver or Redeliver an message to some consumer and awaits for the ACK(true)/NACK(false) result
         /// </summary>
         /// <param name="item">Message to be sent</param>
-        private async Task TryDeliverItemAsync(bool isRetrying, QueueItem item)
+        private async Task TryDeliverItemAsync(QueueItem item)
         {
+            bool isRetrying = item.Retrying;
             bool isAcked = false;
 
             var timestamp = Stopwatch.GetTimestamp();
