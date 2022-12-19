@@ -10,7 +10,7 @@ namespace MemoryQueue.Transports.InMemoryConsumer
             Func<QueueItem, Task<bool>> callBack, string? consumerName = null, CancellationToken cancellationToken = default)
         {
             var id = Guid.NewGuid().ToString();
-            await using var reader = ((InMemoryQueue)inMemoryQueue).AddQueueReader(new QueueConsumer(QueueConsumerType.InMemory)
+            var reader = ((InMemoryQueue)inMemoryQueue).AddQueueReader(new QueueConsumer(QueueConsumerType.InMemory)
             {
                 Id = id,
                 Name = consumerName ?? id,

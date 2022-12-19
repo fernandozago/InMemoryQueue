@@ -3,13 +3,11 @@ using MemoryQueue.Models;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.InteropServices;
 using System.Threading.Channels;
 
 namespace MemoryQueue
 {
-    internal sealed class InMemoryQueueReader : IAsyncDisposable
+    internal sealed class InMemoryQueueReader
     {
         #region Constants
         private const string LOGGER_CATEGORY = $"{nameof(InMemoryQueueReader)}.{{0}}.{{1}}-[{{2}}]";
@@ -46,9 +44,9 @@ namespace MemoryQueue
             {
                 while (!token.IsCancellationRequested && await WaitToReadAsync(token))
                 {
-                    if (TryReadItem(out var item, token))
+                    if (!token.IsCancellationRequested && TryRead(out var queueItem))
                     {
-                        await TryDeliverItemAsync(item).ConfigureAwait(false);
+                        await TryDeliverItemAsync(queueItem).ConfigureAwait(false);
                     }
                 }
             }
@@ -66,53 +64,43 @@ namespace MemoryQueue
             }
         }
 
+        /// <summary>
+        /// Wait to read any of the channels [RetryChannel or MainChannel]
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         private Task<bool> WaitToReadAsync(CancellationToken token) =>
             Task.WhenAny(_mainChannel.Reader.WaitToReadAsync(token).AsTask(), _retryChannel.Reader.WaitToReadAsync(token).AsTask()).Unwrap();
 
-
         /// <summary>
-        /// Try read a pending item
+        /// Try read item from any of the channels [RetryChannel or MainChannel]
+        /// Try RetryChannel First then MainChannel
         /// </summary>
         /// <param name="channelReader"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        private bool TryReadItem([MaybeNullWhen(false)] out QueueItem item, CancellationToken token)
-        {
-            item = null;
-            if (!token.IsCancellationRequested &&
-                (_retryChannel.Reader.TryRead(out item) || _mainChannel.Reader.TryRead(out item)))
-            {
-                return true;
-            }
-
-            return false;
-        }
+        private bool TryRead([MaybeNullWhen(false)] out QueueItem queueItem) =>
+            _retryChannel.Reader.TryRead(out queueItem) || _mainChannel.Reader.TryRead(out queueItem);
 
         /// <summary>
         /// Publish an message to some consumer and awaits for the ACK(true)/NACK(false) result
         /// </summary>
-        /// <param name="item">Message to be sent</param>
-        private async Task TryDeliverItemAsync(QueueItem item)
+        /// <param name="queueItem">Message to be sent</param>
+        private async Task TryDeliverItemAsync(QueueItem queueItem)
         {
             var timestamp = Stopwatch.GetTimestamp();
 
-            bool isRetrying = item.Retrying;
-            bool isAcked = await _channelCallBack(item).ConfigureAwait(false);
+            bool isRetrying = queueItem.Retrying;
+            bool isAcked = await _channelCallBack(queueItem).ConfigureAwait(false);
 
             if (!isAcked)
             {
-                item.Retrying = true;
-                item.RetryCount++;
-                await _retryChannel.Writer.WriteAsync(item).ConfigureAwait(false);
+                queueItem.Retrying = true;
+                queueItem.RetryCount++;
+                await _retryChannel.Writer.WriteAsync(queueItem).ConfigureAwait(false);
             }
 
             _counters.UpdateCounters(isRetrying, isAcked, timestamp);
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await _consumerTask.ConfigureAwait(false);
-            _logger.LogTrace(LOGMSG_READER_DISPOSED);
         }
     }
 

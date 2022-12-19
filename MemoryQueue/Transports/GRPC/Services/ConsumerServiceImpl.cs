@@ -160,14 +160,13 @@ namespace MemoryQueue.Transports.GRPC.Services
             var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.Name, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
             context.CancellationToken.Register(() => logger.LogInformation(LOGMSG_GRPC_REQUEST_CANCELLED));
 
-            await using (var reader = memoryQueue.AddQueueReader(
+            var reader = memoryQueue.AddQueueReader(
                 consumerQueueInfo,
                 (item) => WriteAndAckAsync(item, responseStream, requestStream, logger, context.CancellationToken),
-                context.CancellationToken))
-            {
-                await reader.Completed.Task.ConfigureAwait(false);
-                memoryQueue.RemoveReader(reader);
-            }
+                context.CancellationToken);
+
+            await reader.Completed.Task.ConfigureAwait(false);
+            memoryQueue.RemoveReader(reader);
 
             logger.LogTrace(LOGMSG_GRPC_STREAM_ENDED);
         }
