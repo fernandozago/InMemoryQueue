@@ -70,7 +70,10 @@ namespace MemoryQueue
             {
                 _logger.LogWarning(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX);
             }
-            Completed.TrySetResult(true);
+            finally
+            {
+                Completed.TrySetResult(true);
+            }
         }
 
         /// <summary>
