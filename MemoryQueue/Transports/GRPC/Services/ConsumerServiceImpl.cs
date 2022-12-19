@@ -25,12 +25,14 @@ namespace MemoryQueue.Transports.GRPC.Services
         private readonly bool _isKestrel;
         private readonly InMemoryQueueManager _queueManager;
         private readonly ILoggerFactory _loggerFactory;
+        private readonly ILogger<ConsumerServiceImpl> _logger;
 
         public ConsumerServiceImpl(InMemoryQueueManager queueManager, IConfiguration configuration, ILoggerFactory loggerFactory)
         {
             _isKestrel = bool.TryParse(configuration[GRPC_HOSTED_ON_KESTREL_CONFIG], out bool isKestrel) && isKestrel;
             _queueManager = queueManager;
             _loggerFactory = loggerFactory;
+            _logger = loggerFactory.CreateLogger<ConsumerServiceImpl>();
         }
 
         /// <summary>
@@ -43,12 +45,14 @@ namespace MemoryQueue.Transports.GRPC.Services
         {
             try
             {
-                var inMemoryQueue = _queueManager.GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
-                await inMemoryQueue.EnqueueAsync(request.Message).ConfigureAwait(false);
+                await _queueManager
+                    .GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME))
+                    .EnqueueAsync(request.Message).ConfigureAwait(false);
                 return _ackTrue;
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to create memoryQueue for {queueName}", context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
                 context.ResponseTrailers.Add(GRPC_TRAIL_SERVER_EXCEPTION, ex.Message);
                 throw;
             }
@@ -101,6 +105,7 @@ namespace MemoryQueue.Transports.GRPC.Services
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to create memoryQueue for {queueName}", context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
                 context.ResponseTrailers.Add(GRPC_TRAIL_SERVER_EXCEPTION, ex.Message);
                 throw;
             }
@@ -116,12 +121,14 @@ namespace MemoryQueue.Transports.GRPC.Services
         {
             try
             {
-                var inMemoryQueue = _queueManager.GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
-                inMemoryQueue.Counters.ResetCounters();
+                _queueManager
+                    .GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME))
+                    .Counters.ResetCounters();
                 return Task.FromResult(_empty);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to create memoryQueue for {queueName}", context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
                 context.ResponseTrailers.Add(GRPC_TRAIL_SERVER_EXCEPTION, ex.Message);
                 throw;
             }
@@ -144,8 +151,7 @@ namespace MemoryQueue.Transports.GRPC.Services
             }
             catch (Exception ex)
             {
-                //TODO: Add Logger for ConsumerServiceImpl
-                //_logger.LogError(ex, "Failed to create memoryQueue for {queueName}")
+                _logger.LogError(ex, "Failed to create memoryQueue for {queueName}", context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
                 context.ResponseTrailers.Add(GRPC_TRAIL_SERVER_EXCEPTION, ex.Message);
                 throw;
             }
@@ -230,6 +236,7 @@ namespace MemoryQueue.Transports.GRPC.Services
             {
                 return requestStream.Current.Ack;
             }
+            //Only call logger.LogWarning when MoveNext(token) returned false -- when Current.Ack is false, should be accepted as valid answer
             else
             {
                 logger.LogWarning("Failed to ack the message");
