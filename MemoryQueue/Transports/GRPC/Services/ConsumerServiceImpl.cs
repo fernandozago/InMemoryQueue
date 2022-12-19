@@ -88,7 +88,7 @@ namespace MemoryQueue.Transports.GRPC.Services
 
                     AvgAckTimeMilliseconds = inMemoryQueue.Counters.AvgAckTimeMilliseconds
                 };
-                reply.Consumers.AddRange(inMemoryQueue.Consumers.Select(x => new ConsumerInfoReply()
+                reply.Consumers.AddRange(inMemoryQueue.Consumers.Select(static x => new ConsumerInfoReply()
                 {
                     Host = x.Host,
                     Id = x.Id,
@@ -136,6 +136,7 @@ namespace MemoryQueue.Transports.GRPC.Services
         /// <returns></returns>
         public override async Task BindConsumer(IAsyncStreamReader<QueueItemAck> requestStream, IServerStreamWriter<QueueItemReply> responseStream, ServerCallContext context)
         {
+
             InMemoryQueue? memoryQueue = default;
             try
             {
@@ -148,22 +149,22 @@ namespace MemoryQueue.Transports.GRPC.Services
                 context.ResponseTrailers.Add(GRPC_TRAIL_SERVER_EXCEPTION, ex.Message);
                 throw;
             }
-
             string id = Guid.NewGuid().ToString();
             var consumerQueueInfo = new QueueConsumer(QueueConsumerType.GRPC)
             {
                 Id = id,
                 Host = context.Host,
                 Ip = context.Peer,
-                Name = context.RequestHeaders.SingleOrDefault(x => x.Key == GRPC_HEADER_CLIENTNAME)?.Value ?? id
+                Name = context.RequestHeaders.GetValue(GRPC_HEADER_CLIENTNAME) ?? id
             };
+
             var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.Name, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
             context.CancellationToken.Register(() => logger.LogInformation(LOGMSG_GRPC_REQUEST_CANCELLED));
 
             var reader = memoryQueue.AddQueueReader(
-                consumerQueueInfo,
-                (item) => WriteAndAckAsync(item, responseStream, requestStream, logger, context.CancellationToken),
-                context.CancellationToken);
+                    consumerQueueInfo,
+                    (item) => WriteAndAckAsync(item, responseStream, requestStream, logger, context.CancellationToken),
+                    context.CancellationToken);
 
             await reader.Completed.ConfigureAwait(false);
             memoryQueue.RemoveReader(reader);
