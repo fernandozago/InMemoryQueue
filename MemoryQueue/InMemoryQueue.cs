@@ -2,6 +2,7 @@
 using MemoryQueue.Models;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
 
 namespace MemoryQueue
@@ -75,13 +76,13 @@ namespace MemoryQueue
             _logger.LogTrace(LOGMSG_TRACE_ITEM_QUEUED, queueItem);
         }
 
-        public bool TryPeekMainQueue(out QueueItem? item)
+        public bool TryPeekMainQueue([MaybeNullWhen(false)] out QueueItem item)
         {
             item = null;
             return _mainChannel.Reader.CanPeek && _mainChannel.Reader.TryPeek(out item);
         }
 
-        public bool TryPeekRetryQueue(out QueueItem? item)
+        public bool TryPeekRetryQueue([MaybeNullWhen(false)] out QueueItem item)
         {
             item = null;
             return _retryChannel.Reader.CanPeek && _retryChannel.Reader.TryPeek(out item);
