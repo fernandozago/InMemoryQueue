@@ -37,7 +37,8 @@ namespace MemoryQueue
         public IInMemoryQueue GetOrCreateQueue(string? name = null)
         {
             string queueName = GetValidOrDefaultQueueName(name);
-            if (_queues.TryGetValue(QueueNameHashesGenerator.GenerateHash(queueName), out var queue))
+            var hash = QueueNameHashesGenerator.GenerateHash(queueName);
+            if (_queues.TryGetValue(hash, out var queue))
             {
                 return queue;
             }
@@ -45,7 +46,7 @@ namespace MemoryQueue
             {
                 lock (_locker)
                 {
-                    return _queues.GetOrAdd(QueueNameHashesGenerator.GenerateHash(queueName), (hash) => CreateInMemoryQueue(hash, queueName));
+                    return _queues.GetOrAdd(hash, (h) => CreateInMemoryQueue(h, queueName));
                 }
             }
         }
