@@ -30,15 +30,15 @@ namespace MemoryQueue
 
         public InMemoryQueueReader(string queueName, QueueConsumer consumerInfo, ConsumptionCounter counters, ILoggerFactory loggerFactory, Channel<QueueItem> mainChannel, Channel<QueueItem> retryChannel, Func<QueueItem, Task<bool>> callBack, CancellationToken token)
         {
-            _counters = counters;
+            Completed = new TaskCompletionSource<bool>();
             _logger = loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, queueName, consumerInfo.ConsumerType, consumerInfo.Name));
+            _semaphoreSlim = new(1);
+
+            _counters = counters;
             _token = token;
             _mainChannel = mainChannel;
             _retryChannel = retryChannel;
             _channelCallBack = callBack;
-
-            Completed = new TaskCompletionSource<bool>();
-            _semaphoreSlim = new(1);
 
             _consumerTask = ChannelReaderCore();
         }
