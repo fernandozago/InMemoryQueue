@@ -24,12 +24,10 @@ namespace MemoryQueue
         private readonly ChannelWriter<QueueItem> _retryWriter;
         private readonly Func<QueueItem, Task<bool>> _channelCallBack;
 
-        internal TaskCompletionSource<bool> Completed { get; }
+        internal Task Completed => _consumerTask;
 
         public InMemoryQueueReader(string queueName, QueueConsumer consumerInfo, ConsumptionCounter counters, Channel<QueueItem> mainChannel, Channel<QueueItem> retryChannel, Func<QueueItem, Task<bool>> callBack, ILoggerFactory loggerFactory, CancellationToken token)
         {
-            Completed = new TaskCompletionSource<bool>();
-
             _logger = loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, queueName, consumerInfo.ConsumerType, consumerInfo.Name));
             _counters = counters;
             _mainReader = mainChannel.Reader;
@@ -40,6 +38,11 @@ namespace MemoryQueue
             _consumerTask = ChannelReaderCore(token);
         }
 
+        /// <summary>
+        /// Method responsible for reading channels [RetryChannel and MainChannel]
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         private async Task ChannelReaderCore(CancellationToken token)
         {
             try
@@ -48,7 +51,7 @@ namespace MemoryQueue
                 {
                     if (!token.IsCancellationRequested && TryRead(out var queueItem))
                     {
-                        await TryDeliverItemAsync(queueItem).ConfigureAwait(false);
+                        await DeliverItemAsync(queueItem).ConfigureAwait(false);
                     }
                 }
             }
@@ -59,10 +62,6 @@ namespace MemoryQueue
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX);
-            }
-            finally
-            {
-                Completed.TrySetResult(true);
             }
         }
 
@@ -88,7 +87,7 @@ namespace MemoryQueue
         /// Publish an message to some consumer and awaits for the ACK(true)/NACK(false) result
         /// </summary>
         /// <param name="queueItem">Message to be sent</param>
-        private async Task TryDeliverItemAsync(QueueItem queueItem)
+        private async Task DeliverItemAsync(QueueItem queueItem)
         {
             var timestamp = Stopwatch.GetTimestamp();
 

@@ -18,7 +18,7 @@ namespace MemoryQueue.Transports.InMemoryConsumer
                 Ip = IN_MEMORY_CONSUMER_NA,
             }, callBack, cancellationToken);
 
-            await reader.Completed.Task.ConfigureAwait(false);
+            await reader.Completed.ConfigureAwait(false);
             ((InMemoryQueue)inMemoryQueue).RemoveReader(reader);
         }
 

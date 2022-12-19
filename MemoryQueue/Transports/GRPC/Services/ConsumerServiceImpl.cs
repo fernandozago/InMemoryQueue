@@ -165,7 +165,7 @@ namespace MemoryQueue.Transports.GRPC.Services
                 (item) => WriteAndAckAsync(item, responseStream, requestStream, logger, context.CancellationToken),
                 context.CancellationToken);
 
-            await reader.Completed.Task.ConfigureAwait(false);
+            await reader.Completed.ConfigureAwait(false);
             memoryQueue.RemoveReader(reader);
 
             logger.LogTrace(LOGMSG_GRPC_STREAM_ENDED);
