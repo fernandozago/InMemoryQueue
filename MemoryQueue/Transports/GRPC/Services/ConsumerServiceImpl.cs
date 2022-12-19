@@ -62,7 +62,7 @@ namespace MemoryQueue.Transports.GRPC.Services
         {
             try
             {
-                var inMemoryQueue = (InMemoryQueue)_queueManager.GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
+                var inMemoryQueue = _queueManager.GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
                 int mainQueueSize = inMemoryQueue.MainChannelCount;
                 int retryQueueSize = inMemoryQueue.RetryChannelCount;
 
