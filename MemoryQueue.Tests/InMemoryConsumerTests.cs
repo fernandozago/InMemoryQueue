@@ -203,7 +203,7 @@ namespace MemoryQueue.Tests
                     retryCount++;
                     if (queue.MainChannelCount > 0 || queue.Counters.AckCounter < 30 || queue.Counters.PubCounter < 30)
                     {
-                        await Task.Delay(200).ConfigureAwait(false);
+                        await Task.Delay(1000).ConfigureAwait(false);
                     }
                     else
                     {

@@ -2,7 +2,9 @@
 using MemoryQueue.Models;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Net.Http.Headers;
 using System.Threading.Channels;
+using System.Threading.Tasks.Dataflow;
 
 namespace MemoryQueue
 {
@@ -18,8 +20,8 @@ namespace MemoryQueue
         #endregion
 
         #region Fields
-        private readonly Channel<QueueItem> _retryChannel;
-        private readonly Channel<QueueItem> _mainChannel;
+        private readonly BufferBlock<QueueItem> _mainChannel;
+        private readonly BufferBlock<QueueItem> _retryChannel;
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<InMemoryQueueReader, QueueConsumer> _readers = new ();
@@ -27,8 +29,8 @@ namespace MemoryQueue
 
         public ConsumptionCounter Counters { get; private set; }
         public int ConsumersCount => _readers.Count;
-        public int MainChannelCount => _mainChannel.Reader.Count;
-        public int RetryChannelCount => _retryChannel.Reader.Count;
+        public int MainChannelCount => _mainChannel.Count;
+        public int RetryChannelCount => _retryChannel.Count;
         public string Name { get; private set; }
 
         public IReadOnlyCollection<QueueConsumer> Consumers =>
@@ -42,16 +44,9 @@ namespace MemoryQueue
 
             Counters = new();
 
-            _mainChannel = CreateUnboundedChannel();
-            _retryChannel = CreateUnboundedChannel();
+            _mainChannel = new BufferBlock<QueueItem>();
+            _retryChannel = new BufferBlock<QueueItem>();
         }
-
-        private static Channel<QueueItem> CreateUnboundedChannel() =>
-            Channel.CreateUnbounded<QueueItem>(new UnboundedChannelOptions()
-            {
-                SingleWriter = false,
-                SingleReader = false
-            });
 
         internal InMemoryQueueReader AddQueueReader(QueueConsumer consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken cancellationToken)
         {
@@ -70,7 +65,7 @@ namespace MemoryQueue
         public async ValueTask EnqueueAsync(string item)
         {
             var queueItem = new QueueItem() { Message = item };
-            await _mainChannel.Writer.WriteAsync(queueItem).ConfigureAwait(false);
+            await _mainChannel.SendAsync(queueItem).ConfigureAwait(false);
             Counters.Publish();
             _logger.LogTrace(LOGMSG_TRACE_ITEM_QUEUED, queueItem);
         }
@@ -78,13 +73,13 @@ namespace MemoryQueue
         public bool TryPeekMainQueue(out QueueItem? item)
         {
             item = null;
-            return _mainChannel.Reader.CanPeek && _mainChannel.Reader.TryPeek(out item);
+            return false;
         }
 
         public bool TryPeekRetryQueue(out QueueItem? item)
         {
             item = null;
-            return _retryChannel.Reader.CanPeek && _retryChannel.Reader.TryPeek(out item);
+            return false;
         }
     }
 }

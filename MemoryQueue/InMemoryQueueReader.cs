@@ -3,11 +3,11 @@ using MemoryQueue.Extensions;
 using MemoryQueue.Models;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
-using System.Threading.Channels;
+using System.Threading.Tasks.Dataflow;
 
 namespace MemoryQueue
 {
-    internal sealed class InMemoryQueueReader : IAsyncDisposable
+    internal sealed class InMemoryQueueReader : ITargetBlock<QueueItem>, IAsyncDisposable
     {
         #region Constants
         private const string RETRYCHANNEL_DESCRIPTION = "Retry Channel";
@@ -22,80 +22,60 @@ namespace MemoryQueue
         private const string LOGMSG_DELIVER_FAIL = "Failed trying to deliver an item";
         private const string LOGMSG_REDELIVER_FAIL = "Failed trying to redeliver an item";
         private const string LOGMSG_TRACE_FAILED_GETTING_LOCK_CLIENT_DISCONNECTING_OR_DISCONNECTED = "Failed to to get lock... Client is disconnecting from {queueName}";
-        private const string LOGMSG_READER_DISPOSED = "Reader Disposed"; 
+        private const string LOGMSG_READER_DISPOSED = "Reader Disposed";
         #endregion
 
         private readonly CancellationToken _token;
-        private readonly Channel<QueueItem> _retryChannel;
-        private readonly Task _consumerTask;
         private readonly SemaphoreSlim _semaphoreSlim;
+        private readonly BufferBlock<QueueItem> _queue;
+        private readonly BufferBlock<QueueItem> _retryQueue;
+        private readonly ActionBlock<QueueItem> _actionBlock;
+
+        //private readonly Task _consumer;
         private readonly ILogger _logger;
         private readonly Func<QueueItem, Task<bool>> _channelCallBack;
+        private readonly IDisposable _link1;
+        private readonly IDisposable _link2;
         private readonly ConsumptionCounter _counters;
 
         internal TaskCompletionSource<bool> Completed { get; }
 
-        public InMemoryQueueReader(string queueName, QueueConsumer consumerInfo, ConsumptionCounter counters, ILoggerFactory loggerFactory, Channel<QueueItem> mainChannel, Channel<QueueItem> retryChannel, Func<QueueItem, Task<bool>> callBack, CancellationToken token)
+        public Task Completion => Completed.Task;
+
+        public InMemoryQueueReader(string queueName, QueueConsumer consumerInfo, ConsumptionCounter counters, ILoggerFactory loggerFactory, BufferBlock<QueueItem> queue, BufferBlock<QueueItem> retryQueue, Func<QueueItem, Task<bool>> callBack, CancellationToken token)
         {
-            _counters = counters;
             _logger = loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, queueName, consumerInfo.ConsumerType, consumerInfo.Name));
+
             _token = token;
-            _retryChannel = retryChannel;
+            Completed = new TaskCompletionSource<bool>();
+            _token.Register(() => Complete());
+
+            _counters = counters;
             _channelCallBack = callBack;
 
-            Completed = new TaskCompletionSource<bool>();
             _semaphoreSlim = new(1);
+            _queue = queue;
+            _retryQueue = retryQueue;
 
-            _consumerTask = Task.WhenAll(
-                ChannelConsumerCore(RETRYCHANNEL_DESCRIPTION, retryChannel.Reader),
-                ChannelConsumerCore(MAINCHANNEL_DESCRIPTION, mainChannel.Reader)
-            ).ContinueWith(r => Completed.TrySetResult(true), CancellationToken.None);
+            _actionBlock = new ActionBlock<QueueItem>(ConsumeMessage, new ExecutionDataflowBlockOptions()
+            {
+                SingleProducerConstrained = true,
+                MaxDegreeOfParallelism = 1,
+                BoundedCapacity = 1,
+            });
+
+            _link1 = _queue.LinkTo(_actionBlock);
+            _link2 = _retryQueue.LinkTo(_actionBlock);
         }
 
-        private async Task ChannelConsumerCore(string queueName, ChannelReader<QueueItem> reader)
+        private async Task ConsumeMessage(QueueItem item)
         {
-            try
+            if (!await TryDeliverItemAsync(item.Retrying ? "Redeliver" : "Deliver", item).ConfigureAwait(false))
             {
-                await foreach (var item in reader.ReadAllAsync(_token).ConfigureAwait(false))
-                {
-                    if (_token.IsCancellationRequested || !await TryDeliverItemAsync(queueName, item).ConfigureAwait(false))
-                    {
-                        await AddToRetryChannel(queueName, item).ConfigureAwait(false);
-                    }
-                    if (_token.IsCancellationRequested)
-                        break;
-                }
+                item.Retrying = true;
+                item.RetryCount++;
+                await _retryQueue.SendAsync(item).ConfigureAwait(false);
             }
-            catch (System.OperationCanceledException)
-            {
-                _logger.LogWarning(LOGMSG_QUEUEREADER_CANCELLED, queueName);
-                return;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX, queueName);
-                return;
-            }
-
-            _logger.LogInformation(LOGMSG_QUEUEREADER_FINISHED, queueName);
-        }
-
-        private ValueTask AddToRetryChannel(string queueName, QueueItem item)
-        {
-            item.Retrying = true;
-            item.RetryCount++;
-            if (_logger.IsEnabled(LogLevel.Trace)) 
-            {
-                if (_token.IsCancellationRequested)
-                {
-                    _logger.LogTrace(LOGMSG_TRACE_ITEM_ADDED_TO_RETRY_CANCELLED, queueName, item);
-                }
-                else
-                {
-                    _logger.LogTrace(LOGMSG_TRACE_ITEM_ADDED_TO_RETRY_ACK_FAILED, queueName, item);
-                }
-            }
-            return _retryChannel.Writer.WriteAsync(item);
         }
 
         /// <summary>
@@ -110,40 +90,105 @@ namespace MemoryQueue
 
             var timestamp = Stopwatch.GetTimestamp();
 
-            if (await _semaphoreSlim.TryWaitAsync(_token).ConfigureAwait(false) is IDisposable locker && !_token.IsCancellationRequested)
+            if (await _semaphoreSlim.TryWaitAsync(_token).ConfigureAwait(false) is IDisposable locker)
             {
                 using (locker)
                 {
-                    try
+                    if (!_token.IsCancellationRequested)
                     {
-                        isAcked = await _channelCallBack(item).ConfigureAwait(false);
-                    }
-                    catch (Exception ex) when (item.Retrying)
-                    {
-                        _logger.LogWarning(ex, LOGMSG_REDELIVER_FAIL);
-                    }
-                    catch(Exception ex)
-                    {
-                        _logger.LogWarning(ex, LOGMSG_DELIVER_FAIL);
+                        try
+                        {
+                            isAcked = await _channelCallBack(item).ConfigureAwait(false);
+                        }
+                        catch (Exception ex) when (item.Retrying)
+                        {
+                            _logger.LogWarning(ex, LOGMSG_REDELIVER_FAIL);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, LOGMSG_DELIVER_FAIL);
+                        }
                     }
                 }
             }
             else
             {
-                _logger.LogTrace(LOGMSG_TRACE_FAILED_GETTING_LOCK_CLIENT_DISCONNECTING_OR_DISCONNECTED, queueName);
+                _logger.LogWarning(LOGMSG_TRACE_FAILED_GETTING_LOCK_CLIENT_DISCONNECTING_OR_DISCONNECTED, queueName);
             }
 
             _counters.UpdateCounters(isRetrying, isAcked, timestamp);
             return isAcked;
         }
 
-        public async ValueTask DisposeAsync()
+        public ValueTask DisposeAsync()
         {
             using (_semaphoreSlim)
             {
-                await _consumerTask.ConfigureAwait(false);
+                _link1?.Dispose();
+                _link2?.Dispose();
             }
             _logger.LogInformation(LOGMSG_READER_DISPOSED);
+            return ValueTask.CompletedTask;
+        }
+
+        public DataflowMessageStatus OfferMessage(DataflowMessageHeader messageHeader, QueueItem messageValue, ISourceBlock<QueueItem>? source, bool consumeToAccept)
+        {
+            if (consumeToAccept || source == null)
+            {
+                _logger.LogWarning("ConsumeToAccept: {consumeToAccept} -- {sourceIsNull}", consumeToAccept, source is null);
+                messageValue.Retrying = true;
+                messageValue.RetryCount++;
+                return DataflowMessageStatus.Declined;
+            }
+
+            if (_token.IsCancellationRequested)
+            {
+                _logger.LogWarning("Declining permanently");
+                messageValue.Retrying = true;
+                messageValue.RetryCount++;
+                return DataflowMessageStatus.DecliningPermanently;
+            }
+
+            if (source.ReserveMessage(messageHeader, this))
+            {
+                if (TryDeliverItemAsync(MAINCHANNEL_DESCRIPTION, messageValue).GetAwaiter().GetResult())
+                {
+                    if (source.ConsumeMessage(messageHeader, this, out bool consumed) is QueueItem item && consumed)
+                    {
+                        return DataflowMessageStatus.Accepted;
+                    }
+                }
+
+                messageValue.Retrying = true;
+                messageValue.RetryCount++;
+                source.ReleaseReservation(messageHeader, this);
+                if (!_token.IsCancellationRequested)
+                {
+                    //_logger.LogWarning("Fail to deliver");
+                    return DataflowMessageStatus.Postponed;
+                }
+                else
+                {
+                    _logger.LogWarning("Fail to deliver -- DecliningPermanently");
+                    return DataflowMessageStatus.DecliningPermanently;
+                }
+            }
+            else
+            {
+                messageValue.Retrying = true;
+                messageValue.RetryCount++;
+                return DataflowMessageStatus.NotAvailable;
+            }
+        }
+
+        public void Complete()
+        {
+            Completed.TrySetResult(true);
+        }
+
+        public void Fault(Exception exception)
+        {
+            Completed.TrySetException(exception);
         }
     }
 
