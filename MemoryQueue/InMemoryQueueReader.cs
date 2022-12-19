@@ -22,7 +22,7 @@ namespace MemoryQueue
         private const string LOGMSG_DELIVER_FAIL = "Failed trying to deliver an item";
         private const string LOGMSG_REDELIVER_FAIL = "Failed trying to redeliver an item";
         private const string LOGMSG_TRACE_FAILED_GETTING_LOCK_CLIENT_DISCONNECTING_OR_DISCONNECTED = "Failed to to get lock... Client is disconnecting from {queueName}";
-        private const string LOGMSG_READER_DISPOSED = "Reader Disposed"; 
+        private const string LOGMSG_READER_DISPOSED = "Reader Disposed";
         #endregion
 
         private readonly CancellationToken _token;
@@ -84,7 +84,7 @@ namespace MemoryQueue
         {
             item.Retrying = true;
             item.RetryCount++;
-            if (_logger.IsEnabled(LogLevel.Trace)) 
+            if (_logger.IsEnabled(LogLevel.Trace))
             {
                 if (_token.IsCancellationRequested)
                 {
@@ -110,21 +110,24 @@ namespace MemoryQueue
 
             var timestamp = Stopwatch.GetTimestamp();
 
-            if (await _semaphoreSlim.TryWaitAsync(_token).ConfigureAwait(false) is IDisposable locker && !_token.IsCancellationRequested)
+            if (await _semaphoreSlim.TryWaitAsync(_token).ConfigureAwait(false) is IDisposable locker)
             {
                 using (locker)
                 {
-                    try
+                    if (!_token.IsCancellationRequested)
                     {
-                        isAcked = await _channelCallBack(item).ConfigureAwait(false);
-                    }
-                    catch (Exception ex) when (item.Retrying)
-                    {
-                        _logger.LogWarning(ex, LOGMSG_REDELIVER_FAIL);
-                    }
-                    catch(Exception ex)
-                    {
-                        _logger.LogWarning(ex, LOGMSG_DELIVER_FAIL);
+                        try
+                        {
+                            isAcked = await _channelCallBack(item).ConfigureAwait(false);
+                        }
+                        catch (Exception ex) when (item.Retrying)
+                        {
+                            _logger.LogWarning(ex, LOGMSG_REDELIVER_FAIL);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, LOGMSG_DELIVER_FAIL);
+                        }
                     }
                 }
             }
