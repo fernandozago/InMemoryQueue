@@ -9,7 +9,7 @@ namespace MemoryQueue.Transports.GRPC.Services
     public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     {
         #region Constants
-        private const string GRPC_BINDCONSUMER_LOGGER_CATEGORY = $"{nameof(InMemoryQueueReader)}.{{0}}.{{1}}-[{{2}}]";
+        private const string GRPC_QUEUEREADER_LOGGER_CATEGORY = $"{nameof(InMemoryQueueReader)}.{{0}}.{{1}}-[{{2}}]";
         private const string GRPC_HOSTED_ON_KESTREL_CONFIG = "GrpcHostedOnKestrel";
         private const string GRPC_HEADER_QUEUENAME = "queuename";
         private const string GRPC_HEADER_CLIENTNAME = "clientname";
@@ -157,8 +157,7 @@ namespace MemoryQueue.Transports.GRPC.Services
                 Ip = context.Peer,
                 Name = context.RequestHeaders.SingleOrDefault(x => x.Key == GRPC_HEADER_CLIENTNAME)?.Value ?? id
             };
-
-            var logger = _loggerFactory.CreateLogger(string.Format(GRPC_BINDCONSUMER_LOGGER_CATEGORY, memoryQueue.Name, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
+            var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.Name, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
             context.CancellationToken.Register(() => logger.LogInformation(LOGMSG_GRPC_REQUEST_CANCELLED));
 
             await using (var reader = memoryQueue.AddQueueReader(
