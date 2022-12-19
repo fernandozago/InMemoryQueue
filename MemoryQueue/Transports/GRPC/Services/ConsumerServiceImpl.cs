@@ -188,14 +188,8 @@ namespace MemoryQueue.Transports.GRPC.Services
         /// <returns></returns>
         private async Task<bool> WriteAndAckAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, IAsyncStreamReader<QueueItemAck> requestStream, ILogger logger, CancellationToken cancellationToken)
         {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                logger.LogWarning("Operation was cancelled");
-                return false;
-            }
-
-            return await WriteItemToStreamAsync(item, responseStream, logger, cancellationToken)
-                && await AwaitAckAsync(requestStream, logger, cancellationToken);
+            return await WriteItemAsync(item, responseStream, logger, cancellationToken)
+                && await ReadAckAsync(requestStream, logger, cancellationToken);
         }
 
         /// <summary>
@@ -203,12 +197,17 @@ namespace MemoryQueue.Transports.GRPC.Services
         /// </summary>
         /// <param name="item"></param>
         /// <param name="responseStream"></param>
+        /// <param name="logger"></param>
         /// <param name="token"></param>
-        /// <returns></returns>
-        private async Task<bool> WriteItemToStreamAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, ILogger logger, CancellationToken token)
+        /// <returns>true if succeded, otherwise false</returns>
+        private async Task<bool> WriteItemAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, ILogger logger, CancellationToken token)
         {
             try
             {
+                if (!_isKestrel)
+                {
+                    token.ThrowIfCancellationRequested();
+                }
                 await responseStream.WriteAsync(new QueueItemReply()
                 {
                     Message = item.Message,
@@ -228,9 +227,10 @@ namespace MemoryQueue.Transports.GRPC.Services
         /// Awaits for the Ack/Nack from client consumer
         /// </summary>
         /// <param name="requestStream"></param>
+        /// <param name="logger"></param>
         /// <param name="token"></param>
-        /// <returns></returns>
-        private static async Task<bool> AwaitAckAsync(IAsyncStreamReader<QueueItemAck> requestStream, ILogger logger, CancellationToken token)
+        /// <returns>true = ack, false = nack or fail</returns>
+        private static async Task<bool> ReadAckAsync(IAsyncStreamReader<QueueItemAck> requestStream, ILogger logger, CancellationToken token)
         {
             if (await requestStream.MoveNext(token).ConfigureAwait(false))
             {
