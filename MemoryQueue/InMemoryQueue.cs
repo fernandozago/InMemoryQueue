@@ -12,8 +12,8 @@ namespace MemoryQueue
 
         private const string LOGGER_CATEGORY = $"{nameof(InMemoryQueue)}.{{0}}";
         private const string LOGMSG_TRACE_ITEM_QUEUED = "Item Queued {queueItem}";
-        private const string LOGMSG_READER_ADDED = "Reader Added for {consumerInfo}";
-        private const string LOGMSG_READER_REMOVED = "Reader Removed for {consumerInfo}";
+        private const string LOGMSG_READER_ADDED = "Reader added for {consumerInfo}";
+        private const string LOGMSG_READER_REMOVED = "Reader removed from {consumerInfo}";
 
         #endregion
 
@@ -49,6 +49,7 @@ namespace MemoryQueue
         private static Channel<QueueItem> CreateUnboundedChannel() =>
             Channel.CreateUnbounded<QueueItem>(new UnboundedChannelOptions()
             {
+                AllowSynchronousContinuations = true,
                 SingleWriter = false,
                 SingleReader = false
             });

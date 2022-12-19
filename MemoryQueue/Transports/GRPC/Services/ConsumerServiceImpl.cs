@@ -14,7 +14,7 @@ namespace MemoryQueue.Transports.GRPC.Services
         private const string GRPC_HEADER_QUEUENAME = "queuename";
         private const string GRPC_HEADER_CLIENTNAME = "clientname";
 
-        private const string LOGMSG_GRPC_REQUEST_CANCELLED = "REQUEST CANCELLED";
+        private const string LOGMSG_GRPC_REQUEST_CANCELLED = "Request cancelled and client is being removed";
         private const string LOGMSG_GRPC_STREAM_ENDED = "CONSUMER DISCONNECTED";
         private const string GRPC_TRAIL_SERVER_EXCEPTION = "serverexception";
 
@@ -169,7 +169,7 @@ namespace MemoryQueue.Transports.GRPC.Services
                 memoryQueue.RemoveReader(reader);
             }
 
-            logger.LogInformation(LOGMSG_GRPC_STREAM_ENDED);
+            logger.LogTrace(LOGMSG_GRPC_STREAM_ENDED);
         }
 
         /// <summary>

@@ -21,7 +21,7 @@ namespace MemoryQueue
         private const string LOGMSG_TRACE_ITEM_ADDED_TO_RETRY_ACK_FAILED = "Added Item To Retry Channel from {queueName} ***** FAILED TO ACK ****** {item}";
         private const string LOGMSG_DELIVER_FAIL = "Failed trying to deliver an item";
         private const string LOGMSG_REDELIVER_FAIL = "Failed trying to redeliver an item";
-        private const string LOGMSG_TRACE_FAILED_GETTING_LOCK_CLIENT_DISCONNECTING_OR_DISCONNECTED = "Failed to to get lock... Client is disconnecting from {queueName}";
+        private const string LOGMSG_TRACE_FAILED_GETTING_LOCK_CLIENT_DISCONNECTING_OR_DISCONNECTED = "Failed to to get lock... Client is disconnecting";
         private const string LOGMSG_READER_DISPOSED = "Reader Disposed";
         #endregion
 
@@ -58,17 +58,14 @@ namespace MemoryQueue
             {
                 await foreach (var item in reader.ReadAllAsync(_token).ConfigureAwait(false))
                 {
-                    if (_token.IsCancellationRequested || !await TryDeliverItemAsync(queueName, item).ConfigureAwait(false))
-                    {
-                        await AddToRetryChannel(queueName, item).ConfigureAwait(false);
-                    }
+                    await TryDeliverItemAsync(item.Retrying, item).ConfigureAwait(false);
                     if (_token.IsCancellationRequested)
                         break;
                 }
             }
-            catch (System.OperationCanceledException)
+            catch (OperationCanceledException)
             {
-                _logger.LogWarning(LOGMSG_QUEUEREADER_CANCELLED, queueName);
+                _logger.LogTrace(LOGMSG_QUEUEREADER_CANCELLED, queueName);
                 return;
             }
             catch (Exception ex)
@@ -77,7 +74,7 @@ namespace MemoryQueue
                 return;
             }
 
-            _logger.LogInformation(LOGMSG_QUEUEREADER_FINISHED, queueName);
+            _logger.LogTrace(LOGMSG_QUEUEREADER_FINISHED, queueName);
         }
 
         private ValueTask AddToRetryChannel(string queueName, QueueItem item)
@@ -102,42 +99,36 @@ namespace MemoryQueue
         /// Deliver or Redeliver an message to some consumer and awaits for the ACK(true)/NACK(false) result
         /// </summary>
         /// <param name="item">Message to be sent</param>
-        /// <returns>true (ack) | false (nack)</returns>
-        private async Task<bool> TryDeliverItemAsync(string queueName, QueueItem item)
+        private async Task TryDeliverItemAsync(bool isRetrying, QueueItem item)
         {
-            bool isRetrying = item.Retrying;
             bool isAcked = false;
 
             var timestamp = Stopwatch.GetTimestamp();
-
-            if (await _semaphoreSlim.TryWaitAsync(_token).ConfigureAwait(false) is IDisposable locker)
+            try
             {
-                using (locker)
+                if (await _semaphoreSlim.TryWaitAsync(_token).ConfigureAwait(false) is IDisposable locker)
                 {
-                    if (!_token.IsCancellationRequested)
+                    using (locker)
                     {
-                        try
-                        {
-                            isAcked = await _channelCallBack(item).ConfigureAwait(false);
-                        }
-                        catch (Exception ex) when (item.Retrying)
-                        {
-                            _logger.LogWarning(ex, LOGMSG_REDELIVER_FAIL);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, LOGMSG_DELIVER_FAIL);
-                        }
+                        isAcked = await _channelCallBack(item).ConfigureAwait(false);
                     }
                 }
+                else
+                {
+                    _logger.LogWarning(LOGMSG_TRACE_FAILED_GETTING_LOCK_CLIENT_DISCONNECTING_OR_DISCONNECTED);
+                }
             }
-            else
+            finally
             {
-                _logger.LogTrace(LOGMSG_TRACE_FAILED_GETTING_LOCK_CLIENT_DISCONNECTING_OR_DISCONNECTED, queueName);
-            }
+                _counters.UpdateCounters(isRetrying, isAcked, timestamp);
 
-            _counters.UpdateCounters(isRetrying, isAcked, timestamp);
-            return isAcked;
+                if (!isAcked)
+                {
+                    item.Retrying = true;
+                    item.RetryCount++;
+                    await _retryChannel.Writer.WriteAsync(item).ConfigureAwait(false);
+                }
+            }
         }
 
         public async ValueTask DisposeAsync()
@@ -146,7 +137,7 @@ namespace MemoryQueue
             {
                 await _consumerTask.ConfigureAwait(false);
             }
-            _logger.LogInformation(LOGMSG_READER_DISPOSED);
+            _logger.LogTrace(LOGMSG_READER_DISPOSED);
         }
     }
 
