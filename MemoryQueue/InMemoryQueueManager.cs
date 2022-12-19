@@ -9,7 +9,7 @@ namespace MemoryQueue
     {
         #region Constants
         
-        private const string DEFAULT_QUEUE_NAME = "Default";
+        public const string DEFAULT_QUEUE_NAME = "Default";
         private const string LOGMSG_QUEUE_CREATED = "Queue Created: '{queueName}' -- Hash: '{hash}'";
         private const string EX_INVALID_QUEUE_NAME = "Invalid Queue Name '{0}'";
         private const string LOGMSG_INVALID_QUEUE_NAME = "Failed parsing queuename {queueName}";
