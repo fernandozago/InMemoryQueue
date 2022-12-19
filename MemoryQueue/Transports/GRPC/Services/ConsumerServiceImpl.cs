@@ -7,16 +7,6 @@ using System.Net.WebSockets;
 
 namespace MemoryQueue.Transports.GRPC.Services
 {
-    public enum TransportResponse
-    {
-        None,
-        NotSended,
-        Sended,
-        Nacked,
-        Acked,
-        SendedAndAcked
-    }
-
     public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     {
         #region Constants
