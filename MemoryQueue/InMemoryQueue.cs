@@ -55,7 +55,7 @@ namespace MemoryQueue
 
         internal InMemoryQueueReader AddQueueReader(QueueConsumer consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken cancellationToken)
         {
-            var reader = new InMemoryQueueReader(Name, consumerInfo, Counters, _loggerFactory, _mainChannel, _retryChannel, channelCallBack, cancellationToken);
+            var reader = new InMemoryQueueReader(Name, consumerInfo, Counters, _mainChannel, _retryChannel, channelCallBack, _loggerFactory, cancellationToken);
             _readers.TryAdd(reader, consumerInfo);
             _logger.LogInformation(LOGMSG_READER_ADDED, consumerInfo);
             return reader;

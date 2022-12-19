@@ -27,7 +27,7 @@ namespace MemoryQueue
 
         internal TaskCompletionSource<bool> Completed { get; }
 
-        public InMemoryQueueReader(string queueName, QueueConsumer consumerInfo, ConsumptionCounter counters, ILoggerFactory loggerFactory, Channel<QueueItem> mainChannel, Channel<QueueItem> retryChannel, Func<QueueItem, Task<bool>> callBack, CancellationToken token)
+        public InMemoryQueueReader(string queueName, QueueConsumer consumerInfo, ConsumptionCounter counters, Channel<QueueItem> mainChannel, Channel<QueueItem> retryChannel, Func<QueueItem, Task<bool>> callBack, ILoggerFactory loggerFactory, CancellationToken token)
         {
             Completed = new TaskCompletionSource<bool>();
             _logger = loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, queueName, consumerInfo.ConsumerType, consumerInfo.Name));
@@ -44,7 +44,7 @@ namespace MemoryQueue
         {
             try
             {
-                while (!token.IsCancellationRequested && await Task.WhenAny(_mainChannel.Reader.WaitToReadAsync(token).AsTask(), _retryChannel.Reader.WaitToReadAsync(token).AsTask()).Unwrap())
+                while (!token.IsCancellationRequested && await WaitToReadAsync(token))
                 {
                     if (TryReadItem(out var item, token))
                     {
@@ -66,6 +66,10 @@ namespace MemoryQueue
             }
         }
 
+        private Task<bool> WaitToReadAsync(CancellationToken token) =>
+            Task.WhenAny(_mainChannel.Reader.WaitToReadAsync(token).AsTask(), _retryChannel.Reader.WaitToReadAsync(token).AsTask()).Unwrap();
+
+
         /// <summary>
         /// Try read a pending item
         /// </summary>
@@ -75,12 +79,13 @@ namespace MemoryQueue
         private bool TryReadItem([MaybeNullWhen(false)] out QueueItem item, CancellationToken token)
         {
             item = null;
-            if (!token.IsCancellationRequested && _retryChannel.Reader.TryRead(out item))
+            if (!token.IsCancellationRequested &&
+                (_retryChannel.Reader.TryRead(out item) || _mainChannel.Reader.TryRead(out item)))
             {
                 return true;
             }
 
-            return !token.IsCancellationRequested && _mainChannel.Reader.TryRead(out item);
+            return false;
         }
 
         /// <summary>
