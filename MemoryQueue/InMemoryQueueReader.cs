@@ -10,17 +10,9 @@ namespace MemoryQueue
     internal sealed class InMemoryQueueReader : IAsyncDisposable
     {
         #region Constants
-        private const string RETRYCHANNEL_DESCRIPTION = "Retry Channel";
-        private const string MAINCHANNEL_DESCRIPTION = "Main Channel";
         private const string LOGGER_CATEGORY = $"{nameof(InMemoryQueueReader)}.{{0}}.{{1}}-[{{2}}]";
 
-        private const string LOGMSG_QUEUEREADER_CANCELLED = "QueueReader For: {consumerType} Queue -- Cancelled";
         private const string LOGMSG_QUEUEREADER_FINISHED_WITH_EX = "Finished With Exception";
-        private const string LOGMSG_QUEUEREADER_FINISHED = "QueueReader For: {consumerType} Queue -- Finished";
-        private const string LOGMSG_TRACE_ITEM_ADDED_TO_RETRY_CANCELLED = "Added Item To Retry Channel from {queueName} ***** READER WAS SHUTTING DOWN ****** {item}";
-        private const string LOGMSG_TRACE_ITEM_ADDED_TO_RETRY_ACK_FAILED = "Added Item To Retry Channel from {queueName} ***** FAILED TO ACK ****** {item}";
-        private const string LOGMSG_DELIVER_FAIL = "Failed trying to deliver an item";
-        private const string LOGMSG_REDELIVER_FAIL = "Failed trying to redeliver an item";
         private const string LOGMSG_TRACE_FAILED_GETTING_LOCK_CLIENT_DISCONNECTING_OR_DISCONNECTED = "Failed to to get lock... Client is disconnecting";
         private const string LOGMSG_READER_DISPOSED = "Reader Disposed";
         #endregion
