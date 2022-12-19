@@ -168,7 +168,6 @@ namespace MemoryQueue.Transports.GRPC.Services
                 Ip = context.Peer,
                 Name = context.RequestHeaders.SingleOrDefault(x => x.Key == GRPC_HEADER_CLIENTNAME)?.Value ?? id
             };
-
             var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.Name, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
             context.CancellationToken.Register(() => logger.LogInformation(LOGMSG_GRPC_REQUEST_CANCELLED));
 
