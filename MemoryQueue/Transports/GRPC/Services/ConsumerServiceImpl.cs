@@ -3,13 +3,24 @@ using Grpc.Core;
 using MemoryQueue.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Net.WebSockets;
 
 namespace MemoryQueue.Transports.GRPC.Services
 {
+    public enum TransportResponse
+    {
+        None,
+        NotSended,
+        Sended,
+        Nacked,
+        Acked,
+        SendedAndAcked
+    }
+
     public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     {
         #region Constants
-        private const string GRPC_BINDCONSUMER_LOGGER_CATEGORY = $"{nameof(ConsumerServiceImpl)}.{{0}}";
+        private const string GRPC_QUEUEREADER_LOGGER_CATEGORY = $"{nameof(InMemoryQueueReader)}.{{0}}.{{1}}-[{{2}}]";
         private const string GRPC_HOSTED_ON_KESTREL_CONFIG = "GrpcHostedOnKestrel";
         private const string GRPC_HEADER_QUEUENAME = "queuename";
         private const string GRPC_HEADER_CLIENTNAME = "clientname";
@@ -141,15 +152,13 @@ namespace MemoryQueue.Transports.GRPC.Services
             {
                 memoryQueue = (InMemoryQueue)_queueManager.GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 //TODO: Add Logger for ConsumerServiceImpl
                 //_logger.LogError(ex, "Failed to create memoryQueue for {queueName}")
                 context.ResponseTrailers.Add(GRPC_TRAIL_SERVER_EXCEPTION, ex.Message);
                 throw;
             }
-            var logger = _loggerFactory.CreateLogger(string.Format(GRPC_BINDCONSUMER_LOGGER_CATEGORY, memoryQueue.Name));
-            context.CancellationToken.Register(() => logger.LogInformation(LOGMSG_GRPC_REQUEST_CANCELLED));
 
             string id = Guid.NewGuid().ToString();
             var consumerQueueInfo = new QueueConsumer(QueueConsumerType.GRPC)
@@ -160,9 +169,12 @@ namespace MemoryQueue.Transports.GRPC.Services
                 Name = context.RequestHeaders.SingleOrDefault(x => x.Key == GRPC_HEADER_CLIENTNAME)?.Value ?? id
             };
 
+            var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.Name, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
+            context.CancellationToken.Register(() => logger.LogInformation(LOGMSG_GRPC_REQUEST_CANCELLED));
+
             await using (var reader = memoryQueue.AddQueueReader(
-                consumerQueueInfo, 
-                (item) => WriteAndAckAsync(item, responseStream, requestStream, context.CancellationToken), 
+                consumerQueueInfo,
+                (item) => WriteAndAckAsync(item, responseStream, requestStream, logger, context.CancellationToken),
                 context.CancellationToken))
             {
                 await reader.Completed.Task.ConfigureAwait(false);
@@ -180,14 +192,16 @@ namespace MemoryQueue.Transports.GRPC.Services
         /// <param name="requestStream"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<bool> WriteAndAckAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, IAsyncStreamReader<QueueItemAck> requestStream, CancellationToken cancellationToken)
+        private async Task<bool> WriteAndAckAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, IAsyncStreamReader<QueueItemAck> requestStream, ILogger logger, CancellationToken cancellationToken)
         {
-            var writeAndAckAsync = await Task.WhenAll(
-                    WriteItemToStreamAsync(item, responseStream, cancellationToken),
-                    AwaitAckAsync(requestStream, cancellationToken)
-            ).ConfigureAwait(false);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                logger.LogWarning("Operation was cancelled");
+                return false;
+            }
 
-            return writeAndAckAsync[0] && writeAndAckAsync[1];
+            return await WriteItemToStreamAsync(item, responseStream, logger, cancellationToken) 
+                && await AwaitAckAsync(requestStream, logger, cancellationToken);
         }
 
         /// <summary>
@@ -197,9 +211,9 @@ namespace MemoryQueue.Transports.GRPC.Services
         /// <param name="responseStream"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        private async Task<bool> WriteItemToStreamAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, CancellationToken token)
+        private async Task<bool> WriteItemToStreamAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, ILogger logger, CancellationToken token)
         {
-            if (!token.IsCancellationRequested)
+            try
             {
                 await responseStream.WriteAsync(new QueueItemReply()
                 {
@@ -209,8 +223,11 @@ namespace MemoryQueue.Transports.GRPC.Services
                 }, _isKestrel ? token : CancellationToken.None).ConfigureAwait(false);
                 return true;
             }
-
-            return false;
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to send the message");
+                return false;
+            }
         }
 
         /// <summary>
@@ -219,9 +236,17 @@ namespace MemoryQueue.Transports.GRPC.Services
         /// <param name="requestStream"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        private static async Task<bool> AwaitAckAsync(IAsyncStreamReader<QueueItemAck> requestStream, CancellationToken token)
+        private static async Task<bool> AwaitAckAsync(IAsyncStreamReader<QueueItemAck> requestStream, ILogger logger, CancellationToken token)
         {
-            return await requestStream.MoveNext(token).ConfigureAwait(false) && requestStream.Current.Ack;
+            if (await requestStream.MoveNext(token).ConfigureAwait(false))
+            {
+                return requestStream.Current.Ack;
+            }
+            else
+            {
+                logger.LogWarning("Failed to ack the message");
+                return false;
+            }
         }
     }
 }

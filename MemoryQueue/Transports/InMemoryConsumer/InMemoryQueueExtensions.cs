@@ -1,4 +1,5 @@
 ﻿using MemoryQueue.Models;
+using Microsoft.Extensions.Logging;
 
 namespace MemoryQueue.Transports.InMemoryConsumer
 {

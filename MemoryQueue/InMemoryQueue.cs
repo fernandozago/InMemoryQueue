@@ -2,8 +2,6 @@
 using MemoryQueue.Models;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
-using System.Net.Http.Headers;
-using System.Threading.Channels;
 using System.Threading.Tasks.Dataflow;
 
 namespace MemoryQueue
