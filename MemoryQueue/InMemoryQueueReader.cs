@@ -16,23 +16,25 @@ namespace MemoryQueue
         private const string LOGMSG_READER_DISPOSED = "Reader Disposed";
         #endregion
 
-        private readonly Channel<QueueItem> _mainChannel;
-        private readonly Channel<QueueItem> _retryChannel;
-        private readonly Task _consumerTask;
         private readonly ILogger _logger;
-        private readonly Func<QueueItem, Task<bool>> _channelCallBack;
+        private readonly Task _consumerTask;
         private readonly ConsumptionCounter _counters;
+        private readonly ChannelReader<QueueItem> _mainReader;
+        private readonly ChannelReader<QueueItem> _retryReader;
+        private readonly ChannelWriter<QueueItem> _retryWriter;
+        private readonly Func<QueueItem, Task<bool>> _channelCallBack;
 
         internal TaskCompletionSource<bool> Completed { get; }
 
         public InMemoryQueueReader(string queueName, QueueConsumer consumerInfo, ConsumptionCounter counters, Channel<QueueItem> mainChannel, Channel<QueueItem> retryChannel, Func<QueueItem, Task<bool>> callBack, ILoggerFactory loggerFactory, CancellationToken token)
         {
             Completed = new TaskCompletionSource<bool>();
-            _logger = loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, queueName, consumerInfo.ConsumerType, consumerInfo.Name));
 
+            _logger = loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, queueName, consumerInfo.ConsumerType, consumerInfo.Name));
             _counters = counters;
-            _mainChannel = mainChannel;
-            _retryChannel = retryChannel;
+            _mainReader = mainChannel.Reader;
+            _retryReader = retryChannel.Reader;
+            _retryWriter = retryChannel.Writer;
             _channelCallBack = callBack;
 
             _consumerTask = ChannelReaderCore(token);
@@ -42,7 +44,7 @@ namespace MemoryQueue
         {
             try
             {
-                while (!token.IsCancellationRequested && await WaitToReadAsync(token))
+                while (!token.IsCancellationRequested && await WaitToReadAsync(token).ConfigureAwait(false))
                 {
                     if (!token.IsCancellationRequested && TryRead(out var queueItem))
                     {
@@ -70,7 +72,7 @@ namespace MemoryQueue
         /// <param name="token"></param>
         /// <returns></returns>
         private Task<bool> WaitToReadAsync(CancellationToken token) =>
-            Task.WhenAny(_mainChannel.Reader.WaitToReadAsync(token).AsTask(), _retryChannel.Reader.WaitToReadAsync(token).AsTask()).Unwrap();
+            Task.WhenAny(_mainReader.WaitToReadAsync(token).AsTask(), _retryReader.WaitToReadAsync(token).AsTask()).Unwrap();
 
         /// <summary>
         /// Try read item from any of the channels [RetryChannel or MainChannel]
@@ -80,7 +82,7 @@ namespace MemoryQueue
         /// <param name="token"></param>
         /// <returns></returns>
         private bool TryRead([MaybeNullWhen(false)] out QueueItem queueItem) =>
-            _retryChannel.Reader.TryRead(out queueItem) || _mainChannel.Reader.TryRead(out queueItem);
+            _retryReader.TryRead(out queueItem) || _mainReader.TryRead(out queueItem);
 
         /// <summary>
         /// Publish an message to some consumer and awaits for the ACK(true)/NACK(false) result
@@ -97,7 +99,7 @@ namespace MemoryQueue
             {
                 queueItem.Retrying = true;
                 queueItem.RetryCount++;
-                await _retryChannel.Writer.WriteAsync(queueItem).ConfigureAwait(false);
+                await _retryWriter.WriteAsync(queueItem).ConfigureAwait(false);
             }
 
             _counters.UpdateCounters(isRetrying, isAcked, timestamp);
