@@ -1,11 +1,8 @@
-﻿using Castle.Core.Logging;
-using Grpc.Core;
+﻿using Grpc.Core;
 using MemoryQueue.Client.Grpc;
 using MemoryQueue.Models;
 using MemoryQueue.Tests.SUTFactory;
-using MemoryQueue.Transports.GRPC;
 using MemoryQueue.Transports.GRPC.Services;
-using Moq;
 
 namespace MemoryQueue.Tests
 {
