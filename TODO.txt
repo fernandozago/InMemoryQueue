@@ -1,3 +1,8 @@
+Transport Ideas:
+
+- WebSocket
+- ? (Others)
+
 Pending Clients:
 
 - MemoryQueue.Client.WebSocket
