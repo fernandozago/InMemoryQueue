@@ -17,8 +17,9 @@ namespace MemoryQueue
 
         #endregion
 
-        [GeneratedRegex("^[a-z0-9]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
-        private static partial Regex REGEX_ONLY_LETTERS();
+        
+        [GeneratedRegex("^[a-z0-9-_.]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+        private static partial Regex QUEUENAME_REGEX_VALIDATOR();
 
         private readonly ConcurrentDictionary<int, InMemoryQueue> _queues = new();
         private readonly ILoggerFactory _loggerFactory;
@@ -59,7 +60,7 @@ namespace MemoryQueue
                 _logger.LogTrace(LOGMS_TRACE_USINGDEFAULT_QUEUENAME, DEFAULT_QUEUE_NAME);
                 return DEFAULT_QUEUE_NAME;
             }
-            else if (!REGEX_ONLY_LETTERS().IsMatch(name))
+            else if (!QUEUENAME_REGEX_VALIDATOR().IsMatch(name))
             {
                 var ex = new InvalidOperationException(string.Format(EX_INVALID_QUEUE_NAME, name));
                 _logger.LogError(ex, LOGMSG_INVALID_QUEUE_NAME, name);
