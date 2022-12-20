@@ -19,18 +19,18 @@ namespace MemoryQueue
         #endregion
 
         #region Fields
+        private readonly ILogger _logger;
+        private readonly ILoggerFactory _loggerFactory;
         private readonly Channel<QueueItem> _retryChannel;
         private readonly Channel<QueueItem> _mainChannel;
-        private readonly ILoggerFactory _loggerFactory;
-        private readonly ILogger _logger;
         private readonly ConcurrentDictionary<InMemoryQueueReader, QueueConsumerInfo> _readers = new ();
         #endregion
 
+        public string Name { get; private set; }
         public ConsumptionCounter Counters { get; private set; }
         public int ConsumersCount => _readers.Count;
         public int MainChannelCount => _mainChannel.Reader.Count;
         public int RetryChannelCount => _retryChannel.Reader.Count;
-        public string Name { get; private set; }
 
         public IReadOnlyCollection<QueueConsumerInfo> Consumers =>
             (IReadOnlyCollection<QueueConsumerInfo>)_readers.Values;
