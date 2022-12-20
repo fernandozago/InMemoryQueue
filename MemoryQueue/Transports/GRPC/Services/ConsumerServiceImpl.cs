@@ -150,7 +150,7 @@ namespace MemoryQueue.Transports.GRPC.Services
                 throw;
             }
             string id = Guid.NewGuid().ToString();
-            var consumerQueueInfo = new QueueConsumer(QueueConsumerType.GRPC)
+            var consumerQueueInfo = new QueueConsumerInfo(QueueConsumerType.GRPC)
             {
                 Id = id,
                 Host = context.Host,

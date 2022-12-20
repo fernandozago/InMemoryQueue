@@ -10,7 +10,7 @@ namespace MemoryQueue
         int RetryChannelCount { get; }
         int ConsumersCount { get; }
         ConsumptionCounter Counters { get; }
-        IReadOnlyCollection<QueueConsumer> Consumers { get; }
+        IReadOnlyCollection<QueueConsumerInfo> Consumers { get; }
 
         ValueTask EnqueueAsync(string item);
         bool TryPeekMainQueue(out QueueItem? item);

@@ -23,7 +23,7 @@ namespace MemoryQueue
         private readonly Channel<QueueItem> _mainChannel;
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _logger;
-        private readonly ConcurrentDictionary<InMemoryQueueReader, QueueConsumer> _readers = new ();
+        private readonly ConcurrentDictionary<InMemoryQueueReader, QueueConsumerInfo> _readers = new ();
         #endregion
 
         public ConsumptionCounter Counters { get; private set; }
@@ -32,8 +32,8 @@ namespace MemoryQueue
         public int RetryChannelCount => _retryChannel.Reader.Count;
         public string Name { get; private set; }
 
-        public IReadOnlyCollection<QueueConsumer> Consumers =>
-            (IReadOnlyCollection<QueueConsumer>)_readers.Values;
+        public IReadOnlyCollection<QueueConsumerInfo> Consumers =>
+            (IReadOnlyCollection<QueueConsumerInfo>)_readers.Values;
 
         public InMemoryQueue(string queueName, ILoggerFactory loggerFactory)
         {
@@ -54,7 +54,7 @@ namespace MemoryQueue
                 SingleReader = false
             });
 
-        internal InMemoryQueueReader AddQueueReader(QueueConsumer consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken cancellationToken)
+        internal InMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken cancellationToken)
         {
             var reader = new InMemoryQueueReader(Name, consumerInfo, Counters, _mainChannel, _retryChannel, channelCallBack, _loggerFactory, cancellationToken);
             _readers.TryAdd(reader, consumerInfo);

@@ -26,7 +26,7 @@ namespace MemoryQueue
 
         internal Task Completed => _consumerTask;
 
-        public InMemoryQueueReader(string queueName, QueueConsumer consumerInfo, ConsumptionCounter counters, Channel<QueueItem> mainChannel, Channel<QueueItem> retryChannel, Func<QueueItem, Task<bool>> callBack, ILoggerFactory loggerFactory, CancellationToken token)
+        public InMemoryQueueReader(string queueName, QueueConsumerInfo consumerInfo, ConsumptionCounter counters, Channel<QueueItem> mainChannel, Channel<QueueItem> retryChannel, Func<QueueItem, Task<bool>> callBack, ILoggerFactory loggerFactory, CancellationToken token)
         {
             _logger = loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, queueName, consumerInfo.ConsumerType, consumerInfo.Name));
             _counters = counters;

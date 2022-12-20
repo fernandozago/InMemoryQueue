@@ -1,8 +1,8 @@
 ﻿namespace MemoryQueue.Models
 {
-    public sealed record QueueConsumer
+    public sealed record QueueConsumerInfo
     {
-        public QueueConsumer(QueueConsumerType consumerType)
+        public QueueConsumerInfo(QueueConsumerType consumerType)
         {
             ConsumerType = consumerType;
         }
