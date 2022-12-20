@@ -47,15 +47,12 @@ public static class QueueInfoReplyPropertyGridExtensions
             };
 
             result.Counters.AvgConsumeMs = consumer.Counters.AvgAckTimeMilliseconds.ToString("N10");
+
             result.Counters.DeliverPerSecond = consumer.Counters.DeliverPerSecond.ToString("N0");
-            result.Counters.RedeliverPerSecond = consumer.Counters.RedeliverPerSecond.ToString("N0");
-
-            result.Counters.DeliverCounter = consumer.Counters.DeliverCounter.ToString("N0");
-            result.Counters.RedeliverCounter = consumer.Counters.RedeliverCounter.ToString("N0");
-
             result.Counters.AckPerSecond = consumer.Counters.AckPerSecond.ToString("N0");
             result.Counters.NackPerSecond = consumer.Counters.NackPerSecond.ToString("N0");
 
+            result.Counters.DeliverCounter = consumer.Counters.DeliverCounter.ToString("N0");
             result.Counters.NackCounter = consumer.Counters.NackCounter.ToString("N0");
             result.Counters.AckCounter = consumer.Counters.AckCounter.ToString("N0");
 

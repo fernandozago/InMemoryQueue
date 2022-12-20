@@ -10,10 +10,6 @@ public sealed class ReaderConsumptionCounter : ConsumptionConsolidator
     private long _ackPerSecond = 0;
     private long _ackPerSecond_Counter = 0;
 
-    private long _redeliverCounter = 0;
-    private long _redeliverPerSecond = 0;
-    private long _redeliverPerSecond_Counter = 0;
-
     private long _deliverCounter;
     private long _deliverPerSecond = 0;
     private long _deliverPerSecond_Counter = 0;
@@ -30,9 +26,6 @@ public sealed class ReaderConsumptionCounter : ConsumptionConsolidator
     public long NackCounter => _nackCounter;
     public long NackPerSecond => _nackPerSecond;
 
-    public long RedeliverCounter => _redeliverCounter;
-    public long RedeliverPerSecond => _redeliverPerSecond;
-
     public long DeliverCounter => _deliverCounter;
     public long DeliverPerSecond => _deliverPerSecond;
 
@@ -48,14 +41,7 @@ public sealed class ReaderConsumptionCounter : ConsumptionConsolidator
     {
         _queueCounter.UpdateCounters(isRedeliver, processed, timestamp);
 
-        if (isRedeliver)
-        {
-            Redelivered();
-        }
-        else
-        {
-            Delivered();
-        }
+        Delivered();
 
         if (processed)
         {
@@ -75,9 +61,6 @@ public sealed class ReaderConsumptionCounter : ConsumptionConsolidator
     private void Nack() =>
         Interlocked.Increment(ref _nackPerSecond_Counter);
 
-    private void Redelivered() =>
-        Interlocked.Increment(ref _redeliverPerSecond_Counter);
-
     private void Delivered() =>
         Interlocked.Increment(ref _deliverPerSecond_Counter);
 
@@ -88,9 +71,6 @@ public sealed class ReaderConsumptionCounter : ConsumptionConsolidator
     {
         Interlocked.Exchange(ref _ackPerSecond, Interlocked.Exchange(ref _ackPerSecond_Counter, 0));
         Interlocked.Add(ref _ackCounter, _ackPerSecond);
-
-        Interlocked.Exchange(ref _redeliverPerSecond, Interlocked.Exchange(ref _redeliverPerSecond_Counter, 0));
-        Interlocked.Add(ref _redeliverCounter, _redeliverPerSecond);
 
         Interlocked.Exchange(ref _deliverPerSecond, Interlocked.Exchange(ref _deliverPerSecond_Counter, 0));
         Interlocked.Add(ref _deliverCounter, _deliverPerSecond);

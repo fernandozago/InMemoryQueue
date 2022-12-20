@@ -78,11 +78,8 @@ message ConsumerCounters {
 	int64 nackCounter = 3;
 	int64 nackPerSecond = 4;
 
-	int64 redeliverCounter = 5;
-	int64 redeliverPerSecond = 6;
+	int64 deliverCounter = 5;
+	int64 deliverPerSecond = 6;
 
-	int64 deliverCounter = 7;
-	int64 deliverPerSecond = 8;
-
-	double avgAckTimeMilliseconds = 9;
+	double avgAckTimeMilliseconds = 7;
 }

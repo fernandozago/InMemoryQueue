@@ -43,10 +43,6 @@ public sealed record QueueInfoConsumerCountersReply
     [Description("Messages delivered per second")]
     public string DeliverPerSecond { get; internal set; } = "0";
 
-    [DisplayName("Redeliver p/ Second")]
-    [Description("Messages redelivered per second")]
-    public string RedeliverPerSecond { get; internal set; } = "0";
-
     [DisplayName("Ack p/ Second")]
     [Description("Ack per second")]
     public string AckPerSecond { get; internal set; } = "0";
@@ -66,10 +62,6 @@ public sealed record QueueInfoConsumerCountersReply
     [DisplayName("Total Deliver")]
     [Description("Total messages delivered")]
     public string DeliverCounter { get; internal set; } = "0";
-
-    [DisplayName("Total Redeliver")]
-    [Description("Total messages redelivered")]
-    public string RedeliverCounter { get; internal set; } = "0";
 
     public override string ToString()
     {

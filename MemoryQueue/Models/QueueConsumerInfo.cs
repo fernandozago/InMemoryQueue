@@ -38,8 +38,6 @@ namespace MemoryQueue.Models
             _consumerInfo.Counters.DeliverPerSecond = Counters?.DeliverPerSecond ?? 0;
             _consumerInfo.Counters.NackCounter = Counters?.NackPerSecond ?? 0;
             _consumerInfo.Counters.NackPerSecond = Counters?.NackPerSecond ?? 0;
-            _consumerInfo.Counters.RedeliverCounter = Counters?.RedeliverCounter ?? 0;
-            _consumerInfo.Counters.RedeliverPerSecond = Counters?.RedeliverPerSecond ?? 0;
 
             return _consumerInfo;
         }

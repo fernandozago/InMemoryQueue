@@ -1,4 +1,6 @@
-﻿namespace MemoryQueue.Counters;
+﻿using System.Diagnostics;
+
+namespace MemoryQueue.Counters;
 
 public abstract class ConsumptionConsolidator : IDisposable
 {
@@ -25,7 +27,9 @@ public abstract class ConsumptionConsolidator : IDisposable
         {
             while (await pd.WaitForNextTickAsync(CancellationToken.None).ConfigureAwait(false))
             {
+                //var stamp = Stopwatch.GetTimestamp();
                 OnConsolidate?.Invoke();
+                //Console.WriteLine(Stopwatch.GetElapsedTime(stamp).TotalMilliseconds);
             }
         }
         catch (Exception)
