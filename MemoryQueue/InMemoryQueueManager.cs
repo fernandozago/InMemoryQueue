@@ -17,7 +17,8 @@ namespace MemoryQueue
 
         #endregion
 
-        [GeneratedRegex("^[a-z0-9]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+        
+        [GeneratedRegex("^[a-z0-9-_.]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
         private static partial Regex REGEX_ONLY_LETTERS();
 
         private readonly ConcurrentDictionary<int, InMemoryQueue> _queues = new();
