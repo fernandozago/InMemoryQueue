@@ -37,14 +37,29 @@ public static class QueueInfoReplyPropertyGridExtensions
         refVal.Consumers.RemoveRemovedConsumers(reply.Consumers.Select(x => Guid.Parse(x.Id)));
         foreach (var consumer in reply.Consumers)
         {
-            refVal.Consumers.AddOrUpdate(new QueueInfoReplyConsumer()
+            var result = new QueueInfoReplyConsumer()
             {
                 Id = Guid.Parse(consumer.Id),
                 Peer = consumer.Ip,
                 Name = consumer.Name,
                 Host = consumer.Host,
-                Type = consumer.Type
-            });
+                Type = consumer.Type,
+            };
+
+            result.Counters.AvgConsumeMs = consumer.Counters.AvgAckTimeMilliseconds.ToString("N10");
+            result.Counters.DeliverPerSecond = consumer.Counters.DeliverPerSecond.ToString("N0");
+            result.Counters.RedeliverPerSecond = consumer.Counters.RedeliverPerSecond.ToString("N0");
+
+            result.Counters.DeliverCounter = consumer.Counters.DeliverCounter.ToString("N0");
+            result.Counters.RedeliverCounter = consumer.Counters.RedeliverCounter.ToString("N0");
+
+            result.Counters.AckPerSecond = consumer.Counters.AckPerSecond.ToString("N0");
+            result.Counters.NackPerSecond = consumer.Counters.NackPerSecond.ToString("N0");
+
+            result.Counters.NackCounter = consumer.Counters.NackCounter.ToString("N0");
+            result.Counters.AckCounter = consumer.Counters.AckCounter.ToString("N0");
+
+            refVal.Consumers.AddOrUpdate(result);
         }
     }
 

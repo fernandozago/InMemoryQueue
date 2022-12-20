@@ -2,17 +2,8 @@
 
 namespace MemoryQueue.Counters
 {
-    public sealed class ConsumptionCounter : IAsyncDisposable
+    public sealed class QueueConsumptionCounter : ConsumptionConsolidator
     {
-        private readonly CancellationTokenSource _cts;
-        private readonly Task _task;
-        public ConsumptionCounter()
-        {
-            _cts = new ();
-            _task = ConsolidateTask(_cts.Token);
-        }
-
-        
         private long _ackCounter = 0;
         private long _ackPerSecond = 0;
         private long _ackPerSecond_Counter = 0;
@@ -51,6 +42,11 @@ namespace MemoryQueue.Counters
         public long DeliverPerSecond => _deliverPerSecond;
 
         public double AvgAckTimeMilliseconds => _avgAckTimeMilliseconds;
+
+        public QueueConsumptionCounter()
+        {
+            OnConsolidate += Consolidate;
+        }
 
         internal void ResetCounters()
         {
@@ -119,42 +115,28 @@ namespace MemoryQueue.Counters
         private void ConsumeAvgTime(double elapsedMilliseconds) =>
             Interlocked.Exchange(ref _avgAckTimeMilliseconds, (_avgAckTimeMilliseconds + elapsedMilliseconds) / 2d);
 
-        private async Task ConsolidateTask(CancellationToken token)
+
+        public void Consolidate()
         {
-            using var pd = new PeriodicTimer(TimeSpan.FromSeconds(1));
-            try
-            {
-                while (await pd.WaitForNextTickAsync(token).ConfigureAwait(false))
-                {
-                    Interlocked.Exchange(ref _ackPerSecond, Interlocked.Exchange(ref _ackPerSecond_Counter, 0));
-                    Interlocked.Add(ref _ackCounter, _ackPerSecond);
+            Interlocked.Exchange(ref _ackPerSecond, Interlocked.Exchange(ref _ackPerSecond_Counter, 0));
+            Interlocked.Add(ref _ackCounter, _ackPerSecond);
 
-                    Interlocked.Exchange(ref _pubPerSecond, Interlocked.Exchange(ref _pubPerSecond_Counter, 0));
-                    Interlocked.Add(ref _pubCounter, _pubPerSecond);
+            Interlocked.Exchange(ref _pubPerSecond, Interlocked.Exchange(ref _pubPerSecond_Counter, 0));
+            Interlocked.Add(ref _pubCounter, _pubPerSecond);
 
-                    Interlocked.Exchange(ref _redeliverPerSecond, Interlocked.Exchange(ref _redeliverPerSecond_Counter, 0));
-                    Interlocked.Add(ref _redeliverCounter, _redeliverPerSecond);
+            Interlocked.Exchange(ref _redeliverPerSecond, Interlocked.Exchange(ref _redeliverPerSecond_Counter, 0));
+            Interlocked.Add(ref _redeliverCounter, _redeliverPerSecond);
 
-                    Interlocked.Exchange(ref _deliverPerSecond, Interlocked.Exchange(ref _deliverPerSecond_Counter, 0));
-                    Interlocked.Add(ref _deliverCounter, _deliverPerSecond);
+            Interlocked.Exchange(ref _deliverPerSecond, Interlocked.Exchange(ref _deliverPerSecond_Counter, 0));
+            Interlocked.Add(ref _deliverCounter, _deliverPerSecond);
 
-                    Interlocked.Exchange(ref _nackPerSecond, Interlocked.Exchange(ref _nackPerSecond_Counter, 0));
-                    Interlocked.Add(ref _nackCounter, _nackPerSecond);
-                }
-            }
-            catch (Exception)
-            {
-                //
-            }
+            Interlocked.Exchange(ref _nackPerSecond, Interlocked.Exchange(ref _nackPerSecond_Counter, 0));
+            Interlocked.Add(ref _nackCounter, _nackPerSecond);
         }
 
-        public async ValueTask DisposeAsync()
+        public override void Dispose()
         {
-            using (_cts)
-            {
-                _cts.Cancel();
-                await _task.ConfigureAwait(false);
-            }
+            OnConsolidate -= Consolidate;
         }
     }
 }

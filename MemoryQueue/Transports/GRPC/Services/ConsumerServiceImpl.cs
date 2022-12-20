@@ -95,7 +95,19 @@ namespace MemoryQueue.Transports.GRPC.Services
                     Id = x.Id,
                     Ip = x.Ip,
                     Name = x.Name,
-                    Type = x.ConsumerType.ToString()
+                    Type = x.ConsumerType.ToString(),
+                    Counters = new ConsumerCounters()
+                    {
+                        AckCounter = x.Counters?.AckCounter ?? 0,
+                        AckPerSecond = x.Counters?.AckPerSecond ?? 0,
+                        AvgAckTimeMilliseconds = x.Counters?.AvgAckTimeMilliseconds ?? 0,
+                        DeliverCounter = x.Counters?.DeliverCounter ?? 0,
+                        DeliverPerSecond = x.Counters?.DeliverPerSecond ?? 0,
+                        NackCounter = x.Counters?.NackPerSecond ?? 0,
+                        NackPerSecond = x.Counters?.NackPerSecond ?? 0,
+                        RedeliverCounter = x.Counters?.RedeliverCounter ?? 0,
+                        RedeliverPerSecond = x.Counters?.RedeliverPerSecond ?? 0
+                    }
                 }));
 
                 return Task.FromResult(reply);

@@ -18,7 +18,7 @@ namespace MemoryQueue
 
         private readonly ILogger _logger;
         private readonly Task _consumerTask;
-        private readonly ConsumptionCounter _counters;
+        private readonly ReaderConsumptionCounter _counters;
         private readonly ChannelReader<QueueItem> _mainReader;
         private readonly ChannelReader<QueueItem> _retryReader;
         private readonly ChannelWriter<QueueItem> _retryWriter;
@@ -26,16 +26,17 @@ namespace MemoryQueue
 
         internal Task Completed => _consumerTask;
 
-        public InMemoryQueueReader(string queueName, QueueConsumerInfo consumerInfo, ConsumptionCounter counters, Channel<QueueItem> mainChannel, Channel<QueueItem> retryChannel, Func<QueueItem, Task<bool>> callBack, ILoggerFactory loggerFactory, CancellationToken token)
+        public InMemoryQueueReader(string queueName, QueueConsumerInfo consumerInfo, QueueConsumptionCounter counters, Channel<QueueItem> mainChannel, Channel<QueueItem> retryChannel, Func<QueueItem, Task<bool>> callBack, ILoggerFactory loggerFactory, CancellationToken token)
         {
             _logger = loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, queueName, consumerInfo.ConsumerType, consumerInfo.Name));
-            _counters = counters;
+            _counters = new ReaderConsumptionCounter(counters);
+            consumerInfo.Counters = _counters;
             _mainReader = mainChannel.Reader;
             _retryReader = retryChannel.Reader;
             _retryWriter = retryChannel.Writer;
             _channelCallBack = callBack;
 
-            _consumerTask = ChannelReaderCore(token);
+            _consumerTask = ChannelReaderCore(token).ContinueWith(_ => _counters.Dispose());
         }
 
         /// <summary>

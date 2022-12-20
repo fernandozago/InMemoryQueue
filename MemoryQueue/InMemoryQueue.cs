@@ -27,7 +27,7 @@ namespace MemoryQueue
         #endregion
 
         public string Name { get; private set; }
-        public ConsumptionCounter Counters { get; private set; }
+        public QueueConsumptionCounter Counters { get; private set; }
         public int ConsumersCount => _readers.Count;
         public int MainChannelCount => _mainChannel.Reader.Count;
         public int RetryChannelCount => _retryChannel.Reader.Count;

@@ -25,7 +25,7 @@ public class ConsumerCollection : ICustomTypeDescriptor
         List.AddOrUpdate(emp.Id, (emp, new EmployeeCollectionPropertyDescriptor(this, emp.Id)), (a, b) =>
         {
             added = false;
-            b.consumerInfo.UpdatedAt = DateTime.Now.ToString("HH:mm:ss");
+            b.consumerInfo = emp;
             return b;
         });
 

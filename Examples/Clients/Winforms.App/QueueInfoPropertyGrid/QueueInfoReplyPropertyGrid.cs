@@ -19,8 +19,8 @@ public sealed record QueueInfoReplyPropertyGrid
     public string ETA { get; internal set; } = string.Empty;
 
     [Category("Consumers")]
-    [DisplayName("Avg. (ms)")]
-    [Description("Average time in milliseconds for processing a message (Ack | Nack)")]
+    [DisplayName("Avg. Consume (ms)")]
+    [Description("Average time in milliseconds for consuming a message (Ack | Nack)")]
     public string AvgConsumptionMS { get; internal set; } = string.Empty;
     #endregion
 
