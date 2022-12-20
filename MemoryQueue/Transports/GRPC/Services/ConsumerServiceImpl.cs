@@ -89,26 +89,7 @@ namespace MemoryQueue.Transports.GRPC.Services
 
                     AvgAckTimeMilliseconds = inMemoryQueue.Counters.AvgAckTimeMilliseconds
                 };
-                reply.Consumers.AddRange(inMemoryQueue.Consumers.Select(static x => new ConsumerInfoReply()
-                {
-                    Host = x.Host,
-                    Id = x.Id,
-                    Ip = x.Ip,
-                    Name = x.Name,
-                    Type = x.ConsumerType.ToString(),
-                    Counters = new ConsumerCounters()
-                    {
-                        AckCounter = x.Counters?.AckCounter ?? 0,
-                        AckPerSecond = x.Counters?.AckPerSecond ?? 0,
-                        AvgAckTimeMilliseconds = x.Counters?.AvgAckTimeMilliseconds ?? 0,
-                        DeliverCounter = x.Counters?.DeliverCounter ?? 0,
-                        DeliverPerSecond = x.Counters?.DeliverPerSecond ?? 0,
-                        NackCounter = x.Counters?.NackPerSecond ?? 0,
-                        NackPerSecond = x.Counters?.NackPerSecond ?? 0,
-                        RedeliverCounter = x.Counters?.RedeliverCounter ?? 0,
-                        RedeliverPerSecond = x.Counters?.RedeliverPerSecond ?? 0
-                    }
-                }));
+                reply.Consumers.AddRange(inMemoryQueue.Consumers.Select(static x => x.ToGrpc()));
 
                 return Task.FromResult(reply);
             }
