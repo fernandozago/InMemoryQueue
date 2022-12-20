@@ -8,6 +8,8 @@ public static class QueueInfoReplyPropertyGridExtensions
     {
         if (refVal != null)
         {
+            refVal.ETA = GetEta(reply);
+
             refVal.QueueName = reply.QueueName;
             refVal.AckPerSecond = reply.AckPerSecond.ToString("N0");
             refVal.NackPerSecond = reply.NackPerSecond.ToString("N0");
@@ -20,7 +22,6 @@ public static class QueueInfoReplyPropertyGridExtensions
             refVal.TotalQueueSize.QueueSize = reply.QueueSize.ToString("N0");
             refVal.TotalQueueSize.MainQueueSize = reply.MainQueueSize.ToString("N0");
             refVal.TotalQueueSize.RetryQueueSize = reply.RetryQueueSize.ToString("N0");
-            MergeConsumers(reply, refVal);
 
             refVal.TotalAck = reply.AckCounter.ToString("N0");
             refVal.TotalNack = reply.NackCounter.ToString("N0");
@@ -28,7 +29,7 @@ public static class QueueInfoReplyPropertyGridExtensions
             refVal.TotalRedelivery = reply.RedeliverCounter.ToString("N0");
             refVal.TotalPub = reply.PubCounter.ToString("N0");
 
-            refVal.ETA = GetEta(reply);
+            MergeConsumers(reply, refVal);
         }
     }
 
