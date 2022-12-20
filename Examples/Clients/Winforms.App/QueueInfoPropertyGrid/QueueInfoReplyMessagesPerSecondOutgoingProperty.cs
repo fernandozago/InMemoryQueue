@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using Winforms.App.QueueInfoPropertyGrid;
 
 namespace GrpcClient4.QueueInfoPropertyGrid;
 
@@ -7,16 +8,18 @@ public sealed record QueueInfoReplyMessagesPerSecondOutgoingProperty
 {
     [DisplayName("Deliver")]
     [Description("Messages delivered to consumers per second")]
-    public string DeliveryPerSecond { get; internal set; } = string.Empty;
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long DeliveryPerSecond { get; internal set; }
 
     [DisplayName("Redeliver")]
     [Description("Messages redelivered to consumers per second")]
-    public string RedliveryPerSecond { get; internal set; } = string.Empty;
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long RedliveryPerSecond { get; internal set; }
 
-    internal string OutgoingTotal { get; set; } = string.Empty;
+    internal long OutgoingTotal { get; set; }
     public override string ToString()
     {
-        return OutgoingTotal;
+        return OutgoingTotal.ToString("N0");
     }
 }
 

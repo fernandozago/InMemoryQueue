@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using Winforms.App.QueueInfoPropertyGrid;
 
 namespace GrpcClient4.QueueInfoPropertyGrid;
 
@@ -37,34 +39,41 @@ public sealed record QueueInfoConsumerCountersReply
 {
     [DisplayName("Avg. Consume (ms)")]
     [Description("Average time in milliseconds for consuming a message (Ack | Nack)")]
-    public string AvgConsumeMs { get; internal set; } = 0.ToString("N10");
+    [TypeConverter(typeof(CustomDoubleTypeConverter))]
+    public double AvgConsumeMs { get; internal set; }
 
     [DisplayName("Deliver p/ Second")]
     [Description("Messages delivered per second")]
-    public string DeliverPerSecond { get; internal set; } = "0";
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long DeliverPerSecond { get; internal set; }
 
     [DisplayName("Ack p/ Second")]
     [Description("Ack per second")]
-    public string AckPerSecond { get; internal set; } = "0";
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long AckPerSecond { get; internal set; }
 
     [DisplayName("Nack p/ Second")]
     [Description("Nack per second")]
-    public string NackPerSecond { get; internal set; } = "0";
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long NackPerSecond { get; internal set; }
 
     [DisplayName("Total Acks")]
     [Description("Total acks")]
-    public string AckCounter { get; internal set; } = "0";
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long AckCounter { get; internal set; }
 
     [DisplayName("Total Nacks")]
     [Description("Total nacks")]
-    public string NackCounter { get; internal set; } = "0";
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long NackCounter { get; internal set; }
 
     [DisplayName("Total Deliver")]
     [Description("Total messages delivered")]
-    public string DeliverCounter { get; internal set; } = "0";
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long DeliverCounter { get; internal set; }
 
     public override string ToString()
     {
-        return AvgConsumeMs;
+        return AvgConsumeMs.ToString("N10");
     }
 }

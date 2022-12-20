@@ -11,23 +11,23 @@ public static class QueueInfoReplyPropertyGridExtensions
             refVal.ETA = GetEta(reply);
 
             refVal.QueueName = reply.QueueName;
-            refVal.AckPerSecond = reply.AckPerSecond.ToString("N0");
-            refVal.NackPerSecond = reply.NackPerSecond.ToString("N0");
-            refVal.Outgoing.RedliveryPerSecond = reply.RedeliverPerSecond.ToString("N0");
-            refVal.Outgoing.DeliveryPerSecond = reply.DeliverPerSecond.ToString("N0");
-            refVal.Outgoing.OutgoingTotal = (reply.RedeliverPerSecond + reply.DeliverPerSecond).ToString("N0");
-            refVal.AvgConsumptionMS = reply.AvgAckTimeMilliseconds.ToString("N10");
+            refVal.AckPerSecond = reply.AckPerSecond;
+            refVal.NackPerSecond = reply.NackPerSecond;
+            refVal.Outgoing.RedliveryPerSecond = reply.RedeliverPerSecond;
+            refVal.Outgoing.DeliveryPerSecond = reply.DeliverPerSecond;
+            refVal.Outgoing.OutgoingTotal = reply.RedeliverPerSecond + reply.DeliverPerSecond;
+            refVal.AvgConsumptionMS = reply.AvgAckTimeMilliseconds;
 
-            refVal.PubPerSecond = reply.PubPerSecond.ToString("N0");
-            refVal.TotalQueueSize.QueueSize = reply.QueueSize.ToString("N0");
-            refVal.TotalQueueSize.MainQueueSize = reply.MainQueueSize.ToString("N0");
-            refVal.TotalQueueSize.RetryQueueSize = reply.RetryQueueSize.ToString("N0");
+            refVal.PubPerSecond = reply.PubPerSecond;
+            refVal.TotalQueueSize.QueueSize = reply.QueueSize;
+            refVal.TotalQueueSize.MainQueueSize = reply.MainQueueSize;
+            refVal.TotalQueueSize.RetryQueueSize = reply.RetryQueueSize;
 
-            refVal.TotalAck = reply.AckCounter.ToString("N0");
-            refVal.TotalNack = reply.NackCounter.ToString("N0");
-            refVal.TotalDelivery = reply.DeliverCounter.ToString("N0");
-            refVal.TotalRedelivery = reply.RedeliverCounter.ToString("N0");
-            refVal.TotalPub = reply.PubCounter.ToString("N0");
+            refVal.TotalAck = reply.AckCounter;
+            refVal.TotalNack = reply.NackCounter;
+            refVal.TotalDelivery = reply.DeliverCounter;
+            refVal.TotalRedelivery = reply.RedeliverCounter;
+            refVal.TotalPub = reply.PubCounter;
 
             MergeConsumers(reply, refVal);
         }
@@ -47,15 +47,15 @@ public static class QueueInfoReplyPropertyGridExtensions
                 Type = consumer.Type,
             };
 
-            result.Counters.AvgConsumeMs = consumer.Counters.AvgAckTimeMilliseconds.ToString("N10");
+            result.Counters.AvgConsumeMs = consumer.Counters.AvgAckTimeMilliseconds;
 
-            result.Counters.DeliverPerSecond = consumer.Counters.DeliverPerSecond.ToString("N0");
-            result.Counters.AckPerSecond = consumer.Counters.AckPerSecond.ToString("N0");
-            result.Counters.NackPerSecond = consumer.Counters.NackPerSecond.ToString("N0");
+            result.Counters.DeliverPerSecond = consumer.Counters.DeliverPerSecond;
+            result.Counters.AckPerSecond = consumer.Counters.AckPerSecond;
+            result.Counters.NackPerSecond = consumer.Counters.NackPerSecond;
 
-            result.Counters.DeliverCounter = consumer.Counters.DeliverCounter.ToString("N0");
-            result.Counters.NackCounter = consumer.Counters.NackCounter.ToString("N0");
-            result.Counters.AckCounter = consumer.Counters.AckCounter.ToString("N0");
+            result.Counters.DeliverCounter = consumer.Counters.DeliverCounter;
+            result.Counters.NackCounter = consumer.Counters.NackCounter;
+            result.Counters.AckCounter = consumer.Counters.AckCounter;
 
             refVal.Consumers.AddOrUpdate(result);
         }

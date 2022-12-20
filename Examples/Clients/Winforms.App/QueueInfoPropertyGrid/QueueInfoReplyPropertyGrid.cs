@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Drawing.Design;
+using Winforms.App.QueueInfoPropertyGrid;
 
 namespace GrpcClient4.QueueInfoPropertyGrid;
 
@@ -21,7 +22,8 @@ public sealed record QueueInfoReplyPropertyGrid
     [Category("Consumers")]
     [DisplayName("Avg. Consume (ms)")]
     [Description("Average time in milliseconds for consuming a message (Ack | Nack)")]
-    public string AvgConsumptionMS { get; internal set; } = string.Empty;
+    [TypeConverter(typeof(CustomDoubleTypeConverter))]
+    public double AvgConsumptionMS { get; internal set; }
     #endregion
 
     #region Messages p/ Second
@@ -29,7 +31,8 @@ public sealed record QueueInfoReplyPropertyGrid
     [Category("Messages p/ Second")]
     [DisplayName("Incoming")]
     [Description("Incoming messages to queue")]
-    public string PubPerSecond { get; internal set; } = string.Empty;
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long PubPerSecond { get; internal set; }
 
     [Category("Messages p/ Second")]
     [DisplayName("Outgoing")]
@@ -39,12 +42,14 @@ public sealed record QueueInfoReplyPropertyGrid
     [Category("Messages p/ Second")]
     [DisplayName("Ack")]
     [Description("Message acks per second")]
-    public string AckPerSecond { get; internal set; } = string.Empty;
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long AckPerSecond { get; internal set; }
 
     [Category("Messages p/ Second")]
     [DisplayName("Nack")]
     [Description("Message nacks per second")]
-    public string NackPerSecond { get; internal set; } = string.Empty;
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long NackPerSecond { get; internal set; }
     #endregion
 
     #region Queue Size
@@ -63,27 +68,32 @@ public sealed record QueueInfoReplyPropertyGrid
     [Category("Totals")]
     [DisplayName("Publication")]
     [Description("Messages added to the queue")]
-    public string TotalPub { get; internal set; } = string.Empty;
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long TotalPub { get; internal set; }
 
     [Category("Totals")]
     [DisplayName("Delivery")]
     [Description("Messages delivered to consumers")]
-    public string TotalDelivery { get; internal set; } = string.Empty;
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long TotalDelivery { get; internal set; }
 
     [Category("Totals")]
     [DisplayName("Redelivery")]
     [Description("Messages redelivered to consumers")]
-    public string TotalRedelivery { get; internal set; } = string.Empty;
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long TotalRedelivery { get; internal set; }
 
     [Category("Totals")]
     [DisplayName("Acks")]
     [Description("Total of received acks")]
-    public string TotalAck { get; internal set; } = string.Empty;
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long TotalAck { get; internal set; }
 
     [Category("Totals")]
     [DisplayName("Nacks")]
     [Description("Total of received nacks")]
-    public string TotalNack { get; internal set; } = string.Empty;
+    [TypeConverter(typeof(CustomLongTypeConverter))]
+    public long TotalNack { get; internal set; }
     #endregion
 }
 
