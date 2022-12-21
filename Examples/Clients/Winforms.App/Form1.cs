@@ -23,10 +23,9 @@ namespace GrpcClient2
         double[] nackPerSecond = new double[time];
         double[] redeliverPerSecond = new double[time];
         double[] chartMaxYAxis = new double[time];
-        public Form1(int port, string queueName)
+        public Form1(string host, string queueName)
         {
             _queueName = queueName;
-            string host = $"127.0.0.1:{port}";
             _consumer = new(host, queueName: queueName);
             _progress = new Progress<QueueInfoReply>(UpdateForm);
 
