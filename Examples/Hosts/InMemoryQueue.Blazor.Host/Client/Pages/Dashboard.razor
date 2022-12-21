@@ -10,23 +10,20 @@
         <li class="breadcrumb-item active">Dashboard</li>
     </ol>
     <div class="row">
-        <div class="col-md-12">
-            <!-- Example split danger button -->
-            <div class="btn-group">
-                <button type="button" class="btn btn-primary" @onclick="Refresh">Refresh @(selectedQueue == NONE_SELECTED ? "" : $"({selectedQueue})")</button>
-                <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-                    <span class="visually-hidden">Toggle Dropdown</span>
-                </button>
-                <ul class="dropdown-menu">
-                    @if (activeQueues != null)
+        <div class="col-md-1">
+            <button type="button" class="btn btn-primary" @onclick="Refresh">Refresh</button>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind=SelectedQueue aria-label="Select Queue">
+                <option selected value="@NONE_SELECTED">Select Queue</option>
+                @if (activeQueues != null)
+                {
+                    @foreach (var cnt in activeQueues)
                     {
-                        @foreach (var cnt in activeQueues)
-                        {
-                            <li><a class="dropdown-item" @onclick="() => SelectQueue(cnt)">@cnt</a></li>
-                        }
+                        <option value="@cnt">@cnt</option>
                     }
-                </ul>
-            </div>
+                }
+            </select>
         </div>
     </div>
 
@@ -223,7 +220,7 @@
                             <pre style="border:1px solid gray; text-align:center; margin-bottom:0px">Loading...</pre>
                         }
                         else if (peekMessage is not null)
-                        {  
+                        {
                             <div class="col-md-12">
                                 <table>
                                     <tr>
@@ -244,7 +241,7 @@
                                     </tr>
                                 </table>
                             </div>
-                            
+
                         }
                         else
                         {
@@ -298,8 +295,26 @@
 }
 
 @code {
-    private const string NONE_SELECTED = "None";
+    private const string NONE_SELECTED = "*None*";
+
+
+    public string? SelectedQueue
+    {
+        get => selectedQueue; 
+        set
+        {
+            peekMessage = null;
+            selectedQueueInfo = null;
+            selectedQueue = value;
+            _ = UpdateData().ContinueWith(x =>
+            {
+                if (x.Result) StateHasChanged();
+            });
+        }
+    }
     private string? selectedQueue = NONE_SELECTED;
+
+
     private string[]? activeQueues;
     private QueueItem? peekMessage = null;
     private bool peekLoading = false;
@@ -334,15 +349,8 @@
     private async Task Refresh()
     {
         activeQueues = await Http.GetFromJsonAsync<string[]?>("InMemoryQueue/GetActiveQueues");
-        await UpdateData();
     }
 
-    private async Task SelectQueue(string cnt)
-    {
-        selectedQueue = cnt;
-        peekMessage = null;
-        await UpdateData();
-    }
     private async Task<bool> UpdateData()
     {
         if (selectedQueue != NONE_SELECTED)
