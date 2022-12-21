@@ -10,7 +10,7 @@ namespace MemoryQueue.Models
             ConsumerType = consumerType;
         }
 
-        internal ReaderConsumptionCounter? Counters { get; set; }
+        public ReaderConsumptionCounter? Counters { get; set; }
         public QueueConsumerType ConsumerType { get; private set; }
 
         required public string Id { get; set; }
