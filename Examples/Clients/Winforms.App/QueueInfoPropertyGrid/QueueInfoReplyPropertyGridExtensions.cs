@@ -47,7 +47,7 @@ public static class QueueInfoReplyPropertyGridExtensions
                 Type = consumer.Type,
             };
 
-            result.Counters.AvgConsumeMs = consumer.Counters.AvgAckTimeMilliseconds;
+            result.Counters.AvgConsumeMs = consumer.Counters.AvgConsumptionMs;
 
             result.Counters.DeliverPerSecond = consumer.Counters.DeliverPerSecond;
             result.Counters.AckPerSecond = consumer.Counters.AckPerSecond;
@@ -56,6 +56,7 @@ public static class QueueInfoReplyPropertyGridExtensions
             result.Counters.DeliverCounter = consumer.Counters.DeliverCounter;
             result.Counters.NackCounter = consumer.Counters.NackCounter;
             result.Counters.AckCounter = consumer.Counters.AckCounter;
+            result.Counters.Throttled = consumer.Counters.Throttled;
 
             refVal.Consumers.AddOrUpdate(result);
         }

@@ -81,5 +81,7 @@ message ConsumerCounters {
 	int64 deliverCounter = 5;
 	int64 deliverPerSecond = 6;
 
-	double avgAckTimeMilliseconds = 7;
+	double avgConsumptionMs = 7;
+
+	bool throttled = 8;
 }

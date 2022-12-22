@@ -34,7 +34,9 @@ public record ConsumerCounters
     public long NackPerSecond { get; set; }
     public long DeliverCounter { get; set; }
     public long DeliverPerSecond { get; set; }
-    public double AvgAckTimeMilliseconds { get; set; }
+    public double AvgConsumptionMs { get; set; }
+
+    public bool Throttled { get; set; }
 }
 
 public record Counters
@@ -49,7 +51,7 @@ public record Counters
     public long RedeliverPerSecond { get; set; }
     public long DeliverCounter { get; set; }
     public long DeliverPerSecond { get; set; }
-    public double AvgAckTimeMilliseconds { get; set; }
+    public double AvgConsumptionMs { get; set; }
 }
 
 public record QueueInfo

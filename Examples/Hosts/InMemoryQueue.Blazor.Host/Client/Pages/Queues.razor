@@ -38,7 +38,7 @@
                     <td class="text-right">@(queue.Counters.RedeliverPerSecond.ToString("N0"))</td>
                     <td class="text-right">@queue.Counters.AckPerSecond.ToString("N0")</td>
                     <td class="text-right">@queue.Counters.NackPerSecond.ToString("N0")</td>
-                    <td class="text-right">@queue.Counters.AvgAckTimeMilliseconds.ToString("N5") ms</td>
+                    <td class="text-right">@queue.Counters.AvgConsumptionMs.ToString("N5") ms</td>
                 </tr>
             }
         </tbody>

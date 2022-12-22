@@ -10,7 +10,7 @@ using var loggerFactory = LoggerFactory.Create(builder =>
 });
 
 CancellationTokenSource cts = new ();
-var queueConsumer = new GrpcQueueConsumer("127.0.0.1:1111", loggerFactory, "Default.123");
+var queueConsumer = new GrpcQueueConsumer("127.0.0.1:1111", loggerFactory, "InMemoryQueue.Test-1");
 var consumer = queueConsumer.Consume("MyConsoleConsumer", CallBack, cts.Token);
 var producer = Task.Run(async () =>
 {

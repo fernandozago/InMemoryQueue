@@ -1,4 +1,5 @@
-﻿using MemoryQueue.Counters;
+﻿using Grpc.Core;
+using MemoryQueue.Counters;
 using MemoryQueue.Models;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
@@ -84,6 +85,7 @@ namespace MemoryQueue
         private bool TryRead([MaybeNullWhen(false)] out QueueItem queueItem) =>
             _retryReader.TryRead(out queueItem) || _mainReader.TryRead(out queueItem);
 
+
         private long _notAckedStreak = 0;
         /// <summary>
         /// Publish an message to some consumer and awaits for the ACK(true)/NACK(false) result
@@ -99,21 +101,36 @@ namespace MemoryQueue
             _counters.UpdateCounters(isRetrying, isAcked, timestamp);
             if (!isAcked)
             {
-                _notAckedStreak++;
                 queueItem.Retrying = true;
                 queueItem.RetryCount++;
                 await _retryWriter.WriteAsync(queueItem).ConfigureAwait(false);
-
-                if (_notAckedStreak >= 10)
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(.5));
-                    _notAckedStreak = 0;
-                }
+                await NotAckedRateLimiter();
             }
             else
             {
                 _notAckedStreak = 0;
+                _counters.SetThrottled(false);
             }
+        }
+
+        private async ValueTask NotAckedRateLimiter()
+        {
+            int waitFor = 500;
+            
+            //First NACK -- Dont wait
+            if (_notAckedStreak == 0)
+            {
+                _notAckedStreak++;
+                return;
+            }
+            else if (_notAckedStreak > 0 && _notAckedStreak < 10)
+            {
+                waitFor = (int)_notAckedStreak * 50;
+                _notAckedStreak++;
+            }
+
+            _counters.SetThrottled(true);
+            await Task.Delay(waitFor);
         }
     }
 

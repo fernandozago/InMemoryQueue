@@ -87,7 +87,7 @@ namespace MemoryQueue.Transports.GRPC.Services
                     DeliverCounter = inMemoryQueue.Counters.DeliverCounter,
                     DeliverPerSecond = inMemoryQueue.Counters.DeliverPerSecond,
 
-                    AvgAckTimeMilliseconds = inMemoryQueue.Counters.AvgAckTimeMilliseconds
+                    AvgAckTimeMilliseconds = inMemoryQueue.Counters.AvgConsumptionMs
                 };
                 reply.Consumers.AddRange(inMemoryQueue.Consumers.Select(static x => x.ToGrpc()));
 

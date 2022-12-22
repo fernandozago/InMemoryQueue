@@ -53,7 +53,7 @@
                                     </tr>
                                     <tr>
                                         <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Avg. Consumption</td>
-                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.AvgAckTimeMilliseconds.ToString("N5")) ms</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.AvgConsumptionMs.ToString("N5")) ms</td>
                                     </tr>
                                 </table>
                             </div>
@@ -139,6 +139,7 @@
                                         <pre style="margin:0px; margin-left:15px; padding:5px; padding-top:10px; font-size:10px;">[<b>Type:</b> @consumer.ConsumerType]</pre>
                                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse@(selectedQueueInfo.Consumers.IndexOf(consumer))" aria-expanded="false" aria-controls="panelsStayOpen-collapse@(selectedQueueInfo.Consumers.IndexOf(consumer))">
                                             @consumer.Name
+                                            <span class="badge bg-danger" style="position:absolute; right:45px; visibility: @(consumer.Counters.Throttled ? "visible" : "hidden"); ">Throttled</span>
                                         </button>
                                     </h2>
                                     <div id="panelsStayOpen-collapse@(selectedQueueInfo.Consumers.IndexOf(consumer))" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading@(selectedQueueInfo.Consumers.IndexOf(consumer))">
@@ -173,7 +174,7 @@
                                                             <td scope="col" class="text-right">@consumer.Counters.DeliverPerSecond.ToString("N0")</td>
                                                             <td scope="col" class="text-right">@consumer.Counters.AckPerSecond.ToString("N0")</td>
                                                             <td scope="col" class="text-right">@consumer.Counters.NackPerSecond.ToString("N0")</td>
-                                                            <td scope="col" class="text-right" style="border-right:2px solid gray;">@consumer.Counters.AvgAckTimeMilliseconds.ToString("N5")</td>
+                                                            <td scope="col" class="text-right" style="border-right:2px solid gray;">@consumer.Counters.AvgConsumptionMs.ToString("N5")</td>
 
                                                             <td scope="col" class="text-right">@consumer.Counters.DeliverCounter.ToString("N0")</td>
                                                             <td scope="col" class="text-right">@consumer.Counters.AckCounter.ToString("N0")</td>
