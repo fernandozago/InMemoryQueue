@@ -281,31 +281,13 @@
 }
 
 @code {
-    private const string NONE_SELECTED = "*None*";
-
     [Parameter]
     public string? QueueName { get; set; }
 
-    public string? SelectedQueue
-    {
-        get => selectedQueue; 
-        set
-        {
-            peekMessage = null;
-            selectedQueueInfo = null;
-            selectedQueue = value;
-            _ = UpdateData();
-        }
-    }
-    private string? selectedQueue = NONE_SELECTED;
-
-
-    private string[]? activeQueues;
-    private QueueItem? peekMessage = null;
     private bool peekLoading = false;
+    private QueueItem? peekMessage = null;
     private QueueInfo? selectedQueueInfo;
-    private CancellationTokenSource? cts;
-    private Task? _backgroundTask;
+    private Timer? _timer;
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -317,38 +299,25 @@
                 return;
             }
 
-            selectedQueue = QueueName;
-            cts = new CancellationTokenSource();
-            _backgroundTask = Task.Run(async () =>
-            {
-                while (!cts.IsCancellationRequested)
-                {
-                    await UpdateData();
-                    await Task.Delay(1000);
-                }
-            });
+            _timer = new Timer(_ => InvokeAsync(UpdateData).ContinueWith(_ => StateHasChanged()), null, 100, 1000);
         }
         base.OnAfterRender(firstRender);
     }
 
+    SemaphoreSlim sm = new SemaphoreSlim(1);
     private async Task UpdateData()
     {
-        if (selectedQueue == NONE_SELECTED)
-        {
-            selectedQueueInfo = null;
-            StateHasChanged();
-        }
-        else
+        if (await sm.WaitAsync(10))
         {
             try
             {
-                selectedQueueInfo = await Http.GetFromJsonAsync<QueueInfo?>($"InMemoryQueue/GetQueueData?queueName={selectedQueue}");
-                StateHasChanged();
+                selectedQueueInfo = await Http.GetFromJsonAsync<QueueInfo?>($"InMemoryQueue/GetQueueData?queueName={QueueName}");
             }
             catch
             {
-            //
+                
             }
+            sm.Release();
         }
     }
 
@@ -356,25 +325,19 @@
     {
         peekLoading = true;
         peekMessage = null;
-        if (selectedQueue != NONE_SELECTED)
+        try
         {
-            try
-            {
-                peekMessage = (await Http.GetFromJsonAsync<QueueItemWrapper?>($"InMemoryQueue/PeekMessage?queueName={selectedQueue}"))?.Item;
-            }
-            catch
-            {
-                //
-            }
+            peekMessage = (await Http.GetFromJsonAsync<QueueItemWrapper?>($"InMemoryQueue/PeekMessage?queueName={QueueName}"))?.Item;
+        }
+        catch
+        {
+            
         }
         peekLoading = false;
     }
 
     public void Dispose()
     {
-        using (cts)
-        {
-            cts?.Cancel();
-        }
+        _timer?.Dispose();
     }
 }

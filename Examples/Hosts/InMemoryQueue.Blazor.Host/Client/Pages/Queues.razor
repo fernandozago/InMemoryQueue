@@ -44,30 +44,21 @@
 </table>
 @code {
     private Queue[]? _activeQueues = null;
-    private CancellationTokenSource? _cts;
-    private Task? _backgroundTask;
+    private Timer? _timer;
 
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
         {
-            _cts = new CancellationTokenSource();
-            _backgroundTask = Task.Run(async () =>
-            {
-                while (!_cts.IsCancellationRequested)
-                {
-                    await GetActiveQueuesAsync();
-                    StateHasChanged();
-                    await Task.Delay(1000);
-                }
-            });
+            _timer = new Timer(_ => InvokeAsync(GetActiveQueuesAsync).ContinueWith(_ => StateHasChanged()), null, 100, 1000);
+
         }
         base.OnAfterRender(firstRender);
     }
 
     private string GetState(Queue queue)
     {
-        if (queue.Counters.PubPerSecond == 0 
+        if (queue.Counters.PubPerSecond == 0
             && queue.Counters.NackPerSecond == 0
             && queue.Counters.AckPerSecond == 0
             && queue.Counters.DeliverPerSecond == 0
@@ -81,24 +72,25 @@
         }
     }
 
+    SemaphoreSlim sm = new SemaphoreSlim(1);
     private async Task GetActiveQueuesAsync()
     {
-        _activeQueues = null;
-        try
+        if (await sm.WaitAsync(10))
         {
-            _activeQueues = (await Http.GetFromJsonAsync<Queue[]?>("InMemoryQueue/GetActiveQueues"))?.OrderBy(x => x.Name).ToArray();
-        }
-        catch
-        {
-        //
+            try
+            {
+                _activeQueues = (await Http.GetFromJsonAsync<Queue[]?>("InMemoryQueue/GetActiveQueues"))?.OrderBy(x => x.Name).ToArray();
+            }
+            catch
+            {
+                //
+            }
+            sm.Release();
         }
     }
 
     public void Dispose()
     {
-        using (_cts)
-        {
-            _cts?.Cancel();
-        }
+        _timer?.Dispose();
     }
 }
