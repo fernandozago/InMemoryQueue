@@ -1,0 +1,59 @@
+﻿
+<span class="badge bg-@cssClass">@data</span>
+@code {
+    private Queue? _queue;
+
+    [Parameter]
+    public Queue? Queue
+    {
+        get => _queue; 
+        set
+        {
+            _queue = value;
+            SetState();
+        }
+    }
+
+    private string? cssClass;
+    private string? data;
+
+    public override Task SetParametersAsync(ParameterView parameters)
+    {
+        return base.SetParametersAsync(parameters);
+    }
+
+    private void SetState()
+    {
+        if (_queue is null)
+        {
+            cssClass = "error";
+            data = "Unknown";
+            return;
+        }
+
+        if (_queue.Counters.PubPerSecond == 0
+            && _queue.Counters.NackPerSecond == 0
+            && _queue.Counters.AckPerSecond == 0
+            && _queue.Counters.DeliverPerSecond == 0
+            && _queue.Counters.RedeliverPerSecond == 0)
+        {
+            cssClass = "success";
+            data = "Idle";
+        }
+        else if (_queue.Counters.NackPerSecond > 0 && _queue.Counters.AckPerSecond > 0)
+        {
+            cssClass = "warning";
+            data = "Processing With Nacks";
+        }
+        else if (_queue.Counters.NackPerSecond > 0 && _queue.Counters.AckPerSecond == 0)
+        {
+            cssClass = "danger";
+            data = "Not Processing";
+        }
+        else
+        {
+            cssClass = "success";
+            data = "Processing";
+        }
+    }
+}

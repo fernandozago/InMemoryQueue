@@ -72,6 +72,10 @@ public sealed record QueueInfoConsumerCountersReply
     [TypeConverter(typeof(CustomLongTypeConverter))]
     public long DeliverCounter { get; internal set; }
 
+    [DisplayName("Throttled")]
+    [Description("Is this consumer being throttled down")]
+    public bool Throttled { get; internal set; }
+
     public override string ToString()
     {
         return AvgConsumeMs.ToString("N10");

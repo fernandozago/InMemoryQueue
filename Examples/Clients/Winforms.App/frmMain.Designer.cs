@@ -29,11 +29,11 @@
         private void InitializeComponent()
         {
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.txtQueue = new System.Windows.Forms.TextBox();
             this.button1 = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.textBox1 = new System.Windows.Forms.TextBox();
-            this.txtQueue = new System.Windows.Forms.TextBox();
-            this.label2 = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -46,14 +46,31 @@
             this.groupBox1.Controls.Add(this.textBox1);
             this.groupBox1.Location = new System.Drawing.Point(12, 12);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(237, 91);
+            this.groupBox1.Size = new System.Drawing.Size(263, 91);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Connect To Server:";
             // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(6, 54);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(45, 15);
+            this.label2.TabIndex = 4;
+            this.label2.Text = "Queue:";
+            // 
+            // txtQueue
+            // 
+            this.txtQueue.Location = new System.Drawing.Point(64, 51);
+            this.txtQueue.Name = "txtQueue";
+            this.txtQueue.Size = new System.Drawing.Size(193, 23);
+            this.txtQueue.TabIndex = 3;
+            this.txtQueue.Text = "Default";
+            // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(150, 22);
+            this.button1.Location = new System.Drawing.Point(182, 21);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
             this.button1.TabIndex = 2;
@@ -66,40 +83,23 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(6, 25);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(32, 15);
+            this.label1.Size = new System.Drawing.Size(52, 15);
             this.label1.TabIndex = 1;
-            this.label1.Text = "Port:";
+            this.label1.Text = "Address:";
             // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(56, 22);
+            this.textBox1.Location = new System.Drawing.Point(64, 22);
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(88, 23);
+            this.textBox1.Size = new System.Drawing.Size(112, 23);
             this.textBox1.TabIndex = 0;
-            this.textBox1.Text = "1111";
-            // 
-            // txtQueue
-            // 
-            this.txtQueue.Location = new System.Drawing.Point(56, 51);
-            this.txtQueue.Name = "txtQueue";
-            this.txtQueue.Size = new System.Drawing.Size(88, 23);
-            this.txtQueue.TabIndex = 3;
-            this.txtQueue.Text = "Default";
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(6, 54);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(45, 15);
-            this.label2.TabIndex = 4;
-            this.label2.Text = "Queue:";
+            this.textBox1.Text = "127.0.0.1:1111";
             // 
             // frmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(262, 115);
+            this.ClientSize = new System.Drawing.Size(287, 115);
             this.Controls.Add(this.groupBox1);
             this.Name = "frmMain";
             this.Text = "frmMain";

@@ -18,7 +18,9 @@ public sealed class ReaderConsumptionCounter : ConsumptionConsolidator
     private long _nackPerSecond = 0;
     private long _nackPerSecond_Counter = 0;
 
-    private double _avgAckTimeMilliseconds = 0;
+    private double _avgConsumptionMs = 0;
+
+    private bool _throttled = false;
 
     public long AckCounter => _ackCounter;
     public long AckPerSecond => _ackPerSecond;
@@ -29,12 +31,22 @@ public sealed class ReaderConsumptionCounter : ConsumptionConsolidator
     public long DeliverCounter => _deliverCounter;
     public long DeliverPerSecond => _deliverPerSecond;
 
-    public double AvgAckTimeMilliseconds => _avgAckTimeMilliseconds;
+    public double AvgConsumptionMs => _avgConsumptionMs;
+
+    public bool Throttled => _throttled;
 
     public ReaderConsumptionCounter(QueueConsumptionCounter queueCounter)
     {
         _queueCounter = queueCounter;
         OnConsolidate += Consolidate;
+    }
+
+    internal void SetThrottled(bool throttled)
+    {
+        if (_throttled != throttled)
+        {
+            _throttled = throttled;
+        }
     }
 
     internal void UpdateCounters(bool isRedeliver, bool processed, long timestamp)
@@ -65,7 +77,7 @@ public sealed class ReaderConsumptionCounter : ConsumptionConsolidator
         Interlocked.Increment(ref _deliverPerSecond_Counter);
 
     private void ConsumeAvgTime(double elapsedMilliseconds) =>
-        Interlocked.Exchange(ref _avgAckTimeMilliseconds, (_avgAckTimeMilliseconds + elapsedMilliseconds) / 2d);
+        Interlocked.Exchange(ref _avgConsumptionMs, (_avgConsumptionMs + elapsedMilliseconds) / 2d);
 
     public void Consolidate()
     {

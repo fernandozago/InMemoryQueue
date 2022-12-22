@@ -24,7 +24,7 @@ namespace MemoryQueue.Counters
         private long _nackPerSecond = 0;
         private long _nackPerSecond_Counter = 0;
 
-        private double _avgAckTimeMilliseconds = 0;
+        private double _avgConsumptionMs = 0;
 
         public long AckCounter => _ackCounter;
         public long AckPerSecond => _ackPerSecond;
@@ -41,7 +41,7 @@ namespace MemoryQueue.Counters
         public long DeliverCounter => _deliverCounter;
         public long DeliverPerSecond => _deliverPerSecond;
 
-        public double AvgAckTimeMilliseconds => _avgAckTimeMilliseconds;
+        public double AvgConsumptionMs => _avgConsumptionMs;
 
         public QueueConsumptionCounter()
         {
@@ -71,7 +71,7 @@ namespace MemoryQueue.Counters
             Interlocked.Exchange(ref _nackPerSecond, 0);
             Interlocked.Exchange(ref _nackPerSecond_Counter, 0);
 
-            Interlocked.Exchange(ref _avgAckTimeMilliseconds, 0);
+            Interlocked.Exchange(ref _avgConsumptionMs, 0);
         }
 
         internal void UpdateCounters(bool isRedeliver, bool processed, long timestamp)
@@ -113,7 +113,7 @@ namespace MemoryQueue.Counters
             Interlocked.Increment(ref _deliverPerSecond_Counter);
 
         private void ConsumeAvgTime(double elapsedMilliseconds) =>
-            Interlocked.Exchange(ref _avgAckTimeMilliseconds, (_avgAckTimeMilliseconds + elapsedMilliseconds) / 2d);
+            Interlocked.Exchange(ref _avgConsumptionMs, (_avgConsumptionMs + elapsedMilliseconds) / 2d);
 
 
         public void Consolidate()

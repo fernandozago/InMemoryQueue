@@ -1,4 +1,5 @@
-﻿using MemoryQueue.Counters;
+﻿using Grpc.Core;
+using MemoryQueue.Counters;
 using MemoryQueue.Models;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
@@ -17,6 +18,7 @@ namespace MemoryQueue
         #endregion
 
         private readonly ILogger _logger;
+        private readonly IInMemoryQueue _refQueue;
         private readonly Task _consumerTask;
         private readonly ReaderConsumptionCounter _counters;
         private readonly ChannelReader<QueueItem> _mainReader;
@@ -26,14 +28,15 @@ namespace MemoryQueue
 
         internal Task Completed => _consumerTask;
 
-        public InMemoryQueueReader(string queueName, QueueConsumerInfo consumerInfo, QueueConsumptionCounter counters, Channel<QueueItem> mainChannel, Channel<QueueItem> retryChannel, Func<QueueItem, Task<bool>> callBack, ILoggerFactory loggerFactory, CancellationToken token)
+        public InMemoryQueueReader(InMemoryQueue inMemoryQueue, QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> callBack, CancellationToken token)
         {
-            _logger = loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, queueName, consumerInfo.ConsumerType, consumerInfo.Name));
-            _counters = new ReaderConsumptionCounter(counters);
+            _logger = inMemoryQueue._loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, inMemoryQueue.Name, consumerInfo.ConsumerType, consumerInfo.Name));
+            _refQueue = inMemoryQueue;
+            _counters = new ReaderConsumptionCounter(inMemoryQueue.Counters);
             consumerInfo.Counters = _counters;
-            _mainReader = mainChannel.Reader;
-            _retryReader = retryChannel.Reader;
-            _retryWriter = retryChannel.Writer;
+            _mainReader = inMemoryQueue._mainChannel.Reader;
+            _retryReader = inMemoryQueue._retryChannel.Reader;
+            _retryWriter = inMemoryQueue._retryChannel.Writer;
             _channelCallBack = callBack;
 
             _consumerTask = ChannelReaderCore(token).ContinueWith(_ => _counters.Dispose());
@@ -52,7 +55,7 @@ namespace MemoryQueue
                 {
                     if (!token.IsCancellationRequested && TryRead(out var queueItem))
                     {
-                        await DeliverItemAsync(queueItem).ConfigureAwait(false);
+                        await DeliverItemAsync(queueItem, token).ConfigureAwait(false);
                     }
                 }
             }
@@ -84,25 +87,57 @@ namespace MemoryQueue
         private bool TryRead([MaybeNullWhen(false)] out QueueItem queueItem) =>
             _retryReader.TryRead(out queueItem) || _mainReader.TryRead(out queueItem);
 
+
+        private int _notAckedStreak = 0;
+        private int NotAckedStreak
+        {
+            get => _notAckedStreak;
+            set => _notAckedStreak = Math.Min(20, Math.Max(value, 0));
+        }
         /// <summary>
         /// Publish an message to some consumer and awaits for the ACK(true)/NACK(false) result
         /// </summary>
         /// <param name="queueItem">Message to be sent</param>
-        private async Task DeliverItemAsync(QueueItem queueItem)
+        private async Task DeliverItemAsync(QueueItem queueItem, CancellationToken token)
         {
             var timestamp = Stopwatch.GetTimestamp();
 
-            bool isRetrying = queueItem.Retrying;
             bool isAcked = await _channelCallBack(queueItem).ConfigureAwait(false);
 
+            _counters.UpdateCounters(queueItem.Retrying, isAcked, timestamp);
             if (!isAcked)
             {
                 queueItem.Retrying = true;
                 queueItem.RetryCount++;
                 await _retryWriter.WriteAsync(queueItem).ConfigureAwait(false);
-            }
 
-            _counters.UpdateCounters(isRetrying, isAcked, timestamp);
+                NotAckedStreak++;
+                if (_refQueue.ConsumersCount > 1 && NotAckedStreak > 1)
+                {
+                    _counters.SetThrottled(true);
+                    await NotAckedRateLimiter(NotAckedStreak, token).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                NotAckedStreak--;
+                if (NotAckedStreak == 0)
+                {
+                    _counters.SetThrottled(false);
+                }
+            }
+        }
+
+        private static async ValueTask NotAckedRateLimiter(int nackStreak, CancellationToken token)
+        {           
+            try
+            {
+                await Task.Delay(nackStreak * 25, token).ConfigureAwait(false);
+            }
+            catch
+            {
+                //
+            }
         }
     }
 

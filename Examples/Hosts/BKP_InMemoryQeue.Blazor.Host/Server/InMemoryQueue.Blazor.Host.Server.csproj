@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<RootNamespace>InMemoryQeue.Blazor-Host.Server</RootNamespace>
+		<AssemblyName>$(AssemblyName.Replace(' ', '_'))</AssemblyName>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Grpc.AspNetCore" Version="2.50.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="7.0.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\..\MemoryQueue\MemoryQueue.csproj" />
+		<ProjectReference Include="..\Shared\InMemoryQueue.Blazor.Host.Shared.csproj" />
+	</ItemGroup>
+</Project>

@@ -10,7 +10,7 @@ namespace MemoryQueue.Models
             ConsumerType = consumerType;
         }
 
-        internal ReaderConsumptionCounter? Counters { get; set; }
+        public ReaderConsumptionCounter? Counters { get; set; }
         public QueueConsumerType ConsumerType { get; private set; }
 
         required public string Id { get; set; }
@@ -33,11 +33,12 @@ namespace MemoryQueue.Models
             
             _consumerInfo.Counters.AckCounter = Counters?.AckCounter ?? 0;
             _consumerInfo.Counters.AckPerSecond = Counters?.AckPerSecond ?? 0;
-            _consumerInfo.Counters.AvgAckTimeMilliseconds = Counters?.AvgAckTimeMilliseconds ?? 0;
+            _consumerInfo.Counters.AvgConsumptionMs = Counters?.AvgConsumptionMs ?? 0;
             _consumerInfo.Counters.DeliverCounter = Counters?.DeliverCounter ?? 0;
             _consumerInfo.Counters.DeliverPerSecond = Counters?.DeliverPerSecond ?? 0;
-            _consumerInfo.Counters.NackCounter = Counters?.NackPerSecond ?? 0;
+            _consumerInfo.Counters.NackCounter = Counters?.NackCounter ?? 0;
             _consumerInfo.Counters.NackPerSecond = Counters?.NackPerSecond ?? 0;
+            _consumerInfo.Counters.Throttled = Counters?.Throttled ?? false;
 
             return _consumerInfo;
         }

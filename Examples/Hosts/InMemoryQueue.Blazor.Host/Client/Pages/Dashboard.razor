@@ -1,0 +1,360 @@
+﻿@page "/dashboard"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@using Microsoft.AspNetCore.WebUtilities;
+@using Microsoft.Extensions.Primitives;
+@implements IDisposable
+
+<PageTitle>InMemory Queue Dashboard</PageTitle>
+
+<div class="container-fluid px-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="queues">Queues</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@queueName</li>
+        </ol>
+    </nav>
+
+    @if (selectedQueueInfo is not null)
+    {
+        <br />
+        <div class="accordion" id="accordionPanelsStayOpenExample">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="panelsStayOpen-headingOverview" style="height:35px">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOverview" aria-expanded="false" aria-controls="panelsStayOpen-collapseOverview" style="height:35px">
+                        Overview
+                    </button>
+                </h2>
+                <div id="panelsStayOpen-collapseOverview" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingOverview">
+                    <div class="accordion-body">
+                        <p style="border-bottom:1px solid gray">Queued messages</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                chart
+                            </div>
+                            <div class="col-md-6">
+                                chart info
+                            </div>
+                        </div>
+                        <br />
+                        <p style="border-bottom:1px solid gray">Details</p>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <table>
+                                    <tr>
+                                        <td style="border-right:1px solid gray;">&nbsp;</td>
+                                        <td style="font-weight:bold; padding-left:10px">Info</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Consumers</td>
+                                        <td style="padding-left:10px">@selectedQueueInfo.ConsumersCount.ToString("N0")</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Pending Messages</td>
+                                        <td style="padding-left:10px">@((selectedQueueInfo.MainChannelCount + selectedQueueInfo.RetryChannelCount).ToString("N0"))</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Avg. Consumption</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.AvgConsumptionMs.ToString("N5")) ms</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-4">
+                                <table>
+                                    <tr>
+                                        <td style="border-right:1px solid gray;">&nbsp;</td>
+                                        <td style="font-weight:bold; padding-left:10px">Messages per Second</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Incoming</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.PubPerSecond.ToString("N0"))</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Outgoing</td>
+                                        <td style="padding-left:10px">@((selectedQueueInfo.Counters.DeliverPerSecond + selectedQueueInfo.Counters.RedeliverPerSecond).ToString("N0"))</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Deliver</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.DeliverPerSecond.ToString("N0")) (Outgoing)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Redeliver</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.RedeliverPerSecond.ToString("N0")) (Outgoing)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Ack</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.AckPerSecond.ToString("N0"))</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Nack</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.NackPerSecond.ToString("N0"))</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-4">
+                                <table>
+                                    <tr>
+                                        <td style="border-right:1px solid gray;">&nbsp;</td>
+                                        <td style="font-weight:bold; padding-left:10px">Total Messages</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Published</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.PubCounter.ToString("N0"))</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Delivered</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.DeliverCounter.ToString("N0"))</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Redelivered</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.RedeliverCounter.ToString("N0"))</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Acked</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.AckCounter.ToString("N0"))</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Nacked</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.NackCounter.ToString("N0"))</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="panelsStayOpen-headingConsumers" style="height:35px">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseConsumers" aria-expanded="false" aria-controls="panelsStayOpen-collapseConsumers" style="height:35px">
+                        Consumers
+                    </button>
+                </h2>
+                <div id="panelsStayOpen-collapseConsumers" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingConsumers">
+                    <div class="accordion-body">
+                        <div class="accordion" id="accordionPanelsStayOpenExample">
+
+                            @foreach (var consumer in selectedQueueInfo.Consumers.OrderBy(x => x.Name))
+                            {
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="panelsStayOpen-heading@(selectedQueueInfo.Consumers.IndexOf(consumer))">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse@(selectedQueueInfo.Consumers.IndexOf(consumer))" aria-expanded="false" aria-controls="panelsStayOpen-collapse@(selectedQueueInfo.Consumers.IndexOf(consumer))"
+                                        style="@(consumer.Counters.Throttled ? "background-color: rgba(255, 0, 0, 0.1)" : "background-color: rgba(0, 255, 0, 0.1)");">
+                                            <pre style="margin:0px; margin-right:15px; font-size:10px;">[<b>Type:</b> @consumer.ConsumerType]</pre>
+                                            @consumer.Name
+                                            <span class="badge bg-danger" style="position:absolute; right:50px; visibility: @(consumer.Counters.Throttled ? "visible" : "hidden");">This Consumer is Being Throttled</span>
+                                        </button>
+                                    </h2>
+                                    <div id="panelsStayOpen-collapse@(selectedQueueInfo.Consumers.IndexOf(consumer))" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading@(selectedQueueInfo.Consumers.IndexOf(consumer))">
+                                        <div class="accordion-body">
+                                            <div class="table-responsive">
+                                                <table class="table" style="border-bottom:2px solid gray">
+                                                    <thead>
+                                                        <tr>
+                                                            <th colspan="2" class="text-center" style="border-left:2px solid gray;border-right:2px solid gray;border-top:2px solid gray;">Consumer information</th>
+                                                            <th colspan="4" class="text-center" style="border-left:2px solid gray;border-right:2px solid gray;border-top:2px solid gray;">Messages per second</th>
+                                                            <th colspan="3" class="text-center" style="border-left:2px solid gray;border-right:2px solid gray;border-top:2px solid gray;">Total messages</th>
+                                                        </tr>
+                                                        <tr>
+                                                            <th scope="col" class="text-center" style="border-left:2px solid gray;">@nameof(Consumer.Ip)</th>
+                                                            <th scope="col" class="text-center" style="border-right:2px solid gray;">@nameof(Consumer.Host)</th>
+
+                                                            <th scope="col" class="text-right">Deliver</th>
+                                                            <th scope="col" class="text-right">Ack</th>
+                                                            <th scope="col" class="text-right">Nack</th>
+                                                            <th scope="col" class="text-right" style="border-right:2px solid gray;">Avg. Consume (ms)</th>
+
+                                                            <th scope="col" class="text-right">Deliver</th>
+                                                            <th scope="col" class="text-right">Ack</th>
+                                                            <th scope="col" class="text-right" style="border-right:2px solid gray;">Nack</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td scope="col" class="text-center" style="border-left:2px solid gray;">@consumer.Ip</td>
+                                                            <td scope="col" class="text-center" style="border-right:2px solid gray;">@consumer.Host</td>
+
+                                                            <td scope="col" class="text-right">@consumer.Counters.DeliverPerSecond.ToString("N0")</td>
+                                                            <td scope="col" class="text-right">@consumer.Counters.AckPerSecond.ToString("N0")</td>
+                                                            <td scope="col" class="text-right">@consumer.Counters.NackPerSecond.ToString("N0")</td>
+                                                            <td scope="col" class="text-right" style="border-right:2px solid gray;">@consumer.Counters.AvgConsumptionMs.ToString("N5")</td>
+
+                                                            <td scope="col" class="text-right">@consumer.Counters.DeliverCounter.ToString("N0")</td>
+                                                            <td scope="col" class="text-right">@consumer.Counters.AckCounter.ToString("N0")</td>
+                                                            <td scope="col" class="text-right" style="border-right:2px solid gray;">@consumer.Counters.NackCounter.ToString("N0")</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="panelsStayOpen-headingTwo" style="height:35px">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="false" aria-controls="panelsStayOpen-collapseTwo" style="height:35px">
+                        Peek Message
+                    </button>
+                </h2>
+                <div id="panelsStayOpen-collapseTwo" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingTwo">
+                    <div class="accordion-body">
+                        <button type="button" class="btn btn-primary" @onclick="PeekMessage">Peek Message</button>
+                        <br />
+                        <br />
+                        @if (peekLoading)
+                        {
+                            <pre style="border:1px solid gray; text-align:center; margin-bottom:0px">Loading...</pre>
+                        }
+                        else if (peekMessage is not null)
+                        {
+                            <div class="col-md-12">
+                                <table>
+                                    <tr>
+                                        <td style="border-right:1px solid gray;">&nbsp;</td>
+                                        <td style="font-weight:bold; padding-left:10px">Info</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Is Retrying?</td>
+                                        <td style="padding-left:10px">@(peekMessage.Retrying)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Retry Count</td>
+                                        <td style="padding-left:10px">@(peekMessage.RetryCount)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Message</td>
+                                        <td style="padding-left:10px"><pre style="border:1px solid gray; margin-bottom:0px; width:100%">@peekMessage.Message</pre></td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                        }
+                        else
+                        {
+                            <pre style="border:1px solid gray; text-align:center; margin-bottom:0px">No Content</pre>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br />
+
+    }
+</div>
+
+
+
+@if (selectedQueueInfo is not null && false)
+{
+    <br />
+    <hr />
+
+    <div style="float:left; width:250px;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Info</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Name:</td>
+                    <td>@selectedQueueInfo.Name</td>
+                </tr>
+                <tr>
+                    <td>Active Consumers:</td>
+                    <td>@selectedQueueInfo.ConsumersCount</td>
+                </tr>
+                <tr>
+                    <td>ETA:</td>
+                    <td>?</td>
+                </tr>
+                <tr>
+                    <td>Pending Items:</td>
+                    <td>@(selectedQueueInfo.MainChannelCount + selectedQueueInfo.RetryChannelCount)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+}
+
+@code {
+    private string? queueName;
+    private bool peekLoading = false;
+    private QueueItem? peekMessage = null;
+    private QueueInfo? selectedQueueInfo;
+    private Timer? _timer;
+
+    protected override void OnInitialized()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var queryStrings = QueryHelpers.ParseQuery(uri.Query);
+        if(queryStrings.TryGetValue("queueName", out var queue))
+        {
+            queueName = queue;
+        }
+        else
+        {
+            Navigation.NavigateTo("queues");
+        }
+        base.OnInitialized();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (string.IsNullOrWhiteSpace(queueName))
+            {
+                Navigation.NavigateTo("queues");
+                return;
+            }
+
+            _timer = new Timer(_ => InvokeAsync(UpdateData).ContinueWith(_ => StateHasChanged()), null, 100, 1000);
+        }
+        base.OnAfterRender(firstRender);
+    }
+
+    SemaphoreSlim sm = new SemaphoreSlim(1);
+    private async Task UpdateData()
+    {
+        if (await sm.WaitAsync(10))
+        {
+            try
+            {
+                selectedQueueInfo = await Http.GetFromJsonAsync<QueueInfo?>($"InMemoryQueue/GetQueueData?queueName={queueName}");
+            }
+            catch
+            {
+                
+            }
+            sm.Release();
+        }
+    }
+
+    private async Task PeekMessage()
+    {
+        peekLoading = true;
+        peekMessage = null;
+        try
+        {
+            peekMessage = (await Http.GetFromJsonAsync<QueueItemWrapper?>($"InMemoryQueue/PeekMessage?queueName={queueName}"))?.Item;
+        }
+        catch
+        {
+            
+        }
+        peekLoading = false;
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+}
