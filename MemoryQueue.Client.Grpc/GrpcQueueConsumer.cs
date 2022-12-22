@@ -110,7 +110,7 @@ namespace MemoryQueue.Client.Grpc
 
                 try
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(20), token);
+                    await Task.Delay(TimeSpan.FromSeconds(20), token).ConfigureAwait(false);
                 }
                 catch (Exception)
                 {

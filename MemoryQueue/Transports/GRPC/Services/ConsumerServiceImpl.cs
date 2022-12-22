@@ -173,11 +173,9 @@ namespace MemoryQueue.Transports.GRPC.Services
         /// <param name="requestStream"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<bool> WriteAndAckAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, IAsyncStreamReader<QueueItemAck> requestStream, ILogger logger, CancellationToken cancellationToken)
-        {
-            return await WriteItemAsync(item, responseStream, logger, cancellationToken)
-                && await ReadAckAsync(requestStream, logger, cancellationToken);
-        }
+        private async Task<bool> WriteAndAckAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, IAsyncStreamReader<QueueItemAck> requestStream, ILogger logger, CancellationToken cancellationToken) =>
+            await WriteItemAsync(item, responseStream, logger, cancellationToken).ConfigureAwait(false)
+                && await ReadAckAsync(requestStream, logger, cancellationToken).ConfigureAwait(false);
 
         /// <summary>
         /// Writes an item into the responseStream
