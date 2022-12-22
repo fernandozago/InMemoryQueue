@@ -10,7 +10,7 @@ using var loggerFactory = LoggerFactory.Create(builder =>
 });
 
 CancellationTokenSource cts = new ();
-var queueConsumer = new GrpcQueueConsumer("127.0.0.1:5000", loggerFactory);
+var queueConsumer = new GrpcQueueConsumer("127.0.0.1:1111", loggerFactory, "Default.123");
 var consumer = queueConsumer.Consume("MyConsoleConsumer", CallBack, cts.Token);
 var producer = Task.Run(async () =>
 {
@@ -40,5 +40,5 @@ await consumer;
 static Task<bool> CallBack(QueueItemReply queueItem, CancellationToken arg2)
 {
     Console.WriteLine(queueItem);
-    return Task.FromResult(true);
+    return Task.FromResult(false);
 }

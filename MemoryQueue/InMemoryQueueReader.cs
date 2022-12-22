@@ -84,6 +84,7 @@ namespace MemoryQueue
         private bool TryRead([MaybeNullWhen(false)] out QueueItem queueItem) =>
             _retryReader.TryRead(out queueItem) || _mainReader.TryRead(out queueItem);
 
+        private long _notAckedStreak = 0;
         /// <summary>
         /// Publish an message to some consumer and awaits for the ACK(true)/NACK(false) result
         /// </summary>
@@ -95,14 +96,24 @@ namespace MemoryQueue
             bool isRetrying = queueItem.Retrying;
             bool isAcked = await _channelCallBack(queueItem).ConfigureAwait(false);
 
+            _counters.UpdateCounters(isRetrying, isAcked, timestamp);
             if (!isAcked)
             {
+                _notAckedStreak++;
                 queueItem.Retrying = true;
                 queueItem.RetryCount++;
                 await _retryWriter.WriteAsync(queueItem).ConfigureAwait(false);
-            }
 
-            _counters.UpdateCounters(isRetrying, isAcked, timestamp);
+                if (_notAckedStreak >= 10)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(.5));
+                    _notAckedStreak = 0;
+                }
+            }
+            else
+            {
+                _notAckedStreak = 0;
+            }
         }
     }
 

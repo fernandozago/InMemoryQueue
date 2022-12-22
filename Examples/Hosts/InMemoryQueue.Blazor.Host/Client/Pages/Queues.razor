@@ -4,44 +4,48 @@
 
 <PageTitle>InMemory Queues</PageTitle>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th scope="col" class="table-light text-center" colspan="3">Overview</th>
-            <th scope="col" colspan="1" class="table-info text-center">Messages</th>
-            <th scope="col" colspan="5" class="table-success  text-center">Message rates</th>
-        </tr>
-        <tr>
-            <th scope="col" class="table-light">Name</th>
-            <th scope="col" class="table-light text-center">Consumers</th>
-            <th scope="col" class="table-light text-center">State</th>
-            <th scope="col" class="table-info text-center">Ready</th>
-            <th scope="col" class="table-success text-right">Incoming</th>
-            <th scope="col" class="table-success text-right">Deliver / Redeliver</th>
-            <th scope="col" class="table-success text-right">Ack</th>
-            <th scope="col" class="table-success text-right">Nack</th>
-            <th scope="col" class="table-success text-right">Avg. Consume</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var queue in _activeQueues ?? Array.Empty<Queue>())
-        {
+<div class="table-responsive">
+    <table class="table">
+        <thead>
             <tr>
-                <td><NavLink class="nav-link" href="@($"dashboard/{queue.Name}")">@queue.Name</NavLink></td>
-                <td class="text-center">@queue.ConsumersCount.ToString("N0")</td>
-                <td class="text-center">@GetState(queue)</td>
-                <td class="text-center">@queue.QueueCount.ToString("N0")</td>
-                <td class="text-right">@queue.Counters.PubPerSecond.ToString("N0")</td>
-                <td class="text-right">@((queue.Counters.DeliverPerSecond + queue.Counters.RedeliverPerSecond).ToString("N0"))</td>
-                <td class="text-right">@queue.Counters.AckPerSecond.ToString("N0")</td>
-                <td class="text-right">@queue.Counters.NackPerSecond.ToString("N0")</td>
-                <td class="text-right">@queue.Counters.AvgAckTimeMilliseconds.ToString("N5") ms</td>
+                <th scope="col" class="table-light text-center" colspan="3">Overview</th>
+                <th scope="col" colspan="1" class="table-info text-center">Messages</th>
+                <th scope="col" colspan="6" class="table-success  text-center">Message rates</th>
             </tr>
-        }
-    </tbody>
-    <tbody>
-    </tbody>
-</table>
+            <tr>
+                <th scope="col" class="table-light">Name</th>
+                <th scope="col" class="table-light text-center">Consumers</th>
+                <th scope="col" class="table-light text-center">State</th>
+                <th scope="col" class="table-info text-center">Ready</th>
+                <th scope="col" class="table-success text-right">Incoming</th>
+                <th scope="col" class="table-success text-right">Deliver</th>
+                <th scope="col" class="table-success text-right">Redeliver</th>
+                <th scope="col" class="table-success text-right">Ack</th>
+                <th scope="col" class="table-success text-right">Nack</th>
+                <th scope="col" class="table-success text-right">Avg. Consume</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var queue in _activeQueues ?? Array.Empty<Queue>())
+            {
+                <tr>
+                    <td><NavLink class="nav-link" href="@($"dashboard/{queue.Name}")">@queue.Name</NavLink></td>
+                    <td class="text-center">@queue.ConsumersCount.ToString("N0")</td>
+                    <td class="text-center"><QueueStateBadge Queue="queue" /></td>
+                    <td class="text-center">@queue.QueueCount.ToString("N0")</td>
+                    <td class="text-right">@queue.Counters.PubPerSecond.ToString("N0")</td>
+                    <td class="text-right">@(queue.Counters.DeliverPerSecond.ToString("N0"))</td>
+                    <td class="text-right">@(queue.Counters.RedeliverPerSecond.ToString("N0"))</td>
+                    <td class="text-right">@queue.Counters.AckPerSecond.ToString("N0")</td>
+                    <td class="text-right">@queue.Counters.NackPerSecond.ToString("N0")</td>
+                    <td class="text-right">@queue.Counters.AvgAckTimeMilliseconds.ToString("N5") ms</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+
 @code {
     private Queue[]? _activeQueues = null;
     private Timer? _timer;
@@ -54,22 +58,6 @@
 
         }
         base.OnAfterRender(firstRender);
-    }
-
-    private string GetState(Queue queue)
-    {
-        if (queue.Counters.PubPerSecond == 0
-            && queue.Counters.NackPerSecond == 0
-            && queue.Counters.AckPerSecond == 0
-            && queue.Counters.DeliverPerSecond == 0
-            && queue.Counters.RedeliverPerSecond == 0)
-        {
-            return "Idle";
-        }
-        else
-        {
-            return "Processing";
-        }
     }
 
     SemaphoreSlim sm = new SemaphoreSlim(1);

@@ -7,7 +7,7 @@ public enum QueueConsumerType
     //WebSocket = 3,
 }
 
-public class Queue
+public record Queue
 {
     public string Name { get; set; }
     public int QueueCount { get; set; }
@@ -15,7 +15,7 @@ public class Queue
     public Counters Counters { get; set; }
 }
 
-public class Consumer
+public record Consumer
 {
     public QueueConsumerType ConsumerType { get; set; }
     public string Id { get; set; }
@@ -26,7 +26,7 @@ public class Consumer
     public ConsumerCounters Counters { get; set; }
 }
 
-public class ConsumerCounters
+public record ConsumerCounters
 {
     public long AckCounter { get; set; }
     public long AckPerSecond { get; set; }
@@ -37,7 +37,7 @@ public class ConsumerCounters
     public double AvgAckTimeMilliseconds { get; set; }
 }
 
-public class Counters
+public record Counters
 {
     public long AckCounter { get; set; }
     public long AckPerSecond { get; set; }
@@ -52,7 +52,7 @@ public class Counters
     public double AvgAckTimeMilliseconds { get; set; }
 }
 
-public class QueueInfo
+public record QueueInfo
 {
     public string Name { get; set; }
     public Counters Counters { get; set; }
@@ -62,12 +62,12 @@ public class QueueInfo
     public List<Consumer> Consumers { get; set; }
 }
 
-public class QueueItemWrapper
+public record QueueItemWrapper
 {
     public QueueItem? Item { get; set; }
 }
 
-public class QueueItem
+public record QueueItem
 {
     public string Message { get; set; }
     public bool Retrying { get; set; }
