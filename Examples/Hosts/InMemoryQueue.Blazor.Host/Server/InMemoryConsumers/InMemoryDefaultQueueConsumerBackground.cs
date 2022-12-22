@@ -1,16 +1,14 @@
 ﻿using MemoryQueue;
-using MemoryQueue.Models;
 using MemoryQueue.Transports.InMemoryConsumer;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace InMemoryQueue.Blazor.Host.Grpc.InMemoryConsumers;
 
-public class InMemoryDefaultQueueConsumerBackground : BackgroundService
+public class InMemoryConsumerBackgroundService : BackgroundService
 {
     private readonly InMemoryQueueManager _inMemoryQueueManager;
-    private readonly ILogger<InMemoryDefaultQueueConsumerBackground> _logger;
+    private readonly ILogger<InMemoryConsumerBackgroundService> _logger;
 
-    public InMemoryDefaultQueueConsumerBackground(InMemoryQueueManager inMemoryQueueManager, ILogger<InMemoryDefaultQueueConsumerBackground> logger)
+    public InMemoryConsumerBackgroundService(InMemoryQueueManager inMemoryQueueManager, ILogger<InMemoryConsumerBackgroundService> logger)
     {
         _inMemoryQueueManager = inMemoryQueueManager;
         _logger = logger;
@@ -24,12 +22,16 @@ public class InMemoryDefaultQueueConsumerBackground : BackgroundService
             Publisher(queueName1, stoppingToken),
             Consumer("InMemory-Consumer-0", queueName1, true, stoppingToken),
             Consumer("InMemory-Consumer-1", queueName1, false, stoppingToken),
+            ConsumerMayNackSome("InMemory-Consumer-RandomNack", queueName1, stoppingToken),
 
             Publisher(queueName2, stoppingToken),
             Consumer("InMemory-Consumer-0", queueName2, true, stoppingToken),
             Consumer("InMemory-Consumer-1", queueName2, true, stoppingToken)
         );
     }
+
+    private Task ConsumerMayNackSome(string consumerName, string queueName, CancellationToken token) =>
+        _inMemoryQueueManager.CreateInMemoryConsumer(i => Task.FromResult(Random.Shared.Next(1, 10) >= 3), consumerName, queueName, token);
 
     private async Task Publisher(string queueName, CancellationToken token)
     {

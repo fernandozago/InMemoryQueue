@@ -18,6 +18,7 @@ namespace MemoryQueue
         #endregion
 
         private readonly ILogger _logger;
+        private readonly IInMemoryQueue _refQueue;
         private readonly Task _consumerTask;
         private readonly ReaderConsumptionCounter _counters;
         private readonly ChannelReader<QueueItem> _mainReader;
@@ -27,14 +28,15 @@ namespace MemoryQueue
 
         internal Task Completed => _consumerTask;
 
-        public InMemoryQueueReader(string queueName, QueueConsumerInfo consumerInfo, QueueConsumptionCounter counters, Channel<QueueItem> mainChannel, Channel<QueueItem> retryChannel, Func<QueueItem, Task<bool>> callBack, ILoggerFactory loggerFactory, CancellationToken token)
+        public InMemoryQueueReader(InMemoryQueue inMemoryQueue, QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> callBack, CancellationToken token)
         {
-            _logger = loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, queueName, consumerInfo.ConsumerType, consumerInfo.Name));
-            _counters = new ReaderConsumptionCounter(counters);
+            _logger = inMemoryQueue._loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, inMemoryQueue.Name, consumerInfo.ConsumerType, consumerInfo.Name));
+            _refQueue = inMemoryQueue;
+            _counters = new ReaderConsumptionCounter(inMemoryQueue.Counters);
             consumerInfo.Counters = _counters;
-            _mainReader = mainChannel.Reader;
-            _retryReader = retryChannel.Reader;
-            _retryWriter = retryChannel.Writer;
+            _mainReader = inMemoryQueue._mainChannel.Reader;
+            _retryReader = inMemoryQueue._retryChannel.Reader;
+            _retryWriter = inMemoryQueue._retryChannel.Writer;
             _channelCallBack = callBack;
 
             _consumerTask = ChannelReaderCore(token).ContinueWith(_ => _counters.Dispose());
@@ -86,7 +88,12 @@ namespace MemoryQueue
             _retryReader.TryRead(out queueItem) || _mainReader.TryRead(out queueItem);
 
 
-        private long _notAckedStreak = 0;
+        private int _notAckedStreak = 0;
+        private int NotAckedStreak
+        {
+            get => _notAckedStreak;
+            set => _notAckedStreak = Math.Min(20, Math.Max(value, 0));
+        }
         /// <summary>
         /// Publish an message to some consumer and awaits for the ACK(true)/NACK(false) result
         /// </summary>
@@ -103,35 +110,29 @@ namespace MemoryQueue
                 queueItem.Retrying = true;
                 queueItem.RetryCount++;
                 await _retryWriter.WriteAsync(queueItem).ConfigureAwait(false);
-                await NotAckedRateLimiter(token).ConfigureAwait(false);
+
+                NotAckedStreak++;
+                if (_refQueue.ConsumersCount > 1 && NotAckedStreak > 1)
+                {
+                    _counters.SetThrottled(true);
+                    await NotAckedRateLimiter(NotAckedStreak, token).ConfigureAwait(false);
+                }
             }
             else
             {
-                _notAckedStreak = 0;
-                _counters.SetThrottled(false);
+                NotAckedStreak--;
+                if (NotAckedStreak == 0)
+                {
+                    _counters.SetThrottled(false);
+                }
             }
         }
 
-        private async ValueTask NotAckedRateLimiter(CancellationToken token)
+        private static async ValueTask NotAckedRateLimiter(int nackStreak, CancellationToken token)
         {           
-            //First NACK -- Dont wait
-            if (_notAckedStreak == 0)
-            {
-                _notAckedStreak++;
-                return;
-            }
-
-            int waitFor = 500;
-            if (_notAckedStreak > 0 && _notAckedStreak < 10)
-            {
-                waitFor = (int)_notAckedStreak * 50;
-                _notAckedStreak++;
-            }
-
-            _counters.SetThrottled(true);
             try
             {
-                await Task.Delay(waitFor, token).ConfigureAwait(false);
+                await Task.Delay(nackStreak * 25, token).ConfigureAwait(false);
             }
             catch
             {

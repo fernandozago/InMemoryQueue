@@ -20,9 +20,9 @@ namespace MemoryQueue
 
         #region Fields
         private readonly ILogger _logger;
-        private readonly ILoggerFactory _loggerFactory;
-        private readonly Channel<QueueItem> _retryChannel;
-        private readonly Channel<QueueItem> _mainChannel;
+        internal readonly ILoggerFactory _loggerFactory;
+        internal readonly Channel<QueueItem> _retryChannel;
+        internal readonly Channel<QueueItem> _mainChannel;
         private readonly ConcurrentDictionary<InMemoryQueueReader, QueueConsumerInfo> _readers = new ();
         #endregion
 
@@ -56,7 +56,7 @@ namespace MemoryQueue
 
         internal InMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken cancellationToken)
         {
-            var reader = new InMemoryQueueReader(Name, consumerInfo, Counters, _mainChannel, _retryChannel, channelCallBack, _loggerFactory, cancellationToken);
+            var reader = new InMemoryQueueReader(this, consumerInfo, channelCallBack, cancellationToken);
             _readers.TryAdd(reader, consumerInfo);
             _logger.LogInformation(LOGMSG_READER_ADDED, consumerInfo);
             return reader;

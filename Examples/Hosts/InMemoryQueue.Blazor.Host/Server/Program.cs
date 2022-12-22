@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<GrpcServer>();
 builder.Services.AddSingleton<InMemoryQueueManager>();
 builder.Services.AddSingleton<ConsumerServiceImpl>();
-builder.Services.AddHostedService<InMemoryDefaultQueueConsumerBackground>();
+builder.Services.AddHostedService<InMemoryConsumerBackgroundService>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
