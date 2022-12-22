@@ -29,7 +29,7 @@
             @foreach (var queue in _activeQueues ?? Array.Empty<Queue>())
             {
                 <tr>
-                    <td><NavLink class="nav-link" href="@($"dashboard/{queue.Name}")">@queue.Name</NavLink></td>
+                    <td><NavLink class="nav-link" href="@($"dashboard?queueName={queue.Name}")">@queue.Name</NavLink></td>
                     <td class="text-center">@queue.ConsumersCount.ToString("N0")</td>
                     <td class="text-center"><QueueStateBadge Queue="queue" /></td>
                     <td class="text-center">@queue.QueueCount.ToString("N0")</td>

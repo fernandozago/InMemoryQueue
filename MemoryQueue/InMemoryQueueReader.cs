@@ -53,7 +53,7 @@ namespace MemoryQueue
                 {
                     if (!token.IsCancellationRequested && TryRead(out var queueItem))
                     {
-                        await DeliverItemAsync(queueItem).ConfigureAwait(false);
+                        await DeliverItemAsync(queueItem, token).ConfigureAwait(false);
                     }
                 }
             }
@@ -91,20 +91,19 @@ namespace MemoryQueue
         /// Publish an message to some consumer and awaits for the ACK(true)/NACK(false) result
         /// </summary>
         /// <param name="queueItem">Message to be sent</param>
-        private async Task DeliverItemAsync(QueueItem queueItem)
+        private async Task DeliverItemAsync(QueueItem queueItem, CancellationToken token)
         {
             var timestamp = Stopwatch.GetTimestamp();
 
-            bool isRetrying = queueItem.Retrying;
             bool isAcked = await _channelCallBack(queueItem).ConfigureAwait(false);
 
-            _counters.UpdateCounters(isRetrying, isAcked, timestamp);
+            _counters.UpdateCounters(queueItem.Retrying, isAcked, timestamp);
             if (!isAcked)
             {
                 queueItem.Retrying = true;
                 queueItem.RetryCount++;
                 await _retryWriter.WriteAsync(queueItem).ConfigureAwait(false);
-                await NotAckedRateLimiter();
+                await NotAckedRateLimiter(token).ConfigureAwait(false);
             }
             else
             {
@@ -113,24 +112,31 @@ namespace MemoryQueue
             }
         }
 
-        private async ValueTask NotAckedRateLimiter()
-        {
-            int waitFor = 500;
-            
+        private async ValueTask NotAckedRateLimiter(CancellationToken token)
+        {           
             //First NACK -- Dont wait
             if (_notAckedStreak == 0)
             {
                 _notAckedStreak++;
                 return;
             }
-            else if (_notAckedStreak > 0 && _notAckedStreak < 10)
+
+            int waitFor = 500;
+            if (_notAckedStreak > 0 && _notAckedStreak < 10)
             {
                 waitFor = (int)_notAckedStreak * 50;
                 _notAckedStreak++;
             }
 
             _counters.SetThrottled(true);
-            await Task.Delay(waitFor);
+            try
+            {
+                await Task.Delay(waitFor, token).ConfigureAwait(false);
+            }
+            catch
+            {
+                //
+            }
         }
     }
 

@@ -1,6 +1,8 @@
-﻿@page "/dashboard/{queueName}"
+﻿@page "/dashboard"
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@using Microsoft.AspNetCore.WebUtilities;
+@using Microsoft.Extensions.Primitives;
 @implements IDisposable
 
 <PageTitle>InMemory Queue Dashboard</PageTitle>
@@ -9,7 +11,7 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="queues">Queues</a></li>
-            <li class="breadcrumb-item active" aria-current="page">@QueueName</li>
+            <li class="breadcrumb-item active" aria-current="page">@queueName</li>
         </ol>
     </nav>
 
@@ -136,10 +138,11 @@
                             {
                                 <div class="accordion-item">
                                     <h2 class="accordion-header" id="panelsStayOpen-heading@(selectedQueueInfo.Consumers.IndexOf(consumer))">
-                                        <pre style="margin:0px; margin-left:15px; padding:5px; padding-top:10px; font-size:10px;">[<b>Type:</b> @consumer.ConsumerType]</pre>
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse@(selectedQueueInfo.Consumers.IndexOf(consumer))" aria-expanded="false" aria-controls="panelsStayOpen-collapse@(selectedQueueInfo.Consumers.IndexOf(consumer))">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse@(selectedQueueInfo.Consumers.IndexOf(consumer))" aria-expanded="false" aria-controls="panelsStayOpen-collapse@(selectedQueueInfo.Consumers.IndexOf(consumer))"
+                                        style="@(consumer.Counters.Throttled ? "background-color: rgba(255, 0, 0, 0.1)" : "background-color: rgba(0, 255, 0, 0.1)");">
+                                            <pre style="margin:0px; margin-right:15px; font-size:10px;">[<b>Type:</b> @consumer.ConsumerType]</pre>
                                             @consumer.Name
-                                            <span class="badge bg-danger" style="position:absolute; right:45px; visibility: @(consumer.Counters.Throttled ? "visible" : "hidden"); ">Throttled</span>
+                                            <span class="badge bg-danger" style="position:absolute; right:50px; visibility: @(consumer.Counters.Throttled ? "visible" : "hidden");">This Consumer is Being Throttled</span>
                                         </button>
                                     </h2>
                                     <div id="panelsStayOpen-collapse@(selectedQueueInfo.Consumers.IndexOf(consumer))" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading@(selectedQueueInfo.Consumers.IndexOf(consumer))">
@@ -282,19 +285,32 @@
 }
 
 @code {
-    [Parameter]
-    public string? QueueName { get; set; }
-
+    private string? queueName;
     private bool peekLoading = false;
     private QueueItem? peekMessage = null;
     private QueueInfo? selectedQueueInfo;
     private Timer? _timer;
 
+    protected override void OnInitialized()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var queryStrings = QueryHelpers.ParseQuery(uri.Query);
+        if(queryStrings.TryGetValue("queueName", out var queue))
+        {
+            queueName = queue;
+        }
+        else
+        {
+            Navigation.NavigateTo("queues");
+        }
+        base.OnInitialized();
+    }
+
     protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
         {
-            if (string.IsNullOrWhiteSpace(QueueName))
+            if (string.IsNullOrWhiteSpace(queueName))
             {
                 Navigation.NavigateTo("queues");
                 return;
@@ -312,7 +328,7 @@
         {
             try
             {
-                selectedQueueInfo = await Http.GetFromJsonAsync<QueueInfo?>($"InMemoryQueue/GetQueueData?queueName={QueueName}");
+                selectedQueueInfo = await Http.GetFromJsonAsync<QueueInfo?>($"InMemoryQueue/GetQueueData?queueName={queueName}");
             }
             catch
             {
@@ -328,7 +344,7 @@
         peekMessage = null;
         try
         {
-            peekMessage = (await Http.GetFromJsonAsync<QueueItemWrapper?>($"InMemoryQueue/PeekMessage?queueName={QueueName}"))?.Item;
+            peekMessage = (await Http.GetFromJsonAsync<QueueItemWrapper?>($"InMemoryQueue/PeekMessage?queueName={queueName}"))?.Item;
         }
         catch
         {
