@@ -1,5 +1,6 @@
 ﻿@page "/queues"
 @inject HttpClient Http
+@implements IDisposable
 
 <PageTitle>InMemory Queues</PageTitle>
 
@@ -89,7 +90,15 @@
         }
         catch
         {
-            //
+        //
+        }
+    }
+
+    public void Dispose()
+    {
+        using (_cts)
+        {
+            _cts?.Cancel();
         }
     }
 }
