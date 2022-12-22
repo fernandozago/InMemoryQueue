@@ -7,6 +7,14 @@ public enum QueueConsumerType
     //WebSocket = 3,
 }
 
+public class Queue
+{
+    public string Name { get; set; }
+    public int QueueCount { get; set; }
+    public int ConsumersCount { get; set; }
+    public Counters Counters { get; set; }
+}
+
 public class Consumer
 {
     public QueueConsumerType ConsumerType { get; set; }

@@ -40,11 +40,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Console.Host", "Examples\Ho
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Blazor", "Blazor", "{D1E6E952-2151-4D10-AD03-EDEEF1D701D6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InMemoryQueue.Blazor.Host.Server", "Examples\Hosts\InMemoryQueue.Blazor.Host\Server\InMemoryQueue.Blazor.Host.Server.csproj", "{FE526428-F2C3-4751-A504-807B7DDFEF23}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InMemoryQueue.Blazor.Host.Server", "Examples\Hosts\InMemoryQueue.Blazor.Host\Server\InMemoryQueue.Blazor.Host.Server.csproj", "{FE526428-F2C3-4751-A504-807B7DDFEF23}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InMemoryQueue.Blazor.Host.Client", "Examples\Hosts\InMemoryQueue.Blazor.Host\Client\InMemoryQueue.Blazor.Host.Client.csproj", "{B02319A6-6347-4C6E-80B4-3AFFB346BD58}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InMemoryQueue.Blazor.Host.Client", "Examples\Hosts\InMemoryQueue.Blazor.Host\Client\InMemoryQueue.Blazor.Host.Client.csproj", "{B02319A6-6347-4C6E-80B4-3AFFB346BD58}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InMemoryQueue.Blazor.Host.Shared", "Examples\Hosts\InMemoryQueue.Blazor.Host\Shared\InMemoryQueue.Blazor.Host.Shared.csproj", "{CA05EF53-6134-4E58-ACE7-BEA23227AE73}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InMemoryQueue.Blazor.Host.Shared", "Examples\Hosts\InMemoryQueue.Blazor.Host\Shared\InMemoryQueue.Blazor.Host.Shared.csproj", "{CA05EF53-6134-4E58-ACE7-BEA23227AE73}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

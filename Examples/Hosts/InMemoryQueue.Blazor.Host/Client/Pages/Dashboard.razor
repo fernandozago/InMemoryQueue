@@ -1,31 +1,17 @@
-﻿@page "/dashboard"
+﻿@page "/dashboard/{queueName}"
 @inject HttpClient Http
+@inject NavigationManager Navigation
 @implements IDisposable
 
 <PageTitle>InMemory Queue Dashboard</PageTitle>
 
 <div class="container-fluid px-4">
-    <h1 class="mt-4">InMemory Queue Dashboard</h1>
-    <ol class="breadcrumb mb-4">
-        <li class="breadcrumb-item active">Dashboard</li>
-    </ol>
-    <div class="row">
-        <div class="col-md-1">
-            <button type="button" class="btn btn-primary" @onclick="Refresh">Refresh</button>
-        </div>
-        <div class="col-md-3">
-            <select class="form-select" @bind=SelectedQueue aria-label="Select Queue">
-                <option selected value="@NONE_SELECTED">Select Queue</option>
-                @if (activeQueues != null)
-                {
-                    @foreach (var cnt in activeQueues)
-                    {
-                        <option value="@cnt" selected="@(selectedQueue == cnt)">@cnt</option>
-                    }
-                }
-            </select>
-        </div>
-    </div>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="queues">Queues</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@QueueName</li>
+        </ol>
+    </nav>
 
     @if (selectedQueueInfo is not null)
     {
@@ -297,6 +283,8 @@
 @code {
     private const string NONE_SELECTED = "*None*";
 
+    [Parameter]
+    public string? QueueName { get; set; }
 
     public string? SelectedQueue
     {
@@ -323,35 +311,24 @@
     {
         if (firstRender)
         {
+            if (string.IsNullOrWhiteSpace(QueueName))
+            {
+                Navigation.NavigateTo("queues");
+                return;
+            }
+
+            selectedQueue = QueueName;
             cts = new CancellationTokenSource();
             _backgroundTask = Task.Run(async () =>
             {
                 while (!cts.IsCancellationRequested)
                 {
-                    await Task.Delay(1000);
                     await UpdateData();
+                    await Task.Delay(1000);
                 }
             });
         }
         base.OnAfterRender(firstRender);
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        await Refresh();
-    }
-
-    private async Task Refresh()
-    {
-        activeQueues = null;
-        try
-        {
-            activeQueues = (await Http.GetFromJsonAsync<string[]?>("InMemoryQueue/GetActiveQueues"))?.Order().ToArray();
-        }
-        catch
-        {
-        //
-        }
     }
 
     private async Task UpdateData()
