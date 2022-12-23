@@ -1,8 +1,8 @@
 ﻿namespace MemoryQueue.Models
 {
-    public sealed record QueueItem
+    public sealed class QueueItem
     {
-        required public string Message { get; set; }
+        public string Message { get; set; }
         public bool Retrying { get; set; }
         public int RetryCount { get; set; }
     }

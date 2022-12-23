@@ -1,9 +1,8 @@
 ﻿using MemoryQueue.Counters;
-using MemoryQueue.Transports.GRPC;
 
 namespace MemoryQueue.Models
 {
-    public sealed record QueueConsumerInfo
+    public sealed class QueueConsumerInfo
     {
         public QueueConsumerInfo(QueueConsumerType consumerType)
         {
@@ -13,10 +12,10 @@ namespace MemoryQueue.Models
         public ReaderConsumptionCounter? Counters { get; set; }
         public QueueConsumerType ConsumerType { get; private set; }
 
-        required public string Id { get; set; }
-        required public string Name { get; set; }
-        required public string Ip { get; set; }
-        required public string Host { get; set; }
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Ip { get; set; }
+        public string Host { get; set; }
 
     }
 }

@@ -1,8 +1,8 @@
 ﻿using System.Collections.Concurrent;
 
-namespace MemoryQueue.Extensions
+namespace MemoryQueue.Models.Extensions
 {
-    internal static class QueueNameHashesGenerator
+    public static class QueueNameHashesGenerator
     {
         private static readonly ConcurrentDictionary<string, int> _cachedHashes = new ();
         private static readonly object _locker = new ();
@@ -12,7 +12,7 @@ namespace MemoryQueue.Extensions
         /// </summary>
         /// <param name="queueName"></param>
         /// <returns></returns>
-        internal static int GenerateHash(string queueName)
+        public static int GenerateHash(string queueName)
         {
             if (_cachedHashes.TryGetValue(queueName.ToUpper(), out int hash))
             {

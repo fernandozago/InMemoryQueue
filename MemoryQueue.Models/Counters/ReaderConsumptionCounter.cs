@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using MemoryQueue.Models.Utils;
+using System.Diagnostics;
+using System.Threading;
 
 namespace MemoryQueue.Counters;
 
@@ -40,7 +42,7 @@ public sealed class ReaderConsumptionCounter
         _queueCounter = queueCounter;
     }
 
-    internal void SetThrottled(bool throttled)
+    public void SetThrottled(bool throttled)
     {
         if (_throttled != throttled)
         {
@@ -48,7 +50,7 @@ public sealed class ReaderConsumptionCounter
         }
     }
 
-    internal void UpdateCounters(bool isRedeliver, bool processed, long timestamp)
+    public void UpdateCounters(bool isRedeliver, bool processed, long timestamp)
     {
         _queueCounter.UpdateCounters(isRedeliver, processed, timestamp);
 
@@ -63,7 +65,7 @@ public sealed class ReaderConsumptionCounter
             Nack();
         }
 
-        ConsumeAvgTime(Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds);
+        ConsumeAvgTime(StopwatchEx.GetElapsedTime(timestamp).TotalMilliseconds);
     }
 
     private void Ack() =>

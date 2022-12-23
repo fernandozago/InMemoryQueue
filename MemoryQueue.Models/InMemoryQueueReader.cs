@@ -1,14 +1,16 @@
-﻿using Grpc.Core;
-using MemoryQueue.Counters;
+﻿using MemoryQueue.Counters;
 using MemoryQueue.Models;
+using MemoryQueue.Models.Utils;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
+using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using System.Threading.Channels;
+using System.Threading.Tasks;
 
 namespace MemoryQueue
 {
-    internal sealed class InMemoryQueueReader
+    public sealed class InMemoryQueueReader
     {
         #region Constants
         private const string LOGGER_CATEGORY = $"{nameof(InMemoryQueueReader)}.{{0}}.{{1}}-[{{2}}]";
@@ -27,7 +29,7 @@ namespace MemoryQueue
         private readonly ConsumptionConsolidator _consolidator;
         private readonly Func<QueueItem, Task<bool>> _channelCallBack;
 
-        internal Task Completed => _consumerTask;
+        public Task Completed => _consumerTask;
 
         public InMemoryQueueReader(InMemoryQueue inMemoryQueue, QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> callBack, CancellationToken token)
         {
@@ -102,7 +104,7 @@ namespace MemoryQueue
         /// <param name="queueItem">Message to be sent</param>
         private async Task DeliverItemAsync(QueueItem queueItem, CancellationToken token)
         {
-            var timestamp = Stopwatch.GetTimestamp();
+            var timestamp = StopwatchEx.GetTimestamp();
 
             bool isAcked = await _channelCallBack(queueItem).ConfigureAwait(false);
 

@@ -1,13 +1,17 @@
 ﻿using MemoryQueue.Counters;
 using MemoryQueue.Models;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using System.Threading.Channels;
+using System.Threading.Tasks;
 
 namespace MemoryQueue
 {
-    internal sealed class InMemoryQueue : IInMemoryQueue
+    public sealed class InMemoryQueue : IInMemoryQueue
     {
         #region Constants
 
@@ -57,7 +61,7 @@ namespace MemoryQueue
                 SingleReader = false
             });
 
-        internal InMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken cancellationToken)
+        public InMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken cancellationToken)
         {
             var reader = new InMemoryQueueReader(this, consumerInfo, channelCallBack, cancellationToken);
             _readers.TryAdd(reader, consumerInfo);
@@ -65,7 +69,7 @@ namespace MemoryQueue
             return reader;
         }
 
-        internal void RemoveReader(InMemoryQueueReader reader)
+        public void RemoveReader(InMemoryQueueReader reader)
         {
             _readers.TryRemove(reader, out var value);
             _logger.LogInformation(LOGMSG_READER_REMOVED, value);

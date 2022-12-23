@@ -1,6 +1,8 @@
-﻿using MemoryQueue.Extensions;
+﻿using MemoryQueue.Models.Extensions;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace MemoryQueue
@@ -18,8 +20,7 @@ namespace MemoryQueue
         #endregion
 
         
-        [GeneratedRegex("^[a-z0-9-_.]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
-        private static partial Regex QUEUENAME_REGEX_VALIDATOR();
+        private static Regex QUEUENAME_REGEX_VALIDATOR = new Regex("^[a-z0-9-_.]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         private readonly ConcurrentDictionary<int, InMemoryQueue> _queues = new();
         private readonly ILoggerFactory _loggerFactory;
@@ -60,7 +61,7 @@ namespace MemoryQueue
                 _logger.LogTrace(LOGMS_TRACE_USINGDEFAULT_QUEUENAME, DEFAULT_QUEUE_NAME);
                 return DEFAULT_QUEUE_NAME;
             }
-            else if (!QUEUENAME_REGEX_VALIDATOR().IsMatch(name))
+            else if (!QUEUENAME_REGEX_VALIDATOR.IsMatch(name))
             {
                 var ex = new InvalidOperationException(string.Format(EX_INVALID_QUEUE_NAME, name));
                 _logger.LogError(ex, LOGMSG_INVALID_QUEUE_NAME, name);

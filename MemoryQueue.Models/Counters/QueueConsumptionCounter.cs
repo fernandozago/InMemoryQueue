@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using MemoryQueue.Models.Utils;
+using System.Threading;
 
 namespace MemoryQueue.Counters
 {
@@ -43,7 +44,7 @@ namespace MemoryQueue.Counters
 
         public double AvgConsumptionMs => _avgConsumptionMs;
 
-        internal void ResetCounters()
+        public void ResetCounters()
         {
             Interlocked.Exchange(ref _ackCounter, 0);
             Interlocked.Exchange(ref _ackCounter, 0);
@@ -89,7 +90,7 @@ namespace MemoryQueue.Counters
                 Nack();
             }
 
-            ConsumeAvgTime(Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds);
+            ConsumeAvgTime(StopwatchEx.GetElapsedTime(timestamp).TotalMilliseconds);
         }
 
         private void Ack() =>
@@ -98,7 +99,7 @@ namespace MemoryQueue.Counters
         private void Nack() =>
             Interlocked.Increment(ref _nackPerSecond_Counter);
 
-        internal void Publish() =>
+        public void Publish() =>
             Interlocked.Increment(ref _pubPerSecond_Counter);
 
         private void Redelivered() =>

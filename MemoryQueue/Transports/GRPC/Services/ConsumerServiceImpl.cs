@@ -3,7 +3,6 @@ using Grpc.Core;
 using MemoryQueue.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System.Xml.Linq;
 
 namespace MemoryQueue.Transports.GRPC.Services
 {

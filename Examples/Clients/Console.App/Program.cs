@@ -37,8 +37,9 @@ cts.Cancel();
 await consumer;
 
 
-static Task<bool> CallBack(QueueItemReply queueItem, CancellationToken arg2)
+static async Task<bool> CallBack(QueueItemReply queueItem, CancellationToken arg2)
 {
     Console.WriteLine(queueItem);
-    return Task.FromResult(false);
+    await Task.Delay(100);
+    return false;
 }

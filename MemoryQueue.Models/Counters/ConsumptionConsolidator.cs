@@ -1,4 +1,7 @@
-﻿namespace MemoryQueue.Counters;
+﻿using System;
+using System.Threading;
+
+namespace MemoryQueue.Counters;
 
 public sealed class ConsumptionConsolidator : IDisposable
 {
