@@ -1,5 +1,5 @@
 ﻿using MemoryQueue;
-using MemoryQueue.Transports.InMemoryConsumer;
+using MemoryQueue.Models.InMemoryConsumer;
 
 namespace InMemoryQueue.Blazor.Host.Grpc.InMemoryConsumers;
 

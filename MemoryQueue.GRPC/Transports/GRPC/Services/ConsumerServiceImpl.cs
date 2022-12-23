@@ -1,10 +1,10 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using MemoryQueue.Models;
+using MemoryQueue.Transports.GRPC;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace MemoryQueue.Transports.GRPC.Services
+namespace MemoryQueue.Models.GRPC.Services
 {
     public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     {

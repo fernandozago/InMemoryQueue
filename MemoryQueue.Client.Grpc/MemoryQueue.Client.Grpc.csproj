@@ -41,11 +41,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\MemoryQueue.Models\MemoryQueue.Models.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Protobuf Include="..\MemoryQueue\Transports\GRPC\Protos\Consumer.proto" GrpcServices="ClientOnly">
+		<Protobuf Include="..\MemoryQueue.GRPC\Transports\GRPC\Protos\Consumer.proto" GrpcServices="ClientOnly">
 			<Link>Protos\Consumer.proto</Link>
 		</Protobuf>
 	</ItemGroup>

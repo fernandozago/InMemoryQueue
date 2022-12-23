@@ -2,7 +2,7 @@
 using MemoryQueue.Client.Grpc;
 using MemoryQueue.Models;
 using MemoryQueue.Tests.SUTFactory;
-using MemoryQueue.Transports.GRPC.Services;
+using MemoryQueue.Models.GRPC.Services;
 
 namespace MemoryQueue.Tests
 {

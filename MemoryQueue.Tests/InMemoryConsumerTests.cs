@@ -1,6 +1,6 @@
 ﻿using MemoryQueue.Models;
 using MemoryQueue.Tests.SUTFactory;
-using MemoryQueue.Transports.InMemoryConsumer;
+using MemoryQueue.Models.InMemoryConsumer;
 using System.Data;
 
 namespace MemoryQueue.Tests

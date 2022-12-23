@@ -1,4 +1,4 @@
-﻿using MemoryQueue.Transports.GRPC.Services;
+﻿using MemoryQueue.Models.GRPC.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;

@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\MemoryQueue\MemoryQueue.csproj" />
+    <ProjectReference Include="..\..\..\..\MemoryQueue.GRPC\MemoryQueue.GRPC.csproj" />
     <ProjectReference Include="..\Client\InMemoryQueue.Blazor.Host.Client.csproj" />
     <ProjectReference Include="..\Shared\InMemoryQueue.Blazor.Host.Shared.csproj" />
   </ItemGroup>

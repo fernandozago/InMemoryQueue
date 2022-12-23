@@ -1,7 +1,7 @@
 using InMemoryQueue.Blazor.Host.Grpc;
 using InMemoryQueue.Blazor.Host.Grpc.InMemoryConsumers;
 using MemoryQueue;
-using MemoryQueue.Transports.GRPC.Services;
+using MemoryQueue.Models.GRPC.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

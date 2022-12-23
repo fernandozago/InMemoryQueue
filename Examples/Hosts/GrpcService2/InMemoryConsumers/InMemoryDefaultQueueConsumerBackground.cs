@@ -1,6 +1,6 @@
 ﻿using MemoryQueue;
 using MemoryQueue.Models;
-using MemoryQueue.Transports.InMemoryConsumer;
+using MemoryQueue.Models.InMemoryConsumer;
 
 namespace GrpcService2.Services
 {
