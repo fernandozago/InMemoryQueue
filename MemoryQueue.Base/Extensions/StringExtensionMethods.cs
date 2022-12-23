@@ -1,11 +1,11 @@
 ﻿using System.Collections.Concurrent;
 
-namespace MemoryQueue.Models.Extensions
+namespace MemoryQueue.Base.Extensions
 {
     public static class QueueNameHashesGenerator
     {
-        private static readonly ConcurrentDictionary<string, int> _cachedHashes = new ();
-        private static readonly object _locker = new ();
+        private static readonly ConcurrentDictionary<string, int> _cachedHashes = new();
+        private static readonly object _locker = new();
 
         /// <summary>
         /// Generates (or get cached) a stable hashcode from a string
@@ -31,13 +31,13 @@ namespace MemoryQueue.Models.Extensions
 
                             for (int i = 0; i < str.Length && str[i] != '\0'; i += 2)
                             {
-                                hash1 = ((hash1 << 5) + hash1) ^ str[i];
+                                hash1 = (hash1 << 5) + hash1 ^ str[i];
                                 if (i == str.Length - 1 || str[i + 1] == '\0')
                                     break;
-                                hash2 = ((hash2 << 5) + hash2) ^ str[i + 1];
+                                hash2 = (hash2 << 5) + hash2 ^ str[i + 1];
                             }
 
-                            int result = hash1 + (hash2 * 1566083941);
+                            int result = hash1 + hash2 * 1566083941;
                             _cachedHashes.TryAdd(str, result);
                             return result;
                         }

@@ -50,6 +50,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MemoryQueue.Base", "MemoryQ
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{8E9ABC9B-6356-46BD-90D7-85089A5E4BD2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemoryQueue.SignalR", "MemoryQueue.SignalR\MemoryQueue.SignalR.csproj", "{0179C8B1-803A-4048-B55B-02FDD720ABD8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -104,6 +106,10 @@ Global
 		{9B225422-A535-4D93-B452-1097DB8A7671}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9B225422-A535-4D93-B452-1097DB8A7671}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9B225422-A535-4D93-B452-1097DB8A7671}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0179C8B1-803A-4048-B55B-02FDD720ABD8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0179C8B1-803A-4048-B55B-02FDD720ABD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0179C8B1-803A-4048-B55B-02FDD720ABD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0179C8B1-803A-4048-B55B-02FDD720ABD8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -127,6 +133,7 @@ Global
 		{CA05EF53-6134-4E58-ACE7-BEA23227AE73} = {D1E6E952-2151-4D10-AD03-EDEEF1D701D6}
 		{9B0551D9-8C10-4EE8-AD80-DDC22478B203} = {69EE0F82-BEA2-49DD-B34D-8984ECAE99D6}
 		{9B225422-A535-4D93-B452-1097DB8A7671} = {69EE0F82-BEA2-49DD-B34D-8984ECAE99D6}
+		{0179C8B1-803A-4048-B55B-02FDD720ABD8} = {69EE0F82-BEA2-49DD-B34D-8984ECAE99D6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D7773216-7FFF-4DED-9FCB-A63B5C247D9E}

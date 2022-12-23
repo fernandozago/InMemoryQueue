@@ -1,7 +1,7 @@
-﻿using MemoryQueue.Models;
-using MemoryQueue.Tests.SUTFactory;
-using MemoryQueue.Models.InMemoryConsumer;
+﻿using MemoryQueue.Tests.SUTFactory;
 using System.Data;
+using MemoryQueue.Base.InMemoryConsumer;
+using MemoryQueue.Base.Models;
 
 namespace MemoryQueue.Tests
 {

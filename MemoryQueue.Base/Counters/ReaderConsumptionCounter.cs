@@ -1,8 +1,7 @@
-﻿using MemoryQueue.Models.Utils;
-using System.Diagnostics;
+﻿using MemoryQueue.Base.Utils;
 using System.Threading;
 
-namespace MemoryQueue.Counters;
+namespace MemoryQueue.Base.Counters;
 
 public sealed class ReaderConsumptionCounter
 {

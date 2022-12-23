@@ -1,6 +1,6 @@
 using GrpcService2.GrpcImpl;
 using GrpcService2.Services;
-using MemoryQueue;
+using MemoryQueue.Base;
 using MemoryQueue.Models.GRPC.Services;
 
 var builder = WebApplication.CreateBuilder(args);

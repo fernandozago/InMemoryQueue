@@ -1,6 +1,6 @@
-﻿using MemoryQueue.Counters;
-using MemoryQueue.Models;
-using MemoryQueue.Models.Utils;
+﻿using MemoryQueue.Base.Counters;
+using MemoryQueue.Base.Models;
+using MemoryQueue.Base.Utils;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-namespace MemoryQueue
+namespace MemoryQueue.Base
 {
     public sealed class InMemoryQueueReader
     {
@@ -133,7 +133,7 @@ namespace MemoryQueue
         }
 
         private static async ValueTask NotAckedRateLimiter(int nackStreak, CancellationToken token)
-        {           
+        {
             try
             {
                 await Task.Delay(nackStreak * 25, token).ConfigureAwait(false);

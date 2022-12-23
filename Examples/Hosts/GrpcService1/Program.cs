@@ -1,4 +1,4 @@
-using MemoryQueue;
+using MemoryQueue.Base;
 using MemoryQueue.Models.GRPC.Services;
 
 var builder = WebApplication.CreateBuilder(args);

@@ -1,5 +1,5 @@
-﻿using MemoryQueue;
-using MemoryQueue.Models;
+﻿using MemoryQueue.Base;
+using MemoryQueue.Base.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InMemoryQueue.Blazor_Host.Server.Controllers

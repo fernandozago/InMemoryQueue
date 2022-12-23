@@ -1,5 +1,7 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using MemoryQueue.Base;
+using MemoryQueue.Base.Models;
 using MemoryQueue.Transports.GRPC;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;

@@ -1,8 +1,8 @@
 ﻿using Grpc.Core;
 using MemoryQueue.Client.Grpc;
-using MemoryQueue.Models;
 using MemoryQueue.Tests.SUTFactory;
 using MemoryQueue.Models.GRPC.Services;
+using MemoryQueue.Base.Models;
 
 namespace MemoryQueue.Tests
 {

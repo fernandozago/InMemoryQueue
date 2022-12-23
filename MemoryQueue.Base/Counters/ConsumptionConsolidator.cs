@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace MemoryQueue.Counters;
+namespace MemoryQueue.Base.Counters;
 
 public sealed class ConsumptionConsolidator : IDisposable
 {

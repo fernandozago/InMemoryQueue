@@ -1,8 +1,9 @@
-﻿using System;
+﻿using MemoryQueue.Base.Models;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MemoryQueue.Models.InMemoryConsumer
+namespace MemoryQueue.Base.InMemoryConsumer
 {
     public static class InMemoryQueueExtensions
     {
