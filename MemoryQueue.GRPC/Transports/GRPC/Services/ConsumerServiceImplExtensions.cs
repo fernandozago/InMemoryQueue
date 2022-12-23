@@ -1,7 +1,7 @@
 ﻿using Grpc.Core;
 using MemoryQueue.Transports.GRPC;
 
-namespace MemoryQueue.Models.GRPC.Services
+namespace MemoryQueue.GRPC.Transports.GRPC.Services
 {
     public static class ConsumerServiceImplExtensions
     {

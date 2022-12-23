@@ -1,6 +1,6 @@
 ﻿
 using Grpc.Core;
-using MemoryQueue.Models.GRPC.Services;
+using MemoryQueue.GRPC.Transports.GRPC.Services;
 using GrpcSocketServer = Grpc.Core.Server;
 
 namespace InMemoryQueue.Blazor.Host.Grpc

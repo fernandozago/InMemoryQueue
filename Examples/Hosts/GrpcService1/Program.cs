@@ -1,5 +1,5 @@
 using MemoryQueue.Base;
-using MemoryQueue.Models.GRPC.Services;
+using MemoryQueue.GRPC.Transports.GRPC.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
