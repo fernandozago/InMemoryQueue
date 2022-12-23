@@ -23,11 +23,13 @@ namespace MemoryQueue
         internal readonly ILoggerFactory _loggerFactory;
         internal readonly Channel<QueueItem> _retryChannel;
         internal readonly Channel<QueueItem> _mainChannel;
+        private readonly ConsumptionConsolidator _consolidator;
         private readonly ConcurrentDictionary<InMemoryQueueReader, QueueConsumerInfo> _readers = new ();
         #endregion
 
         public string Name { get; private set; }
-        public QueueConsumptionCounter Counters { get; private set; }
+        public QueueConsumptionCounter Counters { get; private set; }       
+
         public int ConsumersCount => _readers.Count;
         public int MainChannelCount => _mainChannel.Reader.Count;
         public int RetryChannelCount => _retryChannel.Reader.Count;
@@ -42,6 +44,7 @@ namespace MemoryQueue
             _logger = _loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, queueName));
 
             Counters = new();
+            _consolidator = new ConsumptionConsolidator(Counters.Consolidate);
 
             _mainChannel = CreateUnboundedChannel();
             _retryChannel = CreateUnboundedChannel();
@@ -78,14 +81,24 @@ namespace MemoryQueue
 
         public bool TryPeekMainQueue([MaybeNullWhen(false)] out QueueItem item)
         {
+            if (_mainChannel.Reader.CanPeek && _mainChannel.Reader.TryPeek(out item))
+            {
+                return true;
+            }
+
             item = null;
-            return _mainChannel.Reader.CanPeek && _mainChannel.Reader.TryPeek(out item);
+            return false;
         }
 
         public bool TryPeekRetryQueue([MaybeNullWhen(false)] out QueueItem item)
         {
+            if (_retryChannel.Reader.CanPeek && _retryChannel.Reader.TryPeek(out item))
+            {
+                return true;
+            }
+
             item = null;
-            return _retryChannel.Reader.CanPeek && _retryChannel.Reader.TryPeek(out item);
+            return false;
         }
     }
 }

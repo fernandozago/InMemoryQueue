@@ -3,6 +3,7 @@ using Grpc.Core;
 using MemoryQueue.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Xml.Linq;
 
 namespace MemoryQueue.Transports.GRPC.Services
 {
@@ -89,7 +90,7 @@ namespace MemoryQueue.Transports.GRPC.Services
 
                     AvgAckTimeMilliseconds = inMemoryQueue.Counters.AvgConsumptionMs
                 };
-                reply.Consumers.AddRange(inMemoryQueue.Consumers.Select(static x => x.ToGrpc()));
+                reply.Consumers.AddRange(inMemoryQueue.Consumers.Select(x => ToGrpc(x)));
 
                 return Task.FromResult(reply);
             }
@@ -98,6 +99,29 @@ namespace MemoryQueue.Transports.GRPC.Services
                 context.ResponseTrailers.Add(GRPC_TRAIL_SERVER_EXCEPTION, ex.Message);
                 throw;
             }
+        }
+
+        private ConsumerInfoReply ToGrpc(QueueConsumerInfo info)
+        {
+            var _consumerInfo = new ConsumerInfoReply();
+            _consumerInfo.Counters ??= new ConsumerCounters();
+
+            _consumerInfo.Host = info.Host;
+            _consumerInfo.Id = info.Id;
+            _consumerInfo.Ip = info.Ip;
+            _consumerInfo.Name = info.Name;
+            _consumerInfo.Type = info.ConsumerType.ToString();
+
+            _consumerInfo.Counters.AckCounter = info.Counters?.AckCounter ?? 0;
+            _consumerInfo.Counters.AckPerSecond = info.Counters?.AckPerSecond ?? 0;
+            _consumerInfo.Counters.AvgConsumptionMs = info.Counters?.AvgConsumptionMs ?? 0;
+            _consumerInfo.Counters.DeliverCounter = info.Counters?.DeliverCounter ?? 0;
+            _consumerInfo.Counters.DeliverPerSecond = info.Counters?.DeliverPerSecond ?? 0;
+            _consumerInfo.Counters.NackCounter = info.Counters?.NackCounter ?? 0;
+            _consumerInfo.Counters.NackPerSecond = info.Counters?.NackPerSecond ?? 0;
+            _consumerInfo.Counters.Throttled = info.Counters?.Throttled ?? false;
+
+            return _consumerInfo;
         }
 
         /// <summary>

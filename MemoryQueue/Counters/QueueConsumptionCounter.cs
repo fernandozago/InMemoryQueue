@@ -2,7 +2,7 @@
 
 namespace MemoryQueue.Counters
 {
-    public sealed class QueueConsumptionCounter : ConsumptionConsolidator
+    public sealed class QueueConsumptionCounter
     {
         private long _ackCounter = 0;
         private long _ackPerSecond = 0;
@@ -42,11 +42,6 @@ namespace MemoryQueue.Counters
         public long DeliverPerSecond => _deliverPerSecond;
 
         public double AvgConsumptionMs => _avgConsumptionMs;
-
-        public QueueConsumptionCounter()
-        {
-            OnConsolidate += Consolidate;
-        }
 
         internal void ResetCounters()
         {
@@ -132,11 +127,6 @@ namespace MemoryQueue.Counters
 
             Interlocked.Exchange(ref _nackPerSecond, Interlocked.Exchange(ref _nackPerSecond_Counter, 0));
             Interlocked.Add(ref _nackCounter, _nackPerSecond);
-        }
-
-        public override void Dispose()
-        {
-            OnConsolidate -= Consolidate;
         }
     }
 }

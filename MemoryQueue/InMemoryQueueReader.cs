@@ -24,6 +24,7 @@ namespace MemoryQueue
         private readonly ChannelReader<QueueItem> _mainReader;
         private readonly ChannelReader<QueueItem> _retryReader;
         private readonly ChannelWriter<QueueItem> _retryWriter;
+        private readonly ConsumptionConsolidator _consolidator;
         private readonly Func<QueueItem, Task<bool>> _channelCallBack;
 
         internal Task Completed => _consumerTask;
@@ -39,7 +40,8 @@ namespace MemoryQueue
             _retryWriter = inMemoryQueue._retryChannel.Writer;
             _channelCallBack = callBack;
 
-            _consumerTask = ChannelReaderCore(token).ContinueWith(_ => _counters.Dispose());
+            _consolidator = new ConsumptionConsolidator(_counters.Consolidate);
+            _consumerTask = ChannelReaderCore(token).ContinueWith(_ => _consolidator.Dispose());
         }
 
         /// <summary>

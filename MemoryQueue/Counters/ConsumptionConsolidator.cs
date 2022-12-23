@@ -1,45 +1,28 @@
-﻿using System.Diagnostics;
+﻿namespace MemoryQueue.Counters;
 
-namespace MemoryQueue.Counters;
-
-public abstract class ConsumptionConsolidator : IDisposable
+public sealed class ConsumptionConsolidator : IDisposable
 {
-    private static readonly Task? _consolidatorTask;
-    private static readonly object _locker = new();
-    protected static event ConsumptionConsolidatorEventHandler? OnConsolidate;
-
-    static ConsumptionConsolidator()
+    private static class ConsumptionConsolidatorTimer
     {
-        //Avoid race conditions when initializing app (Multiple queues/consumers can be created at the same time)
-        lock (_locker)
+        internal static event ConsumptionConsolidatorEventHandler? OnConsolidate;
+        private static readonly Timer _timer;
+
+        static ConsumptionConsolidatorTimer()
         {
-            if (_consolidatorTask is null)
-            {
-                _consolidatorTask = ConsolidatorTask();
-            }
+            _timer = new Timer(_ => OnConsolidate?.Invoke(), null, 1000, 1000);
         }
     }
 
-    private static async Task ConsolidatorTask()
+    private readonly ConsumptionConsolidatorEventHandler _delegate;
+
+    public ConsumptionConsolidator(Action consolidateAction)
     {
-        using var pd = new PeriodicTimer(TimeSpan.FromSeconds(1));
-        try
-        {
-            while (await pd.WaitForNextTickAsync(CancellationToken.None).ConfigureAwait(false))
-            {
-                //var stamp = Stopwatch.GetTimestamp();
-                OnConsolidate?.Invoke();
-                //Console.WriteLine(Stopwatch.GetElapsedTime(stamp).TotalMilliseconds);
-            }
-        }
-        catch (Exception)
-        {
-            //
-        }
+        _delegate = new ConsumptionConsolidatorEventHandler(consolidateAction);
+        ConsumptionConsolidatorTimer.OnConsolidate += new ConsumptionConsolidatorEventHandler(consolidateAction);
     }
 
-    /// <summary>
-    /// Should implement Dispose and remove the handler added on OnConsolidate Event
-    /// </summary>
-    public abstract void Dispose();
+    public void Dispose()
+    {
+        ConsumptionConsolidatorTimer.OnConsolidate -= _delegate;
+    }
 }

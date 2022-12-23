@@ -2,7 +2,7 @@
 
 namespace MemoryQueue.Counters;
 
-public sealed class ReaderConsumptionCounter : ConsumptionConsolidator
+public sealed class ReaderConsumptionCounter
 {
     private readonly QueueConsumptionCounter _queueCounter;
 
@@ -38,7 +38,6 @@ public sealed class ReaderConsumptionCounter : ConsumptionConsolidator
     public ReaderConsumptionCounter(QueueConsumptionCounter queueCounter)
     {
         _queueCounter = queueCounter;
-        OnConsolidate += Consolidate;
     }
 
     internal void SetThrottled(bool throttled)
@@ -89,10 +88,5 @@ public sealed class ReaderConsumptionCounter : ConsumptionConsolidator
 
         Interlocked.Exchange(ref _nackPerSecond, Interlocked.Exchange(ref _nackPerSecond_Counter, 0));
         Interlocked.Add(ref _nackCounter, _nackPerSecond);
-    }
-
-    public override void Dispose()
-    {
-        OnConsolidate -= Consolidate;
     }
 }

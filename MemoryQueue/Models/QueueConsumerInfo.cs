@@ -18,29 +18,5 @@ namespace MemoryQueue.Models
         required public string Ip { get; set; }
         required public string Host { get; set; }
 
-
-        private ConsumerInfoReply _consumerInfo;
-        public ConsumerInfoReply ToGrpc()
-        {
-            _consumerInfo ??= new ConsumerInfoReply();
-            _consumerInfo.Counters ??= new ConsumerCounters();
-
-            _consumerInfo.Host = Host;
-            _consumerInfo.Id = Id;
-            _consumerInfo.Ip = Ip;
-            _consumerInfo.Name = Name;
-            _consumerInfo.Type = ConsumerType.ToString();
-            
-            _consumerInfo.Counters.AckCounter = Counters?.AckCounter ?? 0;
-            _consumerInfo.Counters.AckPerSecond = Counters?.AckPerSecond ?? 0;
-            _consumerInfo.Counters.AvgConsumptionMs = Counters?.AvgConsumptionMs ?? 0;
-            _consumerInfo.Counters.DeliverCounter = Counters?.DeliverCounter ?? 0;
-            _consumerInfo.Counters.DeliverPerSecond = Counters?.DeliverPerSecond ?? 0;
-            _consumerInfo.Counters.NackCounter = Counters?.NackCounter ?? 0;
-            _consumerInfo.Counters.NackPerSecond = Counters?.NackPerSecond ?? 0;
-            _consumerInfo.Counters.Throttled = Counters?.Throttled ?? false;
-
-            return _consumerInfo;
-        }
     }
 }
