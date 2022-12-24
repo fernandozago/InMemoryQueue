@@ -39,8 +39,7 @@ public class InMemoryConsumerBackgroundService : BackgroundService
         var queue = _inMemoryQueueManager.GetOrCreateQueue(queueName);
         while (!token.IsCancellationRequested)
         {
-            Thread.Sleep(1);
-            //await Task.Delay(1);
+            await Task.Delay(1);
             await queue.EnqueueAsync(DateTime.Now.ToString());
         }
     }

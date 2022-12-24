@@ -89,7 +89,7 @@ namespace MemoryQueue.Base
         private int NotAckedStreak
         {
             get => _notAckedStreak;
-            set => _notAckedStreak = Math.Min(20, Math.Max(value, 0));
+            set => _notAckedStreak = Math.Min(30, Math.Max(value, 0));
         }
         /// <summary>
         /// Publish an message to some consumer and awaits for the ACK(true)/NACK(false) result
