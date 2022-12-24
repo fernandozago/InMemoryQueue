@@ -77,8 +77,12 @@ public sealed class InMemoryQueue : IInMemoryQueue
 
     public async ValueTask EnqueueAsync(string item)
     {
-        var queueItem = new QueueItem() { Message = item };
-        await _mainChannel.Writer.WriteAsync(queueItem).ConfigureAwait(false);
+        var queueItem = new QueueItem(item, false, 0);
+        if (_mainChannel.Writer.WriteAsync(queueItem) is ValueTask t && !t.IsCompletedSuccessfully) 
+        {
+            Console.WriteLine("awaiting write");
+            await t;
+        }
         Counters.Publish();
         _logger.LogTrace(LOGMSG_TRACE_ITEM_QUEUED, queueItem);
     }
@@ -90,7 +94,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
             return true;
         }
 
-        item = null;
+        item = default;
         return false;
     }
 
@@ -101,7 +105,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
             return true;
         }
 
-        item = null;
+        item = default;
         return false;
     }
 }

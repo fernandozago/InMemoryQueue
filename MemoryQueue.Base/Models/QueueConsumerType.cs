@@ -3,6 +3,7 @@
 public enum QueueConsumerType
 {
     GRPC = 1,
-    InMemory = 2
+    InMemory = 2,
+    SignalR = 3
     //WebSocket = 3,
 }

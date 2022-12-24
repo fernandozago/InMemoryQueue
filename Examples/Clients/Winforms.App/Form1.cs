@@ -1,5 +1,6 @@
 using GrpcClient4.QueueInfoPropertyGrid;
 using MemoryQueue.Client.Grpc;
+using MemoryQueue.Client.SignalR;
 using MemoryQueue.Transports.GRPC;
 using RandomNameGeneratorLibrary;
 using System.Diagnostics;
@@ -11,6 +12,7 @@ namespace GrpcClient2
     {
         private readonly IProgress<QueueInfoReply> _progress;
         private readonly GrpcQueueConsumer _consumer;
+        private readonly InMemoryQueueSignalrClient _signalR;
         private readonly Dictionary<Task, CancellationTokenSource> _consumers = new();
         private readonly PersonNameGenerator _personNameGenerator = new();
         private readonly string _queueName;
@@ -27,6 +29,7 @@ namespace GrpcClient2
         {
             _queueName = queueName;
             _consumer = new(host, queueName: queueName);
+            _signalR = new InMemoryQueueSignalrClient("https://localhost:7134/inmemoryqueue/hub", queueName);
             _progress = new Progress<QueueInfoReply>(UpdateForm);
 
             _ = StartTimer();
@@ -152,6 +155,7 @@ namespace GrpcClient2
         }
 
         const int qtd = 1_000_000;
+        //const int qtd = 100_000;
 
         private void btnAddConsumer_Click(object sender, EventArgs e)
         {
@@ -238,7 +242,31 @@ namespace GrpcClient2
         private async void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
             _playPause = false;
+            _signalR.Dispose();
             await _consumer.DisposeAsync();
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var cts = new CancellationTokenSource();
+                var consumerTask = _signalR.Consume(_personNameGenerator.GenerateRandomFirstAndLastName(), static (item, token) =>
+                {
+                    token.ThrowIfCancellationRequested();
+                    return Task.FromResult(true);
+                }, cts.Token);
+                _consumers.Add(consumerTask, cts);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+
         }
 
         public record Data(Guid Info, DateTime CreateDate, string Value);

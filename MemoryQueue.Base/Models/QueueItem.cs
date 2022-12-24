@@ -1,8 +1,15 @@
 ﻿namespace MemoryQueue.Base.Models;
 
-public sealed class QueueItem
+public struct QueueItem
 {
-    public string Message { get; set; }
-    public bool Retrying { get; set; }
-    public int RetryCount { get; set; }
+    public QueueItem(string message, bool retrying, int retryCount)
+    {
+        Message = message;
+        Retrying = retrying;
+        RetryCount = retryCount;
+    }
+
+    public string Message { get; private set; }
+    public bool Retrying { get; private set; }
+    public int RetryCount { get; private set; }
 }

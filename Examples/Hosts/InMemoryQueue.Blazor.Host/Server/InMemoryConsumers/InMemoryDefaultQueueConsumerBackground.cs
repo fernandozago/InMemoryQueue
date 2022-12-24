@@ -35,10 +35,12 @@ public class InMemoryConsumerBackgroundService : BackgroundService
 
     private async Task Publisher(string queueName, CancellationToken token)
     {
+        await Task.Yield();
         var queue = _inMemoryQueueManager.GetOrCreateQueue(queueName);
         while (!token.IsCancellationRequested)
         {
-            await Task.Delay(1);
+            Thread.Sleep(1);
+            //await Task.Delay(1);
             await queue.EnqueueAsync(DateTime.Now.ToString());
         }
     }

@@ -15,6 +15,6 @@ public interface IInMemoryQueue
     IReadOnlyCollection<QueueConsumerInfo> Consumers { get; }
 
     ValueTask EnqueueAsync(string item);
-    bool TryPeekMainQueue(out QueueItem? item);
-    bool TryPeekRetryQueue(out QueueItem? item);
+    bool TryPeekMainQueue(out QueueItem item);
+    bool TryPeekRetryQueue(out QueueItem item);
 }

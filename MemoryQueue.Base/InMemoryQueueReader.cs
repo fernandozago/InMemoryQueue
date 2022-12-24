@@ -1,4 +1,5 @@
 ﻿using MemoryQueue.Base.Counters;
+using MemoryQueue.Base.Extensions;
 using MemoryQueue.Base.Models;
 using MemoryQueue.Base.Utils;
 using Microsoft.Extensions.Logging;
@@ -27,6 +28,7 @@ namespace MemoryQueue.Base
         private readonly ChannelReader<QueueItem> _retryReader;
         private readonly ChannelWriter<QueueItem> _retryWriter;
         private readonly ConsumptionConsolidator _consolidator;
+        private readonly SemaphoreSlim _semaphoreSlim;
         private readonly Func<QueueItem, Task<bool>> _channelCallBack;
 
         public Task Completed => _consumerTask;
@@ -43,7 +45,11 @@ namespace MemoryQueue.Base
             _channelCallBack = callBack;
 
             _consolidator = new ConsumptionConsolidator(_counters.Consolidate);
-            _consumerTask = ChannelReaderCore(token).ContinueWith(_ => _consolidator.Dispose());
+            _semaphoreSlim = new SemaphoreSlim(1);
+            _consumerTask = Task.WhenAll(
+                ChannelReaderCore(_retryReader, token),
+                ChannelReaderCore(_mainReader, token)
+            ).ContinueWith(_ => _consolidator.Dispose());
         }
 
         /// <summary>
@@ -51,17 +57,23 @@ namespace MemoryQueue.Base
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        private async Task ChannelReaderCore(CancellationToken token)
+        private async Task ChannelReaderCore(ChannelReader<QueueItem> reader, CancellationToken token)
         {
+            await Task.Yield();
             try
             {
-                while (!token.IsCancellationRequested && await WaitToReadAsync(token).ConfigureAwait(false))
+                await foreach (var item in reader.ReadAllAsync(token).ConfigureAwait(false))
                 {
-                    if (!token.IsCancellationRequested && TryRead(out var queueItem))
-                    {
-                        await DeliverItemAsync(queueItem, token).ConfigureAwait(false);
-                    }
+                    await DeliverItemAsync(item, token).ConfigureAwait(false);
+                    token.ThrowIfCancellationRequested();
                 }
+                //while (!token.IsCancellationRequested && await WaitToReadAsync(token).ConfigureAwait(false))
+                //{
+                //    if (!token.IsCancellationRequested && TryRead(out var queueItem))
+                //    {
+                //        await DeliverItemAsync(queueItem, token).ConfigureAwait(false);
+                //    }
+                //}
             }
             catch (OperationCanceledException ex)
             {
@@ -72,25 +84,6 @@ namespace MemoryQueue.Base
                 _logger.LogWarning(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX);
             }
         }
-
-        /// <summary>
-        /// Wait to read any of the channels [RetryChannel or MainChannel]
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        private Task<bool> WaitToReadAsync(CancellationToken token) =>
-            Task.WhenAny(_mainReader.WaitToReadAsync(token).AsTask(), _retryReader.WaitToReadAsync(token).AsTask()).Unwrap();
-
-        /// <summary>
-        /// Try read item from any of the channels [RetryChannel or MainChannel]
-        /// Try RetryChannel First then MainChannel
-        /// </summary>
-        /// <param name="channelReader"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        private bool TryRead([MaybeNullWhen(false)] out QueueItem queueItem) =>
-            _retryReader.TryRead(out queueItem) || _mainReader.TryRead(out queueItem);
-
 
         private int _notAckedStreak = 0;
         private int NotAckedStreak
@@ -105,15 +98,19 @@ namespace MemoryQueue.Base
         private async Task DeliverItemAsync(QueueItem queueItem, CancellationToken token)
         {
             var timestamp = StopwatchEx.GetTimestamp();
+            bool isAcked = false;
 
-            bool isAcked = await _channelCallBack(queueItem).ConfigureAwait(false);
+            if (await _semaphoreSlim.TryAwaitAsync(token).ConfigureAwait(false) is IDisposable locker)
+            {
+                using var _ = locker;
+                timestamp = StopwatchEx.GetTimestamp();
+                isAcked = await _channelCallBack(queueItem).ConfigureAwait(false);
+            }
 
             _counters.UpdateCounters(queueItem.Retrying, isAcked, timestamp);
             if (!isAcked)
             {
-                queueItem.Retrying = true;
-                queueItem.RetryCount++;
-                await _retryWriter.WriteAsync(queueItem).ConfigureAwait(false);
+                await _retryWriter.WriteAsync(new QueueItem(queueItem.Message, true, queueItem.RetryCount + 1)).ConfigureAwait(false);
 
                 NotAckedStreak++;
                 if (_refQueue.ConsumersCount > 1 && NotAckedStreak > 1)
