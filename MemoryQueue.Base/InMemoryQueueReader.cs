@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace MemoryQueue.Base
 {
-    public sealed class InMemoryQueueReader
+    public sealed class InMemoryQueueReader : IDisposable
     {
         #region Constants
         private const string LOGGER_CATEGORY = $"{nameof(InMemoryQueueReader)}.{{0}}.{{1}}-[{{2}}]";
@@ -45,7 +45,7 @@ namespace MemoryQueue.Base
             _consumerTask = Task.WhenAll(
                 ChannelReaderCore(inMemoryQueue._retryChannel.Reader, token),
                 ChannelReaderCore(inMemoryQueue._mainChannel.Reader, token)
-            ).ContinueWith(_ => _consolidator.Dispose());
+            );
         }
 
         /// <summary>
@@ -116,6 +116,12 @@ namespace MemoryQueue.Base
                     _counters.SetThrottled(false);
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            _semaphoreSlim.Dispose();
+            _consolidator.Dispose();
         }
     }
 

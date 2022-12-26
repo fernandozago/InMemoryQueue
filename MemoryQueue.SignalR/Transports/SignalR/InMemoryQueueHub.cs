@@ -3,6 +3,7 @@ using MemoryQueue.Base.Models;
 using MemoryQueue.Transports.SignalR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 
@@ -16,11 +17,13 @@ namespace MemoryQueue.SignalR.Transports.SignalR
 
         private readonly InMemoryQueueManager _queueManager;
         private readonly ILoggerFactory _loggerFactory;
+        private readonly ILogger<InMemoryQueueHub> _logger;
 
         public InMemoryQueueHub(InMemoryQueueManager inMemoryQueueManager, ILoggerFactory loggerFactory)
         {
             _queueManager = inMemoryQueueManager;
             _loggerFactory = loggerFactory;
+            _logger = loggerFactory.CreateLogger<InMemoryQueueHub>();
         }
 
         public async Task QueueInfo(string? queue)
@@ -92,83 +95,95 @@ namespace MemoryQueue.SignalR.Transports.SignalR
 
         public async IAsyncEnumerable<QueueItemReply> Consume(string clientName, string? queue, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-
-            InMemoryQueue memoryQueue = (InMemoryQueue)_queueManager.GetOrCreateQueue(queue);
-            string id = Guid.NewGuid().ToString();
+            #region Setup
+            var memoryQueue = (InMemoryQueue)_queueManager.GetOrCreateQueue(queue);
             var consumerQueueInfo = new QueueConsumerInfo(QueueConsumerType.SignalR)
             {
-                Id = id,
+                Id = Guid.NewGuid().ToString(),
                 Host = Context.ConnectionId,
                 Ip = Context.ConnectionId,
                 Name = clientName ?? "Unknown"
             };
-
             var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.Name, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
-            Channel<QueueItem> internalChannel = Channel.CreateBounded<QueueItem>(1);
-
-            cancellationToken.Register(() =>
-            {
-                internalChannel.Writer.Complete();
-                logger.LogInformation(LOGMSG_SIGNALR_REQUEST_CANCELLED);
-            });
 
             Acker = new TaskCompletionSource<bool>();
-            Acker.SetResult(true);
+            Acker.SetCanceled();
 
-            var reader = memoryQueue.AddQueueReader(
+            QueueItem? currentItem = default;
+            using SemaphoreSlim semaphoreSlim = new (0);
+            using var registration = cancellationToken.Register(() =>
+            {
+                using (semaphoreSlim)
+                {
+                    semaphoreSlim.Release();
+                }
+                logger.LogInformation(LOGMSG_SIGNALR_REQUEST_CANCELLED);
+            });
+            #endregion
+
+            Debug.Assert(Acker.Task.IsCanceled);
+            Debug.Assert(semaphoreSlim.CurrentCount == 0);
+            Debug.Assert(currentItem is null);
+
+            using var reader = memoryQueue.AddQueueReader(
                     consumerQueueInfo,
-                    (item) => WriteAndAckAsync(item, internalChannel, logger, cancellationToken),
+                    item => WriteAndAckAsync(item, ref currentItem, semaphoreSlim),
                     cancellationToken);
 
-            await foreach (var item in internalChannel.Reader.ReadAllAsync())
+            while (!cancellationToken.IsCancellationRequested)
             {
-                if (cancellationToken.IsCancellationRequested)
+                try
+                {
+                    await semaphoreSlim.WaitAsync(cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
                 {
                     break;
                 }
 
-                yield return new QueueItemReply()
+                if (currentItem.HasValue)
                 {
-                    Message = item.Message,
-                    RetryCount = item.RetryCount,
-                    Retrying = item.Retrying
-                };
-
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    break;
+                    yield return new QueueItemReply()
+                    {
+                        Message = currentItem.Value.Message,
+                        RetryCount = currentItem.Value.RetryCount,
+                        Retrying = currentItem.Value.Retrying
+                    };
+                    currentItem = null;
                 }
             }
-
             if (!Acker.Task.IsCompleted)
             {
                 logger.LogWarning(LOGMSG_SIGNALR_ACK_FAILED);
             }
+
             Acker.TrySetResult(false);
-            await reader.Completed;
+            await reader.Completed.ConfigureAwait(false);
             memoryQueue.RemoveReader(reader);
+
+            //_logger.LogCritical("SHOUD BE FINISHED");
         }
 
-        private async Task<bool> WriteAndAckAsync(QueueItem item, Channel<QueueItem> internalChannel, ILogger logger, CancellationToken cancellationToken)
+        private Task<bool> WriteAndAckAsync(QueueItem item, ref QueueItem? refItem, SemaphoreSlim semaphore)
         {
             try
             {
-                Acker = new TaskCompletionSource<bool>();
-                if (internalChannel.Writer.WriteAsync(item, cancellationToken) is ValueTask writerTask && !writerTask.IsCompleted)
-                {
-                    await writerTask.ConfigureAwait(false);
-                }
-                return await Acker.Task.ConfigureAwait(false);
+                refItem = item;
+                return (Acker = new TaskCompletionSource<bool>()).Task;
             }
-            catch (Exception ex)
+            finally
             {
-                logger.LogError(ex, "Error at WriteAndAckAsync");
+                semaphore.Release();
             }
-            return false;
         }
 
         public Task Ack(bool acked)
         {
+            if (Acker.Task.IsCompleted)
+            {
+                _logger.LogError("Acker never should not be completed here");
+
+            }
             Acker.TrySetResult(acked);
             return Task.CompletedTask;
         }
@@ -191,11 +206,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
             }
             get
             {
-                if (Context.Items.TryGetValue(nameof(Acker), out var obj))
-                {
-                    return ((TaskCompletionSource<bool>)obj);
-                }
-                throw new InvalidOperationException("Should not run");
+                return (TaskCompletionSource<bool>)Context.Items[(nameof(Acker))];
             }
         }
     }

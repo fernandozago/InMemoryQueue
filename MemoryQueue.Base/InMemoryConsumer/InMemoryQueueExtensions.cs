@@ -13,7 +13,7 @@ public static class InMemoryQueueExtensions
         Func<QueueItem, Task<bool>> callBack, string? consumerName = null, CancellationToken cancellationToken = default)
     {
         var id = Guid.NewGuid().ToString();
-        var reader = ((InMemoryQueue)inMemoryQueue).AddQueueReader(new QueueConsumerInfo(QueueConsumerType.InMemory)
+        using var reader = ((InMemoryQueue)inMemoryQueue).AddQueueReader(new QueueConsumerInfo(QueueConsumerType.InMemory)
         {
             Id = id,
             Name = consumerName ?? id,
