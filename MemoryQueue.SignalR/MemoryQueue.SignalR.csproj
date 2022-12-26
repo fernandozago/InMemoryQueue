@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Title>In Memory Queue SignalR</Title>
+		<PackageId>InMemoryQueue.SignalR</PackageId>
+		<Company>Fernando Zago</Company>
+		<Authors>Fernando Zago</Authors>
+		<PackageProjectUrl>https://github.com/fernandozago/InMemoryQueue</PackageProjectUrl>
+		<Copyright>Apache License 2.0</Copyright>
+		<Description>Creates a in memory queue service in .net</Description>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<RepositoryUrl>https://github.com/fernandozago/InMemoryQueue</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Include="..\LICENSE" Link="LICENSE">
+	    <PackagePath>\</PackagePath>
+	    <Pack>True</Pack>
+	  </None>
+	  <None Include="..\README.md" Link="README.md">
+	    <PackagePath>\</PackagePath>
+	    <Pack>True</Pack>
+	  </None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="Microsoft.AspNetCore.SignalR.Core" Version="1.1.0" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+    <ProjectReference Include="..\MemoryQueue.Base\MemoryQueue.Base.csproj" />
+    <ProjectReference Include="..\MemoryQueue.SignalR.Models\MemoryQueue.SignalR.Models.csproj" />
+  </ItemGroup>
+
+</Project>

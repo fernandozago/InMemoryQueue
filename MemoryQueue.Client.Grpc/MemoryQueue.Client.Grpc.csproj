@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -41,8 +42,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Protobuf Include="..\MemoryQueue\Transports\GRPC\Protos\Consumer.proto" GrpcServices="Client">
-			<Link>Protos\grpcQueue.proto</Link>
+		<Protobuf Include="..\MemoryQueue.GRPC\Transports\GRPC\Protos\Consumer.proto" GrpcServices="ClientOnly">
+			<Link>Protos\Consumer.proto</Link>
 		</Protobuf>
 	</ItemGroup>
 </Project>

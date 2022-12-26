@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Title>In Memory Queue Client SignalR</Title>
+		<PackageId>InMemoryQueue.Client.SignalR</PackageId>
+		<Company>Fernando Zago</Company>
+		<Authors>Fernando Zago</Authors>
+		<PackageProjectUrl>https://github.com/fernandozago/InMemoryQueue</PackageProjectUrl>
+		<Copyright>Apache License 2.0</Copyright>
+		<Description>Creates a in memory queue service in .net</Description>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<RepositoryUrl>https://github.com/fernandozago/InMemoryQueue</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="QueueInfoReply.cs" />
+	  <Compile Remove="QueueItemReply.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\LICENSE">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+		
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="7.0.1" />
+	</ItemGroup>
+		
+	<ItemGroup>
+	  <ProjectReference Include="..\MemoryQueue.SignalR.Models\MemoryQueue.SignalR.Models.csproj" />
+	</ItemGroup>
+
+</Project>

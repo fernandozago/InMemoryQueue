@@ -1,6 +1,5 @@
 ﻿using Grpc.Core;
-using MemoryQueue.Transports.GRPC;
-using MemoryQueue.Transports.GRPC.Services;
+using MemoryQueue.GRPC.Transports.GRPC.Services;
 
 namespace GrpcService2.GrpcImpl
 {

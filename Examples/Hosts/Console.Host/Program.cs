@@ -1,6 +1,6 @@
-﻿using MemoryQueue;
-using MemoryQueue.Models;
-using MemoryQueue.Transports.InMemoryConsumer;
+﻿using MemoryQueue.Base;
+using MemoryQueue.Base.InMemoryConsumer;
+using MemoryQueue.Base.Models;
 using Microsoft.Extensions.Logging;
 
 using var loggerFactory = LoggerFactory.Create(builder =>

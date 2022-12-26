@@ -18,7 +18,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\..\MemoryQueue\MemoryQueue.csproj" />
+	  <ProjectReference Include="..\..\..\MemoryQueue.GRPC\MemoryQueue.GRPC.csproj" />
 	</ItemGroup>
 
 </Project>

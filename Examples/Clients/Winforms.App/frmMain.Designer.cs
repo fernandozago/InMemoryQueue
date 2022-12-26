@@ -30,26 +30,33 @@
         {
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.label2 = new System.Windows.Forms.Label();
-            this.txtQueue = new System.Windows.Forms.TextBox();
+            this.txtGRPCQueue = new System.Windows.Forms.TextBox();
             this.button1 = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
-            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.txtGrpcAddress = new System.Windows.Forms.TextBox();
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.txtSignalRQQueue = new System.Windows.Forms.TextBox();
+            this.button2 = new System.Windows.Forms.Button();
+            this.label4 = new System.Windows.Forms.Label();
+            this.txtSignalRAddress = new System.Windows.Forms.TextBox();
             this.groupBox1.SuspendLayout();
+            this.groupBox2.SuspendLayout();
             this.SuspendLayout();
             // 
             // groupBox1
             // 
             this.groupBox1.Controls.Add(this.label2);
-            this.groupBox1.Controls.Add(this.txtQueue);
+            this.groupBox1.Controls.Add(this.txtGRPCQueue);
             this.groupBox1.Controls.Add(this.button1);
             this.groupBox1.Controls.Add(this.label1);
-            this.groupBox1.Controls.Add(this.textBox1);
+            this.groupBox1.Controls.Add(this.txtGrpcAddress);
             this.groupBox1.Location = new System.Drawing.Point(12, 12);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(263, 91);
+            this.groupBox1.Size = new System.Drawing.Size(439, 91);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Connect To Server:";
+            this.groupBox1.Text = "[GRPC] Connect To Server:";
             // 
             // label2
             // 
@@ -60,17 +67,20 @@
             this.label2.TabIndex = 4;
             this.label2.Text = "Queue:";
             // 
-            // txtQueue
+            // txtGRPCQueue
             // 
-            this.txtQueue.Location = new System.Drawing.Point(64, 51);
-            this.txtQueue.Name = "txtQueue";
-            this.txtQueue.Size = new System.Drawing.Size(193, 23);
-            this.txtQueue.TabIndex = 3;
-            this.txtQueue.Text = "Default";
+            this.txtGRPCQueue.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtGRPCQueue.Location = new System.Drawing.Point(64, 51);
+            this.txtGRPCQueue.Name = "txtGRPCQueue";
+            this.txtGRPCQueue.Size = new System.Drawing.Size(369, 23);
+            this.txtGRPCQueue.TabIndex = 3;
+            this.txtGRPCQueue.Text = "Default";
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(182, 21);
+            this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.button1.Location = new System.Drawing.Point(358, 21);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
             this.button1.TabIndex = 2;
@@ -87,24 +97,92 @@
             this.label1.TabIndex = 1;
             this.label1.Text = "Address:";
             // 
-            // textBox1
+            // txtGrpcAddress
             // 
-            this.textBox1.Location = new System.Drawing.Point(64, 22);
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(112, 23);
-            this.textBox1.TabIndex = 0;
-            this.textBox1.Text = "127.0.0.1:1111";
+            this.txtGrpcAddress.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtGrpcAddress.Location = new System.Drawing.Point(64, 22);
+            this.txtGrpcAddress.Name = "txtGrpcAddress";
+            this.txtGrpcAddress.Size = new System.Drawing.Size(288, 23);
+            this.txtGrpcAddress.TabIndex = 0;
+            this.txtGrpcAddress.Text = "127.0.0.1:1111";
+            // 
+            // groupBox2
+            // 
+            this.groupBox2.Controls.Add(this.label3);
+            this.groupBox2.Controls.Add(this.txtSignalRQQueue);
+            this.groupBox2.Controls.Add(this.button2);
+            this.groupBox2.Controls.Add(this.label4);
+            this.groupBox2.Controls.Add(this.txtSignalRAddress);
+            this.groupBox2.Location = new System.Drawing.Point(12, 109);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Size = new System.Drawing.Size(439, 91);
+            this.groupBox2.TabIndex = 1;
+            this.groupBox2.TabStop = false;
+            this.groupBox2.Text = "[SignalR] Connect To Server:";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(6, 54);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(45, 15);
+            this.label3.TabIndex = 4;
+            this.label3.Text = "Queue:";
+            // 
+            // txtSignalRQQueue
+            // 
+            this.txtSignalRQQueue.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtSignalRQQueue.Location = new System.Drawing.Point(64, 51);
+            this.txtSignalRQQueue.Name = "txtSignalRQQueue";
+            this.txtSignalRQQueue.Size = new System.Drawing.Size(369, 23);
+            this.txtSignalRQQueue.TabIndex = 3;
+            this.txtSignalRQQueue.Text = "Default";
+            // 
+            // button2
+            // 
+            this.button2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.button2.Location = new System.Drawing.Point(358, 21);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(75, 23);
+            this.button2.TabIndex = 2;
+            this.button2.Text = "Start";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(6, 25);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(52, 15);
+            this.label4.TabIndex = 1;
+            this.label4.Text = "Address:";
+            // 
+            // txtSignalRAddress
+            // 
+            this.txtSignalRAddress.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtSignalRAddress.Location = new System.Drawing.Point(64, 22);
+            this.txtSignalRAddress.Name = "txtSignalRAddress";
+            this.txtSignalRAddress.Size = new System.Drawing.Size(288, 23);
+            this.txtSignalRAddress.TabIndex = 0;
+            this.txtSignalRAddress.Text = "https://localhost:7134/inmemoryqueue/hub";
             // 
             // frmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(287, 115);
+            this.ClientSize = new System.Drawing.Size(463, 211);
+            this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Name = "frmMain";
             this.Text = "frmMain";
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
+            this.groupBox2.ResumeLayout(false);
+            this.groupBox2.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -114,8 +192,14 @@
         private GroupBox groupBox1;
         private Button button1;
         private Label label1;
-        private TextBox textBox1;
+        private TextBox txtGrpcAddress;
         private Label label2;
-        private TextBox txtQueue;
+        private TextBox txtGRPCQueue;
+        private GroupBox groupBox2;
+        private Label label3;
+        private TextBox txtSignalRQQueue;
+        private Button button2;
+        private Label label4;
+        private TextBox txtSignalRAddress;
     }
 }

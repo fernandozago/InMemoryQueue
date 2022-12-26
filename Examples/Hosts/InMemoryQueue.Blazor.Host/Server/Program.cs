@@ -1,7 +1,8 @@
 using InMemoryQueue.Blazor.Host.Grpc;
 using InMemoryQueue.Blazor.Host.Grpc.InMemoryConsumers;
-using MemoryQueue;
-using MemoryQueue.Transports.GRPC.Services;
+using MemoryQueue.Base;
+using MemoryQueue.GRPC.Transports.GRPC.Services;
+using MemoryQueue.SignalR.Transports.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,7 @@ builder.Services.AddSingleton<InMemoryQueueManager>();
 builder.Services.AddSingleton<ConsumerServiceImpl>();
 builder.Services.AddHostedService<InMemoryConsumerBackgroundService>();
 
+builder.Services.AddSignalR();
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
@@ -38,6 +40,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.MapHub<InMemoryQueueHub>("/inmemoryqueue/hub");
 app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");

@@ -1,5 +1,5 @@
-﻿using MemoryQueue;
-using MemoryQueue.Transports.InMemoryConsumer;
+﻿using MemoryQueue.Base;
+using MemoryQueue.Base.InMemoryConsumer;
 
 namespace InMemoryQueue.Blazor.Host.Grpc.InMemoryConsumers;
 
@@ -35,6 +35,7 @@ public class InMemoryConsumerBackgroundService : BackgroundService
 
     private async Task Publisher(string queueName, CancellationToken token)
     {
+        await Task.Yield();
         var queue = _inMemoryQueueManager.GetOrCreateQueue(queueName);
         while (!token.IsCancellationRequested)
         {

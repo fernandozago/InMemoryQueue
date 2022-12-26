@@ -1,20 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<ServerGarbageCollection>false</ServerGarbageCollection>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="7.0.1" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="7.0.1" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\MemoryQueue\MemoryQueue.csproj" />
-    <ProjectReference Include="..\Client\InMemoryQueue.Blazor.Host.Client.csproj" />
-    <ProjectReference Include="..\Shared\InMemoryQueue.Blazor.Host.Shared.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\..\MemoryQueue.GRPC\MemoryQueue.GRPC.csproj" />
+		<ProjectReference Include="..\..\..\..\MemoryQueue.SignalR\MemoryQueue.SignalR.csproj" />
+		<ProjectReference Include="..\Client\InMemoryQueue.Blazor.Host.Client.csproj" />
+		<ProjectReference Include="..\Shared\InMemoryQueue.Blazor.Host.Shared.csproj" />
+	</ItemGroup>
 
 
 </Project>
