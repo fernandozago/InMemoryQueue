@@ -7,7 +7,7 @@ public static class QueueInfoReplyPropertyGridExtensions
     {
         if (refVal != null)
         {
-            refVal.ETA = GetEta(reply);
+            refVal.ETA = GetEta(reply.AckPerSecond, reply.QueueSize);
 
             refVal.QueueName = reply.QueueName;
             refVal.AckPerSecond = reply.AckPerSecond;
@@ -36,7 +36,7 @@ public static class QueueInfoReplyPropertyGridExtensions
     {
         if (refVal != null)
         {
-            refVal.ETA = GetEta(reply);
+            refVal.ETA = GetEta(reply.AckPerSecond, reply.QueueSize);
 
             refVal.QueueName = reply.QueueName;
             refVal.AckPerSecond = reply.AckPerSecond;
@@ -121,29 +121,13 @@ public static class QueueInfoReplyPropertyGridExtensions
 
     private const string TIMEOUT_ZERO = "00:00:00";
     private const string TIMEOUT_INFINITE = "Infinite";
-    private static string GetEta(MemoryQueue.Transports.GRPC.QueueInfoReply reply)
+    private static string GetEta(long ackPerSecond, long queueSize)
     {
-        if (reply.AckPerSecond > 0 && reply.QueueSize > 0)
+        if (ackPerSecond > 0 && queueSize > 0)
         {
-            return TimeSpan.FromSeconds(Math.Ceiling(reply.QueueSize / (double)reply.AckPerSecond)).ToString();
+            return TimeSpan.FromSeconds(Math.Ceiling(queueSize / (double)ackPerSecond)).ToString();
         }
-        else if (reply.QueueSize == 0)
-        {
-            return TIMEOUT_ZERO;
-        }
-        else
-        {
-            return TIMEOUT_INFINITE;
-        }
-    }
-
-    private static string GetEta(MemoryQueue.Transports.SignalR.QueueInfoReply reply)
-    {
-        if (reply.AckPerSecond > 0 && reply.QueueSize > 0)
-        {
-            return TimeSpan.FromSeconds(Math.Ceiling(reply.QueueSize / (double)reply.AckPerSecond)).ToString();
-        }
-        else if (reply.QueueSize == 0)
+        else if (queueSize == 0)
         {
             return TIMEOUT_ZERO;
         }

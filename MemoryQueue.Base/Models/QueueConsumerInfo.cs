@@ -17,4 +17,9 @@ public sealed class QueueConsumerInfo
     public string Ip { get; set; }
     public string Host { get; set; }
 
+    public override string ToString()
+    {
+        return $"Name:{Name} Type:{ConsumerType} Ip:{Ip}";
+    }
+
 }

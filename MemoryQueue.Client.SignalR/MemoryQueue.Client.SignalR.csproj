@@ -21,6 +21,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="QueueInfoReply.cs" />
+	  <Compile Remove="QueueItemReply.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<None Include="..\LICENSE">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
@@ -33,6 +38,10 @@
 		
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="7.0.1" />
+	</ItemGroup>
+		
+	<ItemGroup>
+	  <ProjectReference Include="..\MemoryQueue.SignalR.Models\MemoryQueue.SignalR.Models.csproj" />
 	</ItemGroup>
 
 </Project>

@@ -78,10 +78,9 @@ public sealed class InMemoryQueue : IInMemoryQueue
     public async ValueTask EnqueueAsync(string item)
     {
         var queueItem = new QueueItem(item, false, 0);
-        if (_mainChannel.Writer.WriteAsync(queueItem) is ValueTask t && !t.IsCompletedSuccessfully) 
+        if (_mainChannel.Writer.WriteAsync(queueItem) is ValueTask writeTask && !writeTask.IsCompletedSuccessfully) 
         {
-            Console.WriteLine("awaiting write");
-            await t;
+            await writeTask;
         }
         Counters.Publish();
         _logger.LogTrace(LOGMSG_TRACE_ITEM_QUEUED, queueItem);
