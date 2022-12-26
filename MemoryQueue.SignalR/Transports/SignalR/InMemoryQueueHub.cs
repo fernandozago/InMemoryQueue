@@ -11,7 +11,8 @@ namespace MemoryQueue.SignalR.Transports.SignalR
     public class InMemoryQueueHub : Hub
     {
         private const string GRPC_QUEUEREADER_LOGGER_CATEGORY = $"{nameof(InMemoryQueueReader)}.{{0}}.{{1}}-[{{2}}]";
-        private const string LOGMSG_GRPC_REQUEST_CANCELLED = "Request cancelled and client is being removed";
+        private const string LOGMSG_SIGNALR_REQUEST_CANCELLED = "Request cancelled and client is being removed";
+        private const string LOGMSG_SIGNALR_ACK_FAILED = "Failed to ack the message (Request was cancelled or client disconnected)";
 
         private readonly InMemoryQueueManager _queueManager;
         private readonly ILoggerFactory _loggerFactory;
@@ -108,7 +109,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
             cancellationToken.Register(() =>
             {
                 internalChannel.Writer.Complete();
-                logger.LogInformation(LOGMSG_GRPC_REQUEST_CANCELLED);
+                logger.LogInformation(LOGMSG_SIGNALR_REQUEST_CANCELLED);
             });
 
             Acker = new TaskCompletionSource<bool>();
@@ -139,10 +140,13 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                 }
             }
 
+            if (!Acker.Task.IsCompleted)
+            {
+                logger.LogWarning(LOGMSG_SIGNALR_ACK_FAILED);
+            }
             Acker.TrySetResult(false);
             await reader.Completed;
             memoryQueue.RemoveReader(reader);
-            logger.LogInformation("Request finished");
         }
 
         private async Task<bool> WriteAndAckAsync(QueueItem item, Channel<QueueItem> internalChannel, ILogger logger, CancellationToken cancellationToken)
@@ -150,8 +154,11 @@ namespace MemoryQueue.SignalR.Transports.SignalR
             try
             {
                 Acker = new TaskCompletionSource<bool>();
-                await internalChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
-                return await Acker.Task;
+                if (internalChannel.Writer.WriteAsync(item, cancellationToken) is ValueTask writerTask && !writerTask.IsCompleted)
+                {
+                    await writerTask.ConfigureAwait(false);
+                }
+                return await Acker.Task.ConfigureAwait(false);
             }
             catch (Exception ex)
             {

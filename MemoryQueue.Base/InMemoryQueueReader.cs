@@ -20,12 +20,13 @@ namespace MemoryQueue.Base
         #endregion
 
         private readonly ILogger _logger;
-        private readonly IInMemoryQueue _refQueue;
+        private readonly IInMemoryQueue _inMemoryQueue;
         private readonly Task _consumerTask;
+        private readonly QueueConsumerInfo _consumerInfo;
         private readonly ReaderConsumptionCounter _counters;
         private readonly ChannelWriter<QueueItem> _retryWriter;
         private readonly ConsumptionConsolidator _consolidator;
-        private readonly SemaphoreSlim _semaphoreSlim;
+        private readonly SemaphoreSlim _semaphoreSlim = new(1);
         private readonly Func<QueueItem, Task<bool>> _channelCallBack;
 
         public Task Completed => _consumerTask;
@@ -33,14 +34,14 @@ namespace MemoryQueue.Base
         public InMemoryQueueReader(InMemoryQueue inMemoryQueue, QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> callBack, CancellationToken token)
         {
             _logger = inMemoryQueue._loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, inMemoryQueue.Name, consumerInfo.ConsumerType, consumerInfo.Name));
-            _refQueue = inMemoryQueue;
+            _consumerInfo = consumerInfo;
             _counters = new ReaderConsumptionCounter(inMemoryQueue.Counters);
-            consumerInfo.Counters = _counters;
+            _consumerInfo.Counters = _counters;
+            _inMemoryQueue = inMemoryQueue;
             _retryWriter = inMemoryQueue._retryChannel.Writer;
             _channelCallBack = callBack;
 
             _consolidator = new ConsumptionConsolidator(_counters.Consolidate);
-            _semaphoreSlim = new SemaphoreSlim(1);
             _consumerTask = Task.WhenAll(
                 ChannelReaderCore(inMemoryQueue._retryChannel.Reader, token),
                 ChannelReaderCore(inMemoryQueue._mainChannel.Reader, token)
@@ -69,7 +70,7 @@ namespace MemoryQueue.Base
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX);
+                _logger.LogError(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX);
             }
         }
 
@@ -88,9 +89,9 @@ namespace MemoryQueue.Base
             var timestamp = StopwatchEx.GetTimestamp();
             bool isAcked = false;
 
-            if (await _semaphoreSlim.TryAwaitAsync(token).ConfigureAwait(false) is IDisposable locker)
+            if (await _semaphoreSlim.TryAwaitAsync(token).ConfigureAwait(false) is IDisposable disposableLocker)
             {
-                using var _ = locker;
+                using var _ = disposableLocker;
                 timestamp = StopwatchEx.GetTimestamp();
                 isAcked = await _channelCallBack(queueItem).ConfigureAwait(false);
             }
@@ -101,7 +102,7 @@ namespace MemoryQueue.Base
                 await _retryWriter.WriteAsync(new QueueItem(queueItem.Message, true, queueItem.RetryCount + 1)).ConfigureAwait(false);
 
                 NotAckedStreak++;
-                if (_refQueue.ConsumersCount > 1 && NotAckedStreak > 1)
+                if (_inMemoryQueue.ConsumersCount > 1 && NotAckedStreak > 1)
                 {
                     _counters.SetThrottled(true);
                     await TaskEx.SafeDelay(NotAckedStreak * 25, token).ConfigureAwait(false);

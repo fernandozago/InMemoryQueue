@@ -21,7 +21,6 @@ namespace MemoryQueue.Base.Extensions
 
     public static class SemaphoreSlimExtensions
     {
-
         public static async Task<IDisposable?> TryAwaitAsync(this SemaphoreSlim sm, CancellationToken token)
         {
             if (!token.IsCancellationRequested)
@@ -39,6 +38,5 @@ namespace MemoryQueue.Base.Extensions
 
             return null;
         }
-
     }
 }

@@ -19,6 +19,7 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     private const string LOGMSG_GRPC_REQUEST_CANCELLED = "Request cancelled and client is being removed";
     private const string LOGMSG_GRPC_STREAM_ENDED = "CONSUMER DISCONNECTED";
     private const string GRPC_TRAIL_SERVER_EXCEPTION = "serverexception";
+    private const string LOGMSG_GRPC_ACK_FAILED = "Failed to ack the message (Request was cancelled or client disconnected)";
 
     #endregion
 
@@ -249,7 +250,7 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
         //Only call logger.LogWarning when MoveNext(token) returned false -- when Current.Ack is false, should be accepted as valid answer
         else
         {
-            logger.LogWarning("Failed to ack the message");
+            logger.LogWarning(LOGMSG_GRPC_ACK_FAILED);
             return false;
         }
     }
