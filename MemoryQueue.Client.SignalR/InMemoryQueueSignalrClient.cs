@@ -1,19 +1,18 @@
 ﻿using MemoryQueue.Transports.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
-using System;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace MemoryQueue.Client.SignalR;
 
-public class InMemoryQueueSignalrClient : IDisposable
+
+public delegate void QueueInfoReplyEventHandler(QueueInfoReply reply);
+public sealed class InMemoryQueueSignalrClient : IAsyncDisposable
 {
     private readonly CancellationTokenSource _cts;
     private readonly CancellationToken _token;
     private readonly string _address;
     private readonly string? _queueName;
     private readonly HubConnection _connection;
+    public event QueueInfoReplyEventHandler? OnQueueInfo;
 
     public InMemoryQueueSignalrClient(string address, string? queueName = null)
     {
@@ -21,20 +20,23 @@ public class InMemoryQueueSignalrClient : IDisposable
         _token = _cts.Token;
         _address = address;
         _queueName = queueName;
-        //- https://localhost:7134/inmemoryqueue/hub
         _connection = new HubConnectionBuilder()
             .WithUrl(address)
             .WithAutomaticReconnect()
             .Build();
 
+
+        _connection.On<QueueInfoReply>(nameof(QueueInfoReply), v => OnQueueInfo?.Invoke(v));
         _connection.StartAsync().GetAwaiter().GetResult();
     }
 
-    public Task Start() =>
-        _connection.StartAsync();
-
-    public Task Publish(string message) =>
+    public Task PublishAsync(string message) =>
         _connection.SendAsync("Publish", message, _queueName);
+
+    public Task ResetCountersAsync() =>
+        _connection.SendAsync("ResetCounters", _queueName);
+    public Task QueueInfoAsync() =>
+        _connection.SendAsync("QueueInfo", _queueName);
 
     public async Task Consume(string clientName, Func<string, CancellationToken, Task<bool>> callBack, CancellationToken consumerToken)
     {
@@ -78,11 +80,12 @@ public class InMemoryQueueSignalrClient : IDisposable
         }
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         using (_cts)
         {
             _cts.Cancel();
+            await _connection.StopAsync();
         }
     }
 }

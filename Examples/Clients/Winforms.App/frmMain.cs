@@ -11,7 +11,13 @@ namespace GrpcClient4
 
         private void button1_Click(object sender, EventArgs e)
         {
-            var f = new Form1(textBox1.Text, txtQueue.Text);
+            var f = new frmGrpcClient(txtGrpcAddress.Text, txtGRPCQueue.Text);
+            f.Show();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            var f = new frmSignalRClient(txtSignalRAddress.Text, txtGRPCQueue.Text);
             f.Show();
         }
     }

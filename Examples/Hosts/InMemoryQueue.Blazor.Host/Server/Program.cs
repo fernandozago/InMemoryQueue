@@ -40,7 +40,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.MapHub<MyHub>("/inmemoryqueue/hub");
+app.MapHub<InMemoryQueueHub>("/inmemoryqueue/hub");
 app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");

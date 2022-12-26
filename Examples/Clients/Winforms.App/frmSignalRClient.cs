@@ -1,17 +1,15 @@
 using GrpcClient4.QueueInfoPropertyGrid;
-using MemoryQueue.Client.Grpc;
 using MemoryQueue.Client.SignalR;
-using MemoryQueue.Transports.GRPC;
+using MemoryQueue.Transports.SignalR;
 using RandomNameGeneratorLibrary;
 using System.Diagnostics;
 using System.Text.Json;
 
 namespace GrpcClient2
 {
-    public partial class Form1 : Form
+    public partial class frmSignalRClient : Form
     {
         private readonly IProgress<QueueInfoReply> _progress;
-        private readonly GrpcQueueConsumer _consumer;
         private readonly InMemoryQueueSignalrClient _signalR;
         private readonly Dictionary<Task, CancellationTokenSource> _consumers = new();
         private readonly PersonNameGenerator _personNameGenerator = new();
@@ -25,12 +23,12 @@ namespace GrpcClient2
         double[] nackPerSecond = new double[time];
         double[] redeliverPerSecond = new double[time];
         double[] chartMaxYAxis = new double[time];
-        public Form1(string host, string queueName)
+        public frmSignalRClient(string host, string queueName)
         {
             _queueName = queueName;
-            _consumer = new(host, queueName: queueName);
-            _signalR = new InMemoryQueueSignalrClient("https://localhost:7134/inmemoryqueue/hub", queueName);
             _progress = new Progress<QueueInfoReply>(UpdateForm);
+            _signalR = new InMemoryQueueSignalrClient(host, queueName);
+            _signalR.OnQueueInfo += v => _progress.Report(v);
 
             _ = StartTimer();
             InitializeComponent();
@@ -71,6 +69,11 @@ namespace GrpcClient2
             formsPlot1.Refresh();
         }
 
+        private void _signalR_OnQueueInfo(MemoryQueue.Transports.SignalR.QueueInfoReply reply)
+        {
+            throw new NotImplementedException();
+        }
+
         private async Task RandomPub()
         {
             while (_playPause)
@@ -80,10 +83,7 @@ namespace GrpcClient2
                 {
                     try
                     {
-                        await _consumer.PublishAsync(new QueueItemRequest()
-                        {
-                            Message = JsonSerializer.Serialize(new Data(Guid.Empty, DateTime.Now, "A"))
-                        });
+                        await _signalR.PublishAsync(JsonSerializer.Serialize(new Data(Guid.Empty, DateTime.Now, "A")));
                     }
                     catch
                     {
@@ -139,7 +139,7 @@ namespace GrpcClient2
         {
             try
             {
-                _progress.Report(await _consumer.QueueInfoAsync());
+                await _signalR.QueueInfoAsync();
             }
             catch (Exception ex)
             {
@@ -162,7 +162,7 @@ namespace GrpcClient2
             try
             {
                 var cts = new CancellationTokenSource();
-                var consumerTask = _consumer.Consume(_personNameGenerator.GenerateRandomFirstAndLastName(), static (item, token) =>
+                var consumerTask = _signalR.Consume(_personNameGenerator.GenerateRandomFirstAndLastName(), static (item, token) =>
                 {
                     token.ThrowIfCancellationRequested();
                     return Task.FromResult(true);
@@ -202,7 +202,7 @@ namespace GrpcClient2
 
         private async void btnResetCounters_Click(object sender, EventArgs e)
         {
-            await _consumer.ResetCountersAsync();
+            await _signalR.ResetCountersAsync();
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -226,10 +226,7 @@ namespace GrpcClient2
             {
                 try
                 {
-                    await _consumer.PublishAsync(new QueueItemRequest()
-                    {
-                        Message = JsonSerializer.Serialize(new Data(Guid.NewGuid(), DateTime.Now, "A"))
-                    });
+                    await _signalR.PublishAsync(JsonSerializer.Serialize(new Data(Guid.NewGuid(), DateTime.Now, "A")));
                 }
                 catch (Exception)
                 {
@@ -242,8 +239,7 @@ namespace GrpcClient2
         private async void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
             _playPause = false;
-            _signalR.Dispose();
-            await _consumer.DisposeAsync();
+            await _signalR.DisposeAsync();
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -262,11 +258,6 @@ namespace GrpcClient2
             {
                 MessageBox.Show(ex.ToString());
             }
-        }
-
-        private void button4_Click(object sender, EventArgs e)
-        {
-
         }
 
         public record Data(Guid Info, DateTime CreateDate, string Value);

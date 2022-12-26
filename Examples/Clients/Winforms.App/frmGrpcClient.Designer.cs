@@ -1,6 +1,6 @@
 ﻿namespace GrpcClient2
 {
-    partial class Form1
+    partial class frmGrpcClient
     {
         /// <summary>
         ///  Required designer variable.
@@ -34,7 +34,6 @@
             this.btnAddConsumer = new System.Windows.Forms.Button();
             this.btnRemoveConsumer = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.button3 = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
             this.btnResetCounters = new System.Windows.Forms.Button();
             this.propertyGrid1 = new System.Windows.Forms.PropertyGrid();
@@ -48,7 +47,7 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(253, 51);
+            this.button1.Location = new System.Drawing.Point(113, 51);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
             this.button1.TabIndex = 4;
@@ -69,7 +68,7 @@
             // 
             // btnPub
             // 
-            this.btnPub.Location = new System.Drawing.Point(253, 22);
+            this.btnPub.Location = new System.Drawing.Point(113, 22);
             this.btnPub.Name = "btnPub";
             this.btnPub.Size = new System.Drawing.Size(75, 23);
             this.btnPub.TabIndex = 13;
@@ -83,7 +82,7 @@
             this.btnAddConsumer.Name = "btnAddConsumer";
             this.btnAddConsumer.Size = new System.Drawing.Size(95, 23);
             this.btnAddConsumer.TabIndex = 26;
-            this.btnAddConsumer.Text = "Add GRPC";
+            this.btnAddConsumer.Text = "Add Client";
             this.btnAddConsumer.UseVisualStyleBackColor = true;
             this.btnAddConsumer.Click += new System.EventHandler(this.btnAddConsumer_Click);
             // 
@@ -91,7 +90,7 @@
             // 
             this.btnRemoveConsumer.Location = new System.Drawing.Point(6, 51);
             this.btnRemoveConsumer.Name = "btnRemoveConsumer";
-            this.btnRemoveConsumer.Size = new System.Drawing.Size(201, 23);
+            this.btnRemoveConsumer.Size = new System.Drawing.Size(95, 23);
             this.btnRemoveConsumer.TabIndex = 27;
             this.btnRemoveConsumer.Text = "Remove Client";
             this.btnRemoveConsumer.UseVisualStyleBackColor = true;
@@ -101,7 +100,6 @@
             // 
             this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.groupBox1.Controls.Add(this.button3);
             this.groupBox1.Controls.Add(this.button2);
             this.groupBox1.Controls.Add(this.btnResetCounters);
             this.groupBox1.Controls.Add(this.btnAddConsumer);
@@ -115,19 +113,9 @@
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Consumers";
             // 
-            // button3
-            // 
-            this.button3.Location = new System.Drawing.Point(107, 22);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(100, 23);
-            this.button3.TabIndex = 30;
-            this.button3.Text = "Add SignalR";
-            this.button3.UseVisualStyleBackColor = true;
-            this.button3.Click += new System.EventHandler(this.button3_Click);
-            // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(371, 51);
+            this.button2.Location = new System.Drawing.Point(203, 51);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(75, 23);
             this.button2.TabIndex = 29;
@@ -137,7 +125,7 @@
             // 
             // btnResetCounters
             // 
-            this.btnResetCounters.Location = new System.Drawing.Point(371, 22);
+            this.btnResetCounters.Location = new System.Drawing.Point(203, 22);
             this.btnResetCounters.Name = "btnResetCounters";
             this.btnResetCounters.Size = new System.Drawing.Size(75, 23);
             this.btnResetCounters.TabIndex = 28;
@@ -174,14 +162,14 @@
             this.splitContainer1.SplitterDistance = 468;
             this.splitContainer1.TabIndex = 34;
             // 
-            // Form1
+            // frmGrpcClient
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1123, 634);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.groupBox1);
-            this.Name = "Form1";
+            this.Name = "frmGrpcClient";
             this.Text = "Form1";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Form1_FormClosed);
             this.groupBox1.ResumeLayout(false);
@@ -204,6 +192,5 @@
         private SplitContainer splitContainer1;
         private Button btnResetCounters;
         private Button button2;
-        private Button button3;
     }
 }
