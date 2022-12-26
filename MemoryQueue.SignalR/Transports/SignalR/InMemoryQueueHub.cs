@@ -136,7 +136,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                 {
                     await semaphoreSlim.WaitAsync(cancellationToken).ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     break;
                 }
