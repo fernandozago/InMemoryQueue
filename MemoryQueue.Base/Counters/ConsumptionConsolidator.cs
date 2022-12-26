@@ -9,18 +9,10 @@ public sealed class ConsumptionConsolidator : IDisposable
     {
         internal static event ConsumptionConsolidatorEventHandler? OnConsolidate;
         private static readonly Timer _timer;
-        private static readonly Timer _timerGc;
 
         static ConsumptionConsolidatorTimer()
         {
             _timer = new Timer(_ => OnConsolidate?.Invoke(), null, 1000, 1000);
-            _timerGc = new Timer(GCInvoke, null, 60000, 60000 * 5);
-        }
-
-        private static void GCInvoke(object state)
-        {
-            Console.WriteLine("Collecting GC");
-            GC.Collect();
         }
     }
 
