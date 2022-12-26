@@ -110,7 +110,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
             Acker.SetCanceled();
 
             QueueItem? currentItem = default;
-            using SemaphoreSlim semaphoreSlim = new (0);
+            SemaphoreSlim semaphoreSlim = new (0);
             using var registration = cancellationToken.Register(() =>
             {
                 using (semaphoreSlim)
@@ -143,6 +143,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
 
                 if (currentItem.HasValue)
                 {
+                    Debug.Assert(!Acker.Task.IsCompleted);
                     yield return new QueueItemReply()
                     {
                         Message = currentItem.Value.Message,
