@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Threading.Channels;
 
 namespace MemoryQueue.SignalR.Transports.SignalR
 {
