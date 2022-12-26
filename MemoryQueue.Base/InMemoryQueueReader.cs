@@ -4,7 +4,6 @@ using MemoryQueue.Base.Models;
 using MemoryQueue.Base.Utils;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -24,8 +23,6 @@ namespace MemoryQueue.Base
         private readonly IInMemoryQueue _refQueue;
         private readonly Task _consumerTask;
         private readonly ReaderConsumptionCounter _counters;
-        private readonly ChannelReader<QueueItem> _mainReader;
-        private readonly ChannelReader<QueueItem> _retryReader;
         private readonly ChannelWriter<QueueItem> _retryWriter;
         private readonly ConsumptionConsolidator _consolidator;
         private readonly SemaphoreSlim _semaphoreSlim;
@@ -39,16 +36,14 @@ namespace MemoryQueue.Base
             _refQueue = inMemoryQueue;
             _counters = new ReaderConsumptionCounter(inMemoryQueue.Counters);
             consumerInfo.Counters = _counters;
-            _mainReader = inMemoryQueue._mainChannel.Reader;
-            _retryReader = inMemoryQueue._retryChannel.Reader;
             _retryWriter = inMemoryQueue._retryChannel.Writer;
             _channelCallBack = callBack;
 
             _consolidator = new ConsumptionConsolidator(_counters.Consolidate);
             _semaphoreSlim = new SemaphoreSlim(1);
             _consumerTask = Task.WhenAll(
-                ChannelReaderCore(_retryReader, token),
-                ChannelReaderCore(_mainReader, token)
+                ChannelReaderCore(inMemoryQueue._retryChannel.Reader, token),
+                ChannelReaderCore(inMemoryQueue._mainChannel.Reader, token)
             ).ContinueWith(_ => _consolidator.Dispose());
         }
 
@@ -67,13 +62,6 @@ namespace MemoryQueue.Base
                     await DeliverItemAsync(item, token).ConfigureAwait(false);
                     token.ThrowIfCancellationRequested();
                 }
-                //while (!token.IsCancellationRequested && await WaitToReadAsync(token).ConfigureAwait(false))
-                //{
-                //    if (!token.IsCancellationRequested && TryRead(out var queueItem))
-                //    {
-                //        await DeliverItemAsync(queueItem, token).ConfigureAwait(false);
-                //    }
-                //}
             }
             catch (OperationCanceledException ex)
             {
@@ -116,7 +104,7 @@ namespace MemoryQueue.Base
                 if (_refQueue.ConsumersCount > 1 && NotAckedStreak > 1)
                 {
                     _counters.SetThrottled(true);
-                    await NotAckedRateLimiter(NotAckedStreak, token).ConfigureAwait(false);
+                    await TaskEx.SafeDelay(NotAckedStreak * 25, token).ConfigureAwait(false);
                 }
             }
             else
@@ -126,18 +114,6 @@ namespace MemoryQueue.Base
                 {
                     _counters.SetThrottled(false);
                 }
-            }
-        }
-
-        private static async ValueTask NotAckedRateLimiter(int nackStreak, CancellationToken token)
-        {
-            try
-            {
-                await Task.Delay(nackStreak * 25, token).ConfigureAwait(false);
-            }
-            catch
-            {
-                //
             }
         }
     }
