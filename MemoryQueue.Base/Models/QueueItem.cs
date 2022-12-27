@@ -12,4 +12,11 @@ public struct QueueItem
     public string Message { get; private set; }
     public bool Retrying { get; private set; }
     public int RetryCount { get; private set; }
+
+    public QueueItem Retry()
+    {
+        Retrying = true;
+        RetryCount++;
+        return this;
+    }
 }

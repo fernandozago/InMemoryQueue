@@ -200,7 +200,7 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     /// <returns></returns>
     private async Task<bool> WriteAndAckAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, IAsyncStreamReader<QueueItemAck> requestStream, ILogger logger, CancellationToken cancellationToken) =>
         await WriteItemAsync(item, responseStream, logger, cancellationToken).ConfigureAwait(false)
-            && await ReadAckAsync(requestStream, logger, cancellationToken).ConfigureAwait(false);
+            && await ReadAckAsync(requestStream, cancellationToken).ConfigureAwait(false);
 
     /// <summary>
     /// Writes an item into the responseStream
@@ -212,25 +212,14 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     /// <returns>true if succeded, otherwise false</returns>
     private async Task<bool> WriteItemAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, ILogger logger, CancellationToken token)
     {
-        try
+        token.ThrowIfCancellationRequested();
+        await responseStream.WriteAsync(new QueueItemReply()
         {
-            if (!_isKestrel)
-            {
-                token.ThrowIfCancellationRequested();
-            }
-            await responseStream.WriteAsync(new QueueItemReply()
-            {
-                Message = item.Message,
-                Retrying = item.Retrying,
-                RetryCount = item.RetryCount
-            }, _isKestrel ? token : CancellationToken.None).ConfigureAwait(false);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Failed to send the message");
-            return false;
-        }
+            Message = item.Message,
+            Retrying = item.Retrying,
+            RetryCount = item.RetryCount
+        }, _isKestrel ? token : CancellationToken.None).ConfigureAwait(false);
+        return true;
     }
 
     /// <summary>
@@ -240,7 +229,7 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     /// <param name="logger"></param>
     /// <param name="token"></param>
     /// <returns>true = ack, false = nack or fail</returns>
-    private static async Task<bool> ReadAckAsync(IAsyncStreamReader<QueueItemAck> requestStream, ILogger logger, CancellationToken token)
+    private static async Task<bool> ReadAckAsync(IAsyncStreamReader<QueueItemAck> requestStream, CancellationToken token)
     {
         if (await requestStream.MoveNext(token).ConfigureAwait(false))
         {

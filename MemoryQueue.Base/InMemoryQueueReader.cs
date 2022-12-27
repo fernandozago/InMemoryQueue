@@ -14,7 +14,7 @@ namespace MemoryQueue.Base
     {
         #region Constants
         private const string LOGGER_CATEGORY = $"{nameof(InMemoryQueueReader)}.{{0}}.{{1}}-[{{2}}]";
-        private const string LOGMSG_QUEUEREADER_FINISHED_WITH_EX = "Finished With Exception";
+        private const string LOGMSG_QUEUEREADER_FINISHED_WITH_EX = "[{0}] Finished With Exception";
         private const string LOGMSG_READER_DISPOSED = "Reader Disposed";
         private const string LOGMSG_ACK_FAILED_READER_CLOSING = "Failed to ack the message (Request was cancelled or client disconnected)";
         #endregion
@@ -43,8 +43,8 @@ namespace MemoryQueue.Base
 
             _consolidator = new ConsumptionConsolidator(_counters.Consolidate);
             _consumerTask = Task.WhenAll(
-                ChannelReaderCore(inMemoryQueue._retryChannel.Reader, token),
-                ChannelReaderCore(inMemoryQueue._mainChannel.Reader, token)
+                ChannelReaderCore("Retry", inMemoryQueue._retryChannel.Reader, token),
+                ChannelReaderCore("Main", inMemoryQueue._mainChannel.Reader, token)
             );
         }
 
@@ -53,7 +53,7 @@ namespace MemoryQueue.Base
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        private async Task ChannelReaderCore(ChannelReader<QueueItem> reader, CancellationToken token)
+        private async Task ChannelReaderCore(string name, ChannelReader<QueueItem> reader, CancellationToken token)
         {
             await Task.Yield();
             try
@@ -62,18 +62,18 @@ namespace MemoryQueue.Base
                 {
                     if (token.IsCancellationRequested || !await DeliverItemAsync(item, token).ConfigureAwait(false))
                     {
-                        await _retryWriter.WriteAsync(new QueueItem(item.Message, true, item.RetryCount + 1)).ConfigureAwait(false);
+                        await _retryWriter.WriteAsync(item.Retry()).ConfigureAwait(false);
                     }
                     token.ThrowIfCancellationRequested();
                 }
             }
             catch (OperationCanceledException ex)
             {
-                _logger.LogTrace(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX);
+                _logger.LogWarning(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX, name);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX);
+                _logger.LogError(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX, name);
             }
         }
 
@@ -90,7 +90,7 @@ namespace MemoryQueue.Base
         private async Task<bool> DeliverItemAsync(QueueItem queueItem, CancellationToken token)
         {
             var timestamp = StopwatchEx.GetTimestamp();
-            bool isAcked = false;
+            bool? isAcked = null;
 
             if (await _semaphoreSlim.TryAwaitAsync(token).ConfigureAwait(false) is IDisposable disposableLocker)
             {
@@ -102,12 +102,12 @@ namespace MemoryQueue.Base
                 }
                 catch (Exception)
                 {
-                    isAcked = false;
+                    isAcked = null;
                 }
             }
 
-            _counters.UpdateCounters(queueItem.Retrying, isAcked, timestamp);
-            if (isAcked)
+            _counters.UpdateCounters(queueItem.Retrying, isAcked == true, timestamp);
+            if (isAcked == true)
             {
                 NotAckedStreak--;
                 if (NotAckedStreak == 0)
@@ -117,9 +117,17 @@ namespace MemoryQueue.Base
             }
             else
             {
-                if (token.IsCancellationRequested)
+                if (isAcked is null)
                 {
-                    _logger.LogWarning(LOGMSG_ACK_FAILED_READER_CLOSING);
+                    _logger.LogTrace("Failed sending the message");
+                }
+                else if (token.IsCancellationRequested)
+                {
+                    _logger.LogTrace(LOGMSG_ACK_FAILED_READER_CLOSING);
+                }
+                else
+                {
+                    _logger.LogWarning("This should be a normal NACK ");
                 }
 
                 NotAckedStreak++;
@@ -130,7 +138,7 @@ namespace MemoryQueue.Base
                 }
             }
 
-            return isAcked;
+            return isAcked == true;
         }
 
         public void Dispose()
