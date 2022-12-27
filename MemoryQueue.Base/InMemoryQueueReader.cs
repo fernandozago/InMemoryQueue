@@ -60,13 +60,16 @@ namespace MemoryQueue.Base
             {
                 await foreach (var item in reader.ReadAllAsync(token).ConfigureAwait(false))
                 {
-                    await DeliverItemAsync(item, token).ConfigureAwait(false);
+                    if (token.IsCancellationRequested || !await DeliverItemAsync(item, token).ConfigureAwait(false))
+                    {
+                        await _retryWriter.WriteAsync(new QueueItem(item.Message, true, item.RetryCount + 1)).ConfigureAwait(false);
+                    }
                     token.ThrowIfCancellationRequested();
                 }
             }
             catch (OperationCanceledException ex)
             {
-                _logger.LogTrace(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX);
+                _logger.LogWarning(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX);
             }
             catch (Exception ex)
             {
@@ -84,7 +87,7 @@ namespace MemoryQueue.Base
         /// Publish an message to some consumer and awaits for the ACK(true)/NACK(false) result
         /// </summary>
         /// <param name="queueItem">Message to be sent</param>
-        private async Task DeliverItemAsync(QueueItem queueItem, CancellationToken token)
+        private async Task<bool> DeliverItemAsync(QueueItem queueItem, CancellationToken token)
         {
             var timestamp = StopwatchEx.GetTimestamp();
             bool isAcked = false;
@@ -93,22 +96,18 @@ namespace MemoryQueue.Base
             {
                 using var _ = disposableLocker;
                 timestamp = StopwatchEx.GetTimestamp();
-                isAcked = await _channelCallBack(queueItem).ConfigureAwait(false);
+                try
+                {
+                    isAcked = await _channelCallBack(queueItem).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    isAcked = false;
+                }
             }
 
             _counters.UpdateCounters(queueItem.Retrying, isAcked, timestamp);
-            if (!isAcked)
-            {
-                await _retryWriter.WriteAsync(new QueueItem(queueItem.Message, true, queueItem.RetryCount + 1)).ConfigureAwait(false);
-
-                NotAckedStreak++;
-                if (_inMemoryQueue.ConsumersCount > 1 && NotAckedStreak > 1)
-                {
-                    _counters.SetThrottled(true);
-                    await TaskEx.SafeDelay(NotAckedStreak * 25, token).ConfigureAwait(false);
-                }
-            }
-            else
+            if (isAcked)
             {
                 NotAckedStreak--;
                 if (NotAckedStreak == 0)
@@ -116,6 +115,17 @@ namespace MemoryQueue.Base
                     _counters.SetThrottled(false);
                 }
             }
+            else
+            {
+                NotAckedStreak++;
+                if (_inMemoryQueue.ConsumersCount > 1 && NotAckedStreak > 1)
+                {
+                    _counters.SetThrottled(true);
+                    await TaskEx.SafeDelay(NotAckedStreak * 25, token).ConfigureAwait(false);
+                }
+            }
+
+            return isAcked;
         }
 
         public void Dispose()

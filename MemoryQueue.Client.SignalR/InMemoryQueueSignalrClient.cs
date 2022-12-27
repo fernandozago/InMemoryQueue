@@ -51,7 +51,7 @@ public sealed class InMemoryQueueSignalrClient : IAsyncDisposable
                     .Build();
 
                 await connection.StartAsync(consumerToken);
-                await foreach (var item in connection.StreamAsync<QueueItemReply>("Consume", clientName, _queueName, cts.Token))
+                await foreach (var item in connection.StreamAsync<QueueItemReply>("Consume2", clientName, _queueName, cts.Token))
                 {
                     try
                     {

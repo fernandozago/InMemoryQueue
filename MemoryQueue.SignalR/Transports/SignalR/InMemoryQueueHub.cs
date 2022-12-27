@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading.Channels;
 
 namespace MemoryQueue.SignalR.Transports.SignalR
 {
@@ -133,14 +134,18 @@ namespace MemoryQueue.SignalR.Transports.SignalR
             {
                 try
                 {
-                    await semaphoreSlim.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    if (!await semaphoreSlim.WaitAsync(1000, cancellationToken).ConfigureAwait(false))
+                    {
+                        Console.WriteLine("Rotating...");
+                        continue;
+                    }
                 }
                 catch (Exception)
                 {
                     break;
                 }
 
-                if (currentItem.HasValue)
+                if (currentItem.HasValue && !cancellationToken.IsCancellationRequested)
                 {
                     Debug.Assert(!Acker.Task.IsCompleted);
                     yield return new QueueItemReply()
@@ -162,6 +167,65 @@ namespace MemoryQueue.SignalR.Transports.SignalR
             memoryQueue.RemoveReader(reader);
 
             //_logger.LogCritical("SHOUD BE FINISHED");
+        }
+
+        public ChannelReader<QueueItemReply> Consume2(string clientName, string? queue, CancellationToken cancellationToken)
+        {
+            var channel = Channel.CreateBounded<QueueItemReply>(1);
+
+            _ = Task.Run(async () =>
+            {
+                Acker = new TaskCompletionSource<bool>();
+                Acker.SetResult(true);
+
+                using var channelCancelRegistration = cancellationToken.Register(() => channel.Writer.Complete());
+
+                var memoryQueue = (InMemoryQueue)_queueManager.GetOrCreateQueue(queue);
+                var consumerQueueInfo = new QueueConsumerInfo(QueueConsumerType.SignalR)
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Host = Context.ConnectionId,
+                    Ip = Context.ConnectionId,
+                    Name = clientName ?? "Unknown"
+                };
+                var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.Name, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
+
+                var reader = memoryQueue.AddQueueReader(consumerQueueInfo, (item) => WriteAndAckAsync2(channel.Writer, item, cancellationToken), cancellationToken);
+
+                await channel.Reader.Completion.ConfigureAwait(false);
+                try
+                {
+                    Acker.TrySetCanceled();
+                }
+                catch (Exception ex)
+                {
+                    
+                }
+                await reader.Completed.ConfigureAwait(false);
+                memoryQueue.RemoveReader(reader);
+            }, cancellationToken);
+
+            return channel.Reader;
+        }
+
+        private async Task<bool> WriteAndAckAsync2(ChannelWriter<QueueItemReply> writer, QueueItem item, CancellationToken token)
+        {
+            if (token.IsCancellationRequested) return false;
+
+            Acker = new TaskCompletionSource<bool>();
+            using var registration = token.Register(() => Acker.TrySetCanceled());
+
+            if (writer.WriteAsync(new QueueItemReply()
+            {
+                Message = item.Message,
+                RetryCount = item.RetryCount,
+                Retrying = item.Retrying
+            }, token) is ValueTask write && !write.IsCompletedSuccessfully)
+            {
+                await write;
+            }
+
+            return await Acker.Task.ConfigureAwait(false);
         }
 
         private Task<bool> WriteAndAckAsync(QueueItem item, ref QueueItem? refItem, SemaphoreSlim semaphore)
