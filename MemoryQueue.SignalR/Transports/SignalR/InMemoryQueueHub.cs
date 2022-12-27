@@ -13,7 +13,6 @@ namespace MemoryQueue.SignalR.Transports.SignalR
     {
         private const string GRPC_QUEUEREADER_LOGGER_CATEGORY = $"{nameof(InMemoryQueueReader)}.{{0}}.{{1}}-[{{2}}]";
         private const string LOGMSG_SIGNALR_REQUEST_CANCELLED = "Request cancelled and client is being removed";
-        private const string LOGMSG_SIGNALR_ACK_FAILED = "Failed to ack the message (Request was cancelled or client disconnected)";
 
         private readonly InMemoryQueueManager _queueManager;
         private readonly ILoggerFactory _loggerFactory;
@@ -93,83 +92,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                     .EnqueueAsync(item).ConfigureAwait(false);
         }
 
-        public async IAsyncEnumerable<QueueItemReply> Consume(string clientName, string? queue, [EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            #region Setup
-            var memoryQueue = (InMemoryQueue)_queueManager.GetOrCreateQueue(queue);
-            var consumerQueueInfo = new QueueConsumerInfo(QueueConsumerType.SignalR)
-            {
-                Id = Guid.NewGuid().ToString(),
-                Host = Context.ConnectionId,
-                Ip = Context.ConnectionId,
-                Name = clientName ?? "Unknown"
-            };
-            var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.Name, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
-
-            Acker = new TaskCompletionSource<bool>();
-            Acker.SetCanceled();
-
-            QueueItem? currentItem = default;
-            SemaphoreSlim semaphoreSlim = new (0);
-            using var registration = cancellationToken.Register(() =>
-            {
-                using (semaphoreSlim)
-                {
-                    semaphoreSlim.Release();
-                }
-                logger.LogInformation(LOGMSG_SIGNALR_REQUEST_CANCELLED);
-            });
-            #endregion
-
-            Debug.Assert(Acker.Task.IsCanceled);
-            Debug.Assert(semaphoreSlim.CurrentCount == 0);
-            Debug.Assert(currentItem is null);
-
-            using var reader = memoryQueue.AddQueueReader(
-                    consumerQueueInfo,
-                    item => WriteAndAckAsync(item, ref currentItem, semaphoreSlim),
-                    cancellationToken);
-
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                try
-                {
-                    if (!await semaphoreSlim.WaitAsync(1000, cancellationToken).ConfigureAwait(false))
-                    {
-                        Console.WriteLine("Rotating...");
-                        continue;
-                    }
-                }
-                catch (Exception)
-                {
-                    break;
-                }
-
-                if (currentItem.HasValue && !cancellationToken.IsCancellationRequested)
-                {
-                    Debug.Assert(!Acker.Task.IsCompleted);
-                    yield return new QueueItemReply()
-                    {
-                        Message = currentItem.Value.Message,
-                        RetryCount = currentItem.Value.RetryCount,
-                        Retrying = currentItem.Value.Retrying
-                    };
-                    currentItem = null;
-                }
-            }
-            if (!Acker.Task.IsCompleted)
-            {
-                logger.LogWarning(LOGMSG_SIGNALR_ACK_FAILED);
-            }
-
-            Acker.TrySetResult(false);
-            await reader.Completed.ConfigureAwait(false);
-            memoryQueue.RemoveReader(reader);
-
-            //_logger.LogCritical("SHOUD BE FINISHED");
-        }
-
-        public ChannelReader<QueueItemReply> Consume2(string clientName, string? queue, CancellationToken cancellationToken)
+        public ChannelReader<QueueItemReply> Consume(string clientName, string? queue, CancellationToken cancellationToken)
         {
             var channel = Channel.CreateBounded<QueueItemReply>(1);
 

@@ -18,7 +18,7 @@ await connection.SendAsync("Publish", "TESTE3", null);
 await connection.SendAsync("Publish", "TESTE4", null);
 await connection.SendAsync("Publish", "TESTE5", null);
 
-await foreach (var item in connection.StreamAsync<string>("Consume2", null, CancellationToken.None))
+await foreach (var item in connection.StreamAsync<string>("Consume", null, CancellationToken.None))
 {
     //Console.WriteLine(item);
     await connection.SendAsync("Ack");

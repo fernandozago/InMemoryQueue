@@ -15,8 +15,8 @@ namespace MemoryQueue.Base
         #region Constants
         private const string LOGGER_CATEGORY = $"{nameof(InMemoryQueueReader)}.{{0}}.{{1}}-[{{2}}]";
         private const string LOGMSG_QUEUEREADER_FINISHED_WITH_EX = "Finished With Exception";
-        private const string LOGMSG_TRACE_FAILED_GETTING_LOCK_CLIENT_DISCONNECTING_OR_DISCONNECTED = "Failed to to get lock... Client is disconnecting";
         private const string LOGMSG_READER_DISPOSED = "Reader Disposed";
+        private const string LOGMSG_ACK_FAILED_READER_CLOSING = "Failed to ack the message (Request was cancelled or client disconnected)";
         #endregion
 
         private readonly ILogger _logger;
@@ -117,6 +117,11 @@ namespace MemoryQueue.Base
             }
             else
             {
+                if (token.IsCancellationRequested)
+                {
+                    _logger.LogWarning(LOGMSG_ACK_FAILED_READER_CLOSING);
+                }
+
                 NotAckedStreak++;
                 if (_inMemoryQueue.ConsumersCount > 1 && NotAckedStreak > 1)
                 {
