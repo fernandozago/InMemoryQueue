@@ -69,7 +69,7 @@ namespace MemoryQueue.Base
             }
             catch (OperationCanceledException ex)
             {
-                _logger.LogWarning(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX);
+                _logger.LogTrace(ex, LOGMSG_QUEUEREADER_FINISHED_WITH_EX);
             }
             catch (Exception ex)
             {
