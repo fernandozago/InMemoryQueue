@@ -17,7 +17,7 @@ namespace GrpcClient4
 
         private void button2_Click(object sender, EventArgs e)
         {
-            var f = new frmSignalRClient(txtSignalRAddress.Text, txtGRPCQueue.Text);
+            var f = new frmSignalRClient(txtSignalRAddress.Text, txtSignalRQQueue.Text);
             f.Show();
         }
     }
