@@ -12,10 +12,10 @@ public sealed record QueueConsumerInfo
     public ReaderConsumptionCounter? Counters { get; set; }
     public QueueConsumerType ConsumerType { get; private set; }
 
-    public string Id { get; set; }
-    public string Name { get; set; }
-    public string Ip { get; set; }
-    public string Host { get; set; }
+    required public string Id { get; set; }
+    required public string Name { get; set; }
+    required public string Ip { get; set; }
+    required public string Host { get; set; }
 
     public override string ToString()
     {
