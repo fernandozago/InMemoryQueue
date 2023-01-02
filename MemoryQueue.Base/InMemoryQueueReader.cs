@@ -26,8 +26,8 @@ namespace MemoryQueue.Base
         private readonly ConsumptionConsolidator _consolidator;
         private readonly ActionBlock<QueueItem> _actionBlock;
         private readonly CancellationToken _token;
-        private readonly IDisposable _retryRegistry;
-        private readonly IDisposable _mainRegistry;
+        private readonly IDisposable _retryLink;
+        private readonly IDisposable _mainLink;
         private readonly SemaphoreSlim _semaphoreSlim = new(1);
         private readonly Func<QueueItem, Task<bool>> _channelCallBack;
 
@@ -54,8 +54,8 @@ namespace MemoryQueue.Base
                 _actionBlock.Complete();
             });
 
-            _retryRegistry = inMemoryQueue._retryChannel.LinkTo(_actionBlock);
-            _mainRegistry = inMemoryQueue._mainChannel.LinkTo(_actionBlock);
+            _retryLink = inMemoryQueue._retryChannel.LinkTo(_actionBlock);
+            _mainLink = inMemoryQueue._mainChannel.LinkTo(_actionBlock);
         }
 
         private int _notAckedStreak = 0;
@@ -99,13 +99,12 @@ namespace MemoryQueue.Base
             {
                 if (isAcked is null || token.IsCancellationRequested)
                 {
-                    //_logger.LogWarning(LOGMSG_ACK_FAILED_READER_CLOSING);
-                    _logger.LogWarning("{LOGMSG_ACK_FAILED_READER_CLOSING}: {isAcked} -- {cancellationRequested}", LOGMSG_ACK_FAILED_READER_CLOSING, isAcked is null ? "null" : isAcked.ToString(), token.IsCancellationRequested);
+                    _logger.LogWarning(LOGMSG_ACK_FAILED_READER_CLOSING);
                     _actionBlock.Complete();
                 }
                 else
                 {
-                    _logger.LogTrace("Normal Nack: {isAcked} -- {cancellationRequested}", isAcked is null ? "null" : isAcked.ToString(), token.IsCancellationRequested);
+                    _logger.LogTrace("Normal -- {cancellationRequested}", token.IsCancellationRequested);
                 }
 
                 await _retryWriter.SendAsync(queueItem.Retry()).ConfigureAwait(false);
@@ -122,8 +121,8 @@ namespace MemoryQueue.Base
 
         public void Dispose()
         {
-            _retryRegistry.Dispose();
-            _mainRegistry.Dispose();
+            _retryLink.Dispose();
+            _mainLink.Dispose();
             _semaphoreSlim.Dispose();
             _consolidator.Dispose();
         }
