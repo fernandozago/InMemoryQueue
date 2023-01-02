@@ -13,7 +13,7 @@ public static class InMemoryQueueExtensions
         Func<QueueItem, Task<bool>> callBack, string? consumerName = null, CancellationToken cancellationToken = default)
     {
         var id = Guid.NewGuid().ToString();
-        using var reader = ((InMemoryQueue)inMemoryQueue).AddQueueReader(new QueueConsumerInfo(QueueConsumerType.InMemory)
+        var reader = inMemoryQueue.AddQueueReader(new QueueConsumerInfo(QueueConsumerType.InMemory)
         {
             Id = id,
             Name = consumerName ?? id,
@@ -22,7 +22,7 @@ public static class InMemoryQueueExtensions
         }, callBack, cancellationToken);
 
         await reader.Completed.ConfigureAwait(false);
-        ((InMemoryQueue)inMemoryQueue).RemoveReader(reader);
+        inMemoryQueue.RemoveReader(reader);
     }
 
     public static Task CreateInMemoryConsumer(this InMemoryQueueManager inMemoryQueueManager,

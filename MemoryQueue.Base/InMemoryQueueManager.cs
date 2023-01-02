@@ -22,7 +22,7 @@ public sealed partial class InMemoryQueueManager
 
     private static Regex QUEUENAME_REGEX_VALIDATOR = new Regex("^[a-z0-9-_.]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-    private readonly ConcurrentDictionary<int, InMemoryQueue> _queues = new();
+    private readonly ConcurrentDictionary<int, IInMemoryQueue> _queues = new();
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<InMemoryQueueManager> _logger;
     private readonly object _locker = new();
@@ -71,7 +71,7 @@ public sealed partial class InMemoryQueueManager
         return name;
     }
 
-    private InMemoryQueue CreateInMemoryQueue(int hash, string queueName)
+    private IInMemoryQueue CreateInMemoryQueue(int hash, string queueName)
     {
         try
         {

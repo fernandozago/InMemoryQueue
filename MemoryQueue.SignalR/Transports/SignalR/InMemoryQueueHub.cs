@@ -101,9 +101,13 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                 Acker = new TaskCompletionSource<bool>();
                 Acker.SetResult(true);
 
+                _logger.LogInformation("channelCancelRegistration");
                 using var channelCancelRegistration = cancellationToken.Register(() => channel.Writer.Complete());
 
-                var memoryQueue = (InMemoryQueue)_queueManager.GetOrCreateQueue(queue);
+                _logger.LogInformation("Creating Queue");
+                var memoryQueue = _queueManager.GetOrCreateQueue(queue);
+
+                _logger.LogInformation("Consumer Info");
                 var consumerQueueInfo = new QueueConsumerInfo(QueueConsumerType.SignalR)
                 {
                     Id = Guid.NewGuid().ToString(),
@@ -112,7 +116,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                     Name = clientName ?? "Unknown"
                 };
                 var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.Name, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
-
+                
                 var reader = memoryQueue.AddQueueReader(consumerQueueInfo, (item) => WriteAndAckAsync2(channel.Writer, item, cancellationToken), cancellationToken);
 
                 await channel.Reader.Completion.ConfigureAwait(false);
@@ -133,7 +137,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
 
         private async Task<bool> WriteAndAckAsync2(ChannelWriter<QueueItemReply> writer, QueueItem item, CancellationToken token)
         {
-            if (token.IsCancellationRequested) return false;
+            token.ThrowIfCancellationRequested();
 
             Acker = new TaskCompletionSource<bool>();
             using var registration = token.Register(() => Acker.TrySetCanceled());
@@ -148,6 +152,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                 await write;
             }
 
+            token.ThrowIfCancellationRequested();
             return await Acker.Task.ConfigureAwait(false);
         }
 

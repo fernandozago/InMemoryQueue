@@ -1,6 +1,8 @@
 ﻿using MemoryQueue.Base.Counters;
 using MemoryQueue.Base.Models;
+using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MemoryQueue.Base;
@@ -13,8 +15,14 @@ public interface IInMemoryQueue
     int ConsumersCount { get; }
     QueueConsumptionCounter Counters { get; }
     IReadOnlyCollection<QueueConsumerInfo> Consumers { get; }
-
+    IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken cancellationToken);
+    void RemoveReader(IInMemoryQueueReader reader);
     ValueTask EnqueueAsync(string item);
     bool TryPeekMainQueue(out QueueItem item);
     bool TryPeekRetryQueue(out QueueItem item);
+}
+
+public interface IInMemoryQueueReader : IDisposable
+{
+    Task Completed { get; }
 }

@@ -41,6 +41,7 @@ public class InMemoryConsumerBackgroundService : BackgroundService
         {
             await Task.Delay(1);
             await queue.EnqueueAsync(DateTime.Now.ToString());
+            await queue.EnqueueAsync(DateTime.Now.ToString());
         }
     }
 

@@ -6,8 +6,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace MemoryQueue.Base;
 
@@ -25,18 +25,18 @@ public sealed class InMemoryQueue : IInMemoryQueue
     #region Fields
     private readonly ILogger _logger;
     internal readonly ILoggerFactory _loggerFactory;
-    internal readonly Channel<QueueItem> _retryChannel;
-    internal readonly Channel<QueueItem> _mainChannel;
+    internal readonly BufferBlock<QueueItem> _retryChannel;
+    internal readonly BufferBlock<QueueItem> _mainChannel;
     private readonly ConsumptionConsolidator _consolidator;
-    private readonly ConcurrentDictionary<InMemoryQueueReader, QueueConsumerInfo> _readers = new();
+    private readonly ConcurrentDictionary<IInMemoryQueueReader, QueueConsumerInfo> _readers = new();
     #endregion
 
     public string Name { get; private set; }
     public QueueConsumptionCounter Counters { get; private set; }
 
     public int ConsumersCount => _readers.Count;
-    public int MainChannelCount => _mainChannel.Reader.Count;
-    public int RetryChannelCount => _retryChannel.Reader.Count;
+    public int MainChannelCount => _mainChannel.Count;
+    public int RetryChannelCount => _retryChannel.Count;
 
     public IReadOnlyCollection<QueueConsumerInfo> Consumers =>
         (IReadOnlyCollection<QueueConsumerInfo>)_readers.Values;
@@ -50,18 +50,11 @@ public sealed class InMemoryQueue : IInMemoryQueue
         Counters = new();
         _consolidator = new ConsumptionConsolidator(Counters.Consolidate);
 
-        _mainChannel = CreateUnboundedChannel();
-        _retryChannel = CreateUnboundedChannel();
+        _mainChannel = new();
+        _retryChannel = new();
     }
 
-    private static Channel<QueueItem> CreateUnboundedChannel() =>
-        Channel.CreateUnbounded<QueueItem>(new UnboundedChannelOptions()
-        {
-            SingleWriter = false,
-            SingleReader = false
-        });
-
-    public InMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken cancellationToken)
+    public IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken cancellationToken)
     {
         var reader = new InMemoryQueueReader(this, consumerInfo, channelCallBack, cancellationToken);
         _readers.TryAdd(reader, consumerInfo);
@@ -69,41 +62,33 @@ public sealed class InMemoryQueue : IInMemoryQueue
         return reader;
     }
 
-    public void RemoveReader(InMemoryQueueReader reader)
+    public void RemoveReader(IInMemoryQueueReader reader)
     {
-        _readers.TryRemove(reader, out var value);
-        _logger.LogInformation(LOGMSG_READER_REMOVED, value);
+        using (reader)
+        {
+            _readers.TryRemove(reader, out var value);
+            _logger.LogInformation(LOGMSG_READER_REMOVED, value);
+        }
     }
 
     public async ValueTask EnqueueAsync(string item)
     {
         var queueItem = new QueueItem(item, false, 0);
-        if (_mainChannel.Writer.WriteAsync(queueItem) is ValueTask writeTask && !writeTask.IsCompletedSuccessfully) 
+        if (await _mainChannel.SendAsync(queueItem))
         {
-            await writeTask;
+            Counters.Publish();
+            _logger.LogTrace(LOGMSG_TRACE_ITEM_QUEUED, queueItem);
         }
-        Counters.Publish();
-        _logger.LogTrace(LOGMSG_TRACE_ITEM_QUEUED, queueItem);
     }
 
     public bool TryPeekMainQueue([MaybeNullWhen(false)] out QueueItem item)
     {
-        if (_mainChannel.Reader.CanPeek && _mainChannel.Reader.TryPeek(out item))
-        {
-            return true;
-        }
-
         item = default;
         return false;
     }
 
     public bool TryPeekRetryQueue([MaybeNullWhen(false)] out QueueItem item)
     {
-        if (_retryChannel.Reader.CanPeek && _retryChannel.Reader.TryPeek(out item))
-        {
-            return true;
-        }
-
         item = default;
         return false;
     }

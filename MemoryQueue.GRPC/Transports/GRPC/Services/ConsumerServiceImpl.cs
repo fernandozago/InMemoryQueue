@@ -157,10 +157,10 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     public override async Task BindConsumer(IAsyncStreamReader<QueueItemAck> requestStream, IServerStreamWriter<QueueItemReply> responseStream, ServerCallContext context)
     {
 
-        InMemoryQueue? memoryQueue = default;
+        IInMemoryQueue? memoryQueue = default;
         try
         {
-            memoryQueue = (InMemoryQueue)_queueManager.GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
+            memoryQueue = _queueManager.GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
         }
         catch (Exception ex)
         {
@@ -179,7 +179,7 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
         var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.Name, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
         context.CancellationToken.Register(() => logger.LogInformation(LOGMSG_GRPC_REQUEST_CANCELLED));
 
-        using var reader = memoryQueue.AddQueueReader(
+        var reader = memoryQueue.AddQueueReader(
                 consumerQueueInfo,
                 (item) => WriteAndAckAsync(item, responseStream, requestStream, logger, context.CancellationToken),
                 context.CancellationToken);
@@ -236,6 +236,7 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
             return requestStream.Current.Ack;
         }
 
+        token.ThrowIfCancellationRequested();
         return false;
     }
 }
