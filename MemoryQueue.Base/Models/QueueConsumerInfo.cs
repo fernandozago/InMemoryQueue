@@ -2,7 +2,7 @@
 
 namespace MemoryQueue.Base.Models;
 
-public sealed class QueueConsumerInfo
+public sealed record QueueConsumerInfo
 {
     public QueueConsumerInfo(QueueConsumerType consumerType)
     {
@@ -19,7 +19,6 @@ public sealed class QueueConsumerInfo
 
     public override string ToString()
     {
-        return $"Name:{Name} Type:{ConsumerType} Ip:{Ip}";
+        return $"{{ ConsumerType = {ConsumerType}, Id = {Id}, Name = {Name}, Ip = {Ip}, Host = {Host} }}";
     }
-
 }

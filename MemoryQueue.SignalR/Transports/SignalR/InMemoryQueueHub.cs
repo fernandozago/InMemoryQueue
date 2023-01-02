@@ -101,13 +101,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                 Acker = new TaskCompletionSource<bool>();
                 Acker.SetResult(true);
 
-                _logger.LogInformation("channelCancelRegistration");
-                using var channelCancelRegistration = cancellationToken.Register(() => channel.Writer.Complete());
-
-                _logger.LogInformation("Creating Queue");
                 var memoryQueue = _queueManager.GetOrCreateQueue(queue);
-
-                _logger.LogInformation("Consumer Info");
                 var consumerQueueInfo = new QueueConsumerInfo(QueueConsumerType.SignalR)
                 {
                     Id = Guid.NewGuid().ToString(),
@@ -115,18 +109,26 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                     Ip = Context.ConnectionId,
                     Name = clientName ?? "Unknown"
                 };
+
                 var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.Name, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
+
+                using var channelCancelRegistration = cancellationToken.Register(() =>
+                {
+                    logger.LogInformation(LOGMSG_SIGNALR_REQUEST_CANCELLED);
+                    channel.Writer.Complete();
+                });
                 
-                var reader = memoryQueue.AddQueueReader(consumerQueueInfo, (item) => WriteAndAckAsync2(channel.Writer, item, cancellationToken), cancellationToken);
+                var reader = memoryQueue.AddQueueReader(consumerQueueInfo, (item) => WriteAndAckAsync(channel.Writer, item, cancellationToken), cancellationToken);
 
                 await channel.Reader.Completion.ConfigureAwait(false);
                 try
                 {
+                    //Context may be disposed at this point.
                     Acker.TrySetCanceled();
                 }
                 catch (Exception ex)
                 {
-                    
+                    //silently ignore exception
                 }
                 await reader.Completed.ConfigureAwait(false);
                 memoryQueue.RemoveReader(reader);
@@ -135,7 +137,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
             return channel.Reader;
         }
 
-        private async Task<bool> WriteAndAckAsync2(ChannelWriter<QueueItemReply> writer, QueueItem item, CancellationToken token)
+        private async Task<bool> WriteAndAckAsync(ChannelWriter<QueueItemReply> writer, QueueItem item, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
@@ -154,19 +156,6 @@ namespace MemoryQueue.SignalR.Transports.SignalR
 
             token.ThrowIfCancellationRequested();
             return await Acker.Task.ConfigureAwait(false);
-        }
-
-        private Task<bool> WriteAndAckAsync(QueueItem item, ref QueueItem? refItem, SemaphoreSlim semaphore)
-        {
-            try
-            {
-                refItem = item;
-                return (Acker = new TaskCompletionSource<bool>()).Task;
-            }
-            finally
-            {
-                semaphore.Release();
-            }
         }
 
         public Task Ack(bool acked)

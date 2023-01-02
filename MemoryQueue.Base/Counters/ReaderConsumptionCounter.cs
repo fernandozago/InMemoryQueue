@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace MemoryQueue.Base.Counters;
 
-public sealed class ReaderConsumptionCounter
+public sealed record ReaderConsumptionCounter
 {
     private readonly QueueConsumptionCounter _queueCounter;
 

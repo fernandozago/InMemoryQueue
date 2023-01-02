@@ -126,7 +126,6 @@ namespace MemoryQueue.Base
             _mainRegistry.Dispose();
             _semaphoreSlim.Dispose();
             _consolidator.Dispose();
-            _logger.LogInformation("Reader Disposed");
         }
     }
 
