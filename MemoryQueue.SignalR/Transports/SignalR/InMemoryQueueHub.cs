@@ -149,10 +149,9 @@ namespace MemoryQueue.SignalR.Transports.SignalR
 
         private async Task<bool> WriteAndAckAsync(ChannelWriter<QueueItemReply> writer, QueueItem item, CancellationToken token)
         {
-            token.ThrowIfCancellationRequested();
-
             Acker = new TaskCompletionSource<bool>();
             using var registration = token.Register(() => Acker.TrySetCanceled());
+            token.ThrowIfCancellationRequested();
 
             if (writer.WriteAsync(new QueueItemReply()
             {
@@ -172,8 +171,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
         {
             if (Acker.Task.IsCompleted)
             {
-                _logger.LogError("Acker never should not be completed here");
-
+                _logger.LogError("Acker should never be completed here");
             }
             Acker.TrySetResult(acked);
             return Task.CompletedTask;
