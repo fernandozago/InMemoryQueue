@@ -130,6 +130,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                     }
                     catch (Exception ex)
                     {
+                        //_logger.LogError(ex, "Error Trying to set acker to cancelled");
                         //silently ignore exception
                     }
                     await reader.Completed.ConfigureAwait(false);
@@ -149,8 +150,9 @@ namespace MemoryQueue.SignalR.Transports.SignalR
 
         private async Task<bool> WriteAndAckAsync(ChannelWriter<QueueItemReply> writer, QueueItem item, CancellationToken token)
         {
-            Acker = new TaskCompletionSource<bool>();
-            using var registration = token.Register(() => Acker.TrySetCanceled());
+            var tcs = new TaskCompletionSource<bool>();
+            using var registration = token.Register(() => tcs.TrySetCanceled());
+            Acker = tcs;
             token.ThrowIfCancellationRequested();
 
             if (writer.WriteAsync(new QueueItemReply()
@@ -164,7 +166,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
             }
 
             token.ThrowIfCancellationRequested();
-            return await Acker.Task.ConfigureAwait(false);
+            return await tcs.Task.ConfigureAwait(false);
         }
 
         public Task Ack(bool acked)
