@@ -72,7 +72,7 @@ namespace MemoryQueue.Base
         {
             IDisposable? disposableLocker = await _semaphoreSlim.TryAwaitAsync(token).ConfigureAwait(false);
 
-            bool? isAcked = null;
+            bool isAcked = false;
             var timestamp = StopwatchEx.GetTimestamp();
             if (disposableLocker is not null)
             {
@@ -84,12 +84,12 @@ namespace MemoryQueue.Base
                 {
                     _logger.LogWarning(ex, LOGMSG_ACK_FAILED_READER_CLOSING);
                     _actionBlock.Complete();
-                    isAcked = null;
+                    isAcked = false;
                 }
             }
 
-            _counters.UpdateCounters(queueItem.Retrying, isAcked == true, timestamp);
-            if (isAcked == true)
+            _counters.UpdateCounters(queueItem.Retrying, isAcked, timestamp);
+            if (isAcked)
             {
                 NotAckedStreak--;
                 if (NotAckedStreak == 0)
@@ -99,19 +99,6 @@ namespace MemoryQueue.Base
             }
             else
             {
-                //if (isAcked is null || token.IsCancellationRequested)
-                //{
-                //    _logger.LogWarning(LOGMSG_ACK_FAILED_READER_CLOSING);
-                //    _actionBlock.Complete();
-                //}
-                //else
-                //{
-                //    if (_consumerInfo.ConsumerType == QueueConsumerType.GRPC)
-                //    {
-                //        _logger.LogInformation("Normal -- {cancellationRequested}", token.IsCancellationRequested);
-                //    }
-                //}
-
                 await _retryWriter.SendAsync(queueItem.Retry()).ConfigureAwait(false);
                 NotAckedStreak++;
                 if (_inMemoryQueue.ConsumersCount > 1 && NotAckedStreak > 1)

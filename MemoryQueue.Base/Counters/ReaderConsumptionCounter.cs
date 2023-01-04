@@ -51,7 +51,7 @@ public sealed record ReaderConsumptionCounter
 
     public void UpdateCounters(bool isRedeliver, bool processed, long timestamp)
     {
-        _queueCounter.UpdateCounters(isRedeliver, processed, timestamp);
+        ConsumeAvgTime(StopwatchEx.GetElapsedTime(timestamp).TotalMilliseconds);
 
         Delivered();
 
@@ -64,7 +64,7 @@ public sealed record ReaderConsumptionCounter
             Nack();
         }
 
-        ConsumeAvgTime(StopwatchEx.GetElapsedTime(timestamp).TotalMilliseconds);
+        _queueCounter.UpdateCounters(isRedeliver, processed, timestamp);
     }
 
     private void Ack() =>

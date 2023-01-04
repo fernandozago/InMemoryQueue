@@ -72,6 +72,8 @@ public sealed class QueueConsumptionCounter
 
     internal void UpdateCounters(bool isRedeliver, bool processed, long timestamp)
     {
+        ConsumeAvgTime(StopwatchEx.GetElapsedTime(timestamp).TotalMilliseconds);
+
         if (isRedeliver)
         {
             Redelivered();
@@ -89,8 +91,6 @@ public sealed class QueueConsumptionCounter
         {
             Nack();
         }
-
-        ConsumeAvgTime(StopwatchEx.GetElapsedTime(timestamp).TotalMilliseconds);
     }
 
     private void Ack() =>
