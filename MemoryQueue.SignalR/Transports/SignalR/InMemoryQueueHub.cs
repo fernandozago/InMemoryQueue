@@ -120,18 +120,28 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                 
                 var reader = memoryQueue.AddQueueReader(consumerQueueInfo, (item) => WriteAndAckAsync(channel.Writer, item, cancellationToken), cancellationToken);
 
-                await channel.Reader.Completion.ConfigureAwait(false);
                 try
                 {
-                    //Context may be disposed at this point.
-                    Acker.TrySetCanceled();
+                    await channel.Reader.Completion.ConfigureAwait(false);
+                    try
+                    {
+                        //Context may be disposed at this point.
+                        Acker.TrySetCanceled();
+                    }
+                    catch (Exception ex)
+                    {
+                        //silently ignore exception
+                    }
+                    await reader.Completed.ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch(Exception ex)
                 {
-                    //silently ignore exception
+                    _logger.LogError(ex, "Failed completing this consumer");
                 }
-                await reader.Completed.ConfigureAwait(false);
-                memoryQueue.RemoveReader(reader);
+                finally
+                {
+                    memoryQueue.RemoveReader(reader);
+                }
             }, cancellationToken);
 
             return channel.Reader;
