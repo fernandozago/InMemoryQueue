@@ -198,9 +198,14 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     /// <param name="requestStream"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    private async Task<bool> WriteAndAckAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, IAsyncStreamReader<QueueItemAck> requestStream, ILogger logger, CancellationToken cancellationToken) =>
-        await WriteItemAsync(item, responseStream, logger, cancellationToken).ConfigureAwait(false)
+    private async Task<bool> WriteAndAckAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, IAsyncStreamReader<QueueItemAck> requestStream, ILogger logger, CancellationToken cancellationToken)
+    {
+        var result = await WriteItemAsync(item, responseStream, logger, cancellationToken).ConfigureAwait(false)
             && await ReadAckAsync(requestStream, cancellationToken).ConfigureAwait(false);
+
+        cancellationToken.ThrowIfCancellationRequested();
+        return result;
+    }
 
     /// <summary>
     /// Writes an item into the responseStream
@@ -212,7 +217,6 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     /// <returns>true if succeded, otherwise false</returns>
     private async Task<bool> WriteItemAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, ILogger logger, CancellationToken token)
     {
-        token.ThrowIfCancellationRequested();
         await responseStream.WriteAsync(new QueueItemReply()
         {
             Message = item.Message,
@@ -229,14 +233,6 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     /// <param name="logger"></param>
     /// <param name="token"></param>
     /// <returns>true = ack, false = nack or fail</returns>
-    private static async Task<bool> ReadAckAsync(IAsyncStreamReader<QueueItemAck> requestStream, CancellationToken token)
-    {
-        if (await requestStream.MoveNext(token).ConfigureAwait(false))
-        {
-            return requestStream.Current.Ack;
-        }
-
-        token.ThrowIfCancellationRequested();
-        return false;
-    }
+    private static async Task<bool> ReadAckAsync(IAsyncStreamReader<QueueItemAck> requestStream, CancellationToken token) =>
+        await requestStream.MoveNext(token).ConfigureAwait(false) && requestStream.Current.Ack;
 }

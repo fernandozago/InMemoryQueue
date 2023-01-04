@@ -2,11 +2,9 @@
 
 public struct QueueItem
 {
-    public QueueItem(string message, bool retrying, int retryCount)
+    public QueueItem(string message)
     {
         Message = message;
-        Retrying = retrying;
-        RetryCount = retryCount;
     }
 
     public string Message { get; private set; }
@@ -15,8 +13,10 @@ public struct QueueItem
 
     public QueueItem Retry()
     {
-        Retrying = true;
-        RetryCount++;
-        return this;
+        return this with
+        {
+            Retrying = true,
+            RetryCount = RetryCount + 1
+        };
     }
 }

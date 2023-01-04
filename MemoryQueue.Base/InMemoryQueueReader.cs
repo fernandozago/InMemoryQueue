@@ -35,12 +35,12 @@ namespace MemoryQueue.Base
 
         public InMemoryQueueReader(InMemoryQueue inMemoryQueue, QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> callBack, CancellationToken token)
         {
-            _logger = inMemoryQueue._loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, inMemoryQueue.Name, consumerInfo.ConsumerType, consumerInfo.Name));
+            _logger = inMemoryQueue.LoggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, inMemoryQueue.Name, consumerInfo.ConsumerType, consumerInfo.Name));
             _counters = new ReaderConsumptionCounter(inMemoryQueue.Counters);
             _consumerInfo = consumerInfo;
             _consumerInfo.Counters = _counters;
             _inMemoryQueue = inMemoryQueue;
-            _retryWriter = inMemoryQueue._retryChannel;
+            _retryWriter = inMemoryQueue.RetryChannel;
             _channelCallBack = callBack;
             _token = token;
 
@@ -54,8 +54,8 @@ namespace MemoryQueue.Base
                 _actionBlock.Complete();
             });
 
-            _retryLink = inMemoryQueue._retryChannel.LinkTo(_actionBlock);
-            _mainLink = inMemoryQueue._mainChannel.LinkTo(_actionBlock);
+            _retryLink = inMemoryQueue.RetryChannel.LinkTo(_actionBlock);
+            _mainLink = inMemoryQueue.MainChannel.LinkTo(_actionBlock);
         }
 
         private int _notAckedStreak = 0;
@@ -75,13 +75,15 @@ namespace MemoryQueue.Base
             bool? isAcked = null;
             var timestamp = StopwatchEx.GetTimestamp();
             if (disposableLocker is not null)
-            {                
+            {
                 try
                 {
                     isAcked = await _channelCallBack(queueItem).ConfigureAwait(false);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    _logger.LogWarning(ex, LOGMSG_ACK_FAILED_READER_CLOSING);
+                    _actionBlock.Complete();
                     isAcked = null;
                 }
             }
@@ -97,15 +99,18 @@ namespace MemoryQueue.Base
             }
             else
             {
-                if (isAcked is null || token.IsCancellationRequested)
-                {
-                    _logger.LogWarning(LOGMSG_ACK_FAILED_READER_CLOSING);
-                    _actionBlock.Complete();
-                }
-                else
-                {
-                    _logger.LogTrace("Normal -- {cancellationRequested}", token.IsCancellationRequested);
-                }
+                //if (isAcked is null || token.IsCancellationRequested)
+                //{
+                //    _logger.LogWarning(LOGMSG_ACK_FAILED_READER_CLOSING);
+                //    _actionBlock.Complete();
+                //}
+                //else
+                //{
+                //    if (_consumerInfo.ConsumerType == QueueConsumerType.GRPC)
+                //    {
+                //        _logger.LogInformation("Normal -- {cancellationRequested}", token.IsCancellationRequested);
+                //    }
+                //}
 
                 await _retryWriter.SendAsync(queueItem.Retry()).ConfigureAwait(false);
                 NotAckedStreak++;

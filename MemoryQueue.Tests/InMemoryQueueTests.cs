@@ -19,12 +19,15 @@ namespace MemoryQueue.Tests
             Assert.AreEqual(1, queue.MainChannelCount);
             Assert.AreEqual(0, queue.RetryChannelCount);
 
-            //Assert.IsTrue(queue.TryPeekMainQueue(out var itemMain));
-            //Assert.AreEqual(data, itemMain!.Message);
-            //Assert.IsFalse(itemMain!.Retrying);
-            //Assert.AreEqual(0, itemMain!.RetryCount);
+            Assert.IsTrue(queue.TryPeekMainQueue(out var itemMain));
+            Assert.AreEqual(data, itemMain!.Message);
+            Assert.IsFalse(itemMain!.Retrying);
+            Assert.AreEqual(0, itemMain!.RetryCount);
 
-            //Assert.IsFalse(queue.TryPeekRetryQueue(out _));
+            Assert.IsTrue(queue.TryPeekRetryQueue(out var itemRetry));
+            Assert.AreEqual(data, itemRetry!.Message);
+            Assert.IsTrue(itemRetry!.Retrying);
+            Assert.AreEqual(1, itemRetry!.RetryCount);
 
             Assert.AreEqual(0, queue.Consumers.Count);
             Assert.AreEqual(0, queue.ConsumersCount);
