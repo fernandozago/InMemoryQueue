@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace MemoryQueue.Base;
@@ -22,13 +23,13 @@ public sealed partial class InMemoryQueueManager
 
     private static Regex QUEUENAME_REGEX_VALIDATOR = new Regex("^[a-z0-9-_.]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-    private readonly ConcurrentDictionary<int, IInMemoryQueue> _queues = new();
+    private readonly ConcurrentDictionary<int, Lazy<IInMemoryQueue>> _queues = new();
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<InMemoryQueueManager> _logger;
     private readonly object _locker = new();
 
-    public IReadOnlyCollection<IInMemoryQueue> ActiveQueues =>
-        (IReadOnlyCollection<IInMemoryQueue>)_queues.Values;
+    public IReadOnlyCollection<Lazy<IInMemoryQueue>> ActiveQueues =>
+        (IReadOnlyCollection<Lazy<IInMemoryQueue>>)_queues.Values;
 
     public InMemoryQueueManager(ILoggerFactory loggerFactory)
     {
@@ -40,17 +41,7 @@ public sealed partial class InMemoryQueueManager
     {
         string queueName = GetValidOrDefaultQueueName(name);
         var hash = QueueNameHashesGenerator.GenerateHash(queueName);
-        if (_queues.TryGetValue(hash, out var queue))
-        {
-            return queue;
-        }
-        else
-        {
-            lock (_locker)
-            {
-                return _queues.GetOrAdd(hash, (h) => CreateInMemoryQueue(h, queueName));
-            }
-        }
+        return _queues.GetOrAdd(hash, new Lazy<IInMemoryQueue>(() => CreateInMemoryQueue(hash, queueName))).Value;
     }
 
     private string GetValidOrDefaultQueueName(string? name)

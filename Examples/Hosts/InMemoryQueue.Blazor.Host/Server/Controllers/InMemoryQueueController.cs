@@ -19,12 +19,12 @@ namespace InMemoryQueue.Blazor_Host.Server.Controllers
 
         [HttpGet(nameof(GetActiveQueues))]
         public Task<IActionResult> GetActiveQueues() =>
-            Task.FromResult((IActionResult)Ok(_inMemoryQueueManager.ActiveQueues.OrderBy(x => x.Name).Select(x => new 
+            Task.FromResult((IActionResult)Ok(_inMemoryQueueManager.ActiveQueues.OrderBy(x => x.Value.Name).Select(x => new 
             {
-                x.Name,
-                QueueCount = x.MainChannelCount + x.RetryChannelCount,
-                x.ConsumersCount,
-                x.Counters
+                x.Value.Name,
+                QueueCount = x.Value.MainChannelCount + x.Value.RetryChannelCount,
+                x.Value.ConsumersCount,
+                x.Value.Counters
             })));
 
         [HttpGet(nameof(GetQueueData))]
