@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
@@ -84,8 +85,10 @@ public sealed class InMemoryQueue : IInMemoryQueue
 
     public bool TryPeekMainQueue([MaybeNullWhen(false)] out QueueItem item)
     {
+        var ts = Stopwatch.GetTimestamp();
         if (MainChannel.TryReceive(out item))
         {
+            Counters.UpdateCounters(item.Retrying, false, ts);
             RetryChannel.Post(item.Retry());
             return true;
         }
@@ -94,8 +97,10 @@ public sealed class InMemoryQueue : IInMemoryQueue
 
     public bool TryPeekRetryQueue([MaybeNullWhen(false)] out QueueItem item)
     {
+        var ts = Stopwatch.GetTimestamp();
         if (RetryChannel.TryReceive(out item))
         {
+            Counters.UpdateCounters(item.Retrying, false, ts);
             RetryChannel.Post(item.Retry());
             return true;
         }

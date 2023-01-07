@@ -38,10 +38,8 @@ namespace InMemoryQueue.Blazor_Host.Server.Controllers
             return Task.FromResult((IActionResult?)Ok(new QueueItemWrapper(queueItem)));
         }
 
-        private bool TryGetQueueItem(IInMemoryQueue queue, out QueueItem queueItem)
-        {
-            return queue.TryPeekRetryQueue(out queueItem) || queue.TryPeekMainQueue(out queueItem);
-        }
+        private bool TryGetQueueItem(IInMemoryQueue queue, out QueueItem queueItem) =>
+            queue.TryPeekRetryQueue(out queueItem) || queue.TryPeekMainQueue(out queueItem);
         
         private class QueueItemWrapper
         {
