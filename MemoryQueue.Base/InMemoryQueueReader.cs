@@ -1,5 +1,4 @@
 ﻿using MemoryQueue.Base.Counters;
-using MemoryQueue.Base.Extensions;
 using MemoryQueue.Base.Models;
 using MemoryQueue.Base.Utils;
 using Microsoft.Extensions.Logging;
@@ -36,6 +35,16 @@ namespace MemoryQueue.Base
         public InMemoryQueueReader(InMemoryQueue inMemoryQueue, QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> callBack, CancellationToken token)
         {
             _logger = inMemoryQueue.LoggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, inMemoryQueue.Name, consumerInfo.ConsumerType, consumerInfo.Name));
+            _actionBlock = new ActionBlock<QueueItem>(DeliverItemAsync, new ExecutionDataflowBlockOptions()
+            {
+                BoundedCapacity = 1
+            });
+
+            _token.Register(() =>
+            {
+                _actionBlock.Complete();
+            });
+
             _counters = new ReaderConsumptionCounter(inMemoryQueue.Counters);
             _consolidator = new ConsumptionConsolidator(_counters.Consolidate);
             _consumerInfo = consumerInfo;
@@ -46,15 +55,7 @@ namespace MemoryQueue.Base
             _channelCallBack = callBack;
             _token = token;
 
-            _actionBlock = new ActionBlock<QueueItem>(DeliverItemAsync, new ExecutionDataflowBlockOptions()
-            {
-                BoundedCapacity = 1
-            });
-            _token.Register(() =>
-            {
-                _actionBlock?.Complete();
-            });
-
+            //Enable Link InMemoryQueue to ActionBlock
             _retryLink = inMemoryQueue.RetryChannel.LinkTo(_actionBlock);
             _mainLink = inMemoryQueue.MainChannel.LinkTo(_actionBlock);
         }
@@ -111,8 +112,6 @@ namespace MemoryQueue.Base
                     await TaskEx.SafeDelay(NotAckedStreak * 25, _token).ConfigureAwait(false);
                 }
             }
-
-            //disposableLocker?.Dispose();
         }
 
         public void Dispose()
