@@ -1,4 +1,5 @@
-﻿using MemoryQueue.Tests.SUTFactory;
+﻿using MemoryQueue.Base.Models;
+using MemoryQueue.Tests.SUTFactory;
 
 namespace MemoryQueue.Tests
 {
@@ -19,15 +20,21 @@ namespace MemoryQueue.Tests
             Assert.AreEqual(1, queue.MainChannelCount);
             Assert.AreEqual(0, queue.RetryChannelCount);
 
-            Assert.IsTrue(queue.TryPeekMainQueue(out var itemMain));
-            Assert.AreEqual(data, itemMain!.Message);
-            Assert.IsFalse(itemMain!.Retrying);
-            Assert.AreEqual(0, itemMain!.RetryCount);
 
-            Assert.IsTrue(queue.TryPeekRetryQueue(out var itemRetry));
-            Assert.AreEqual(data, itemRetry!.Message);
-            Assert.IsTrue(itemRetry!.Retrying);
-            Assert.AreEqual(1, itemRetry!.RetryCount);
+            QueueItem? retryEmptyItem = await queue.TryPeekRetryQueue().ConfigureAwait(false);
+            Assert.IsNull(retryEmptyItem);
+
+            QueueItem? mainItem = await queue.TryPeekMainQueue().ConfigureAwait(false);
+            Assert.IsNotNull(mainItem);
+            Assert.AreEqual(data, mainItem.Message);
+            Assert.IsFalse(mainItem.Retrying);
+            Assert.AreEqual(0, mainItem.RetryCount);
+
+            QueueItem? retryItem = await queue.TryPeekRetryQueue().ConfigureAwait(false);
+            Assert.IsNotNull(retryItem);
+            Assert.AreEqual(data, retryItem.Message);
+            Assert.IsTrue(retryItem.Retrying);
+            Assert.AreEqual(1, retryItem.RetryCount);
 
             Assert.AreEqual(0, queue.Consumers.Count);
             Assert.AreEqual(0, queue.ConsumersCount);

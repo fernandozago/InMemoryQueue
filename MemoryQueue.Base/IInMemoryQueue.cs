@@ -18,8 +18,8 @@ public interface IInMemoryQueue
     IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken cancellationToken);
     void RemoveReader(IInMemoryQueueReader reader);
     ValueTask EnqueueAsync(string item);
-    bool TryPeekMainQueue(out QueueItem item);
-    bool TryPeekRetryQueue(out QueueItem item);
+    ValueTask<QueueItem?> TryPeekMainQueue();
+    ValueTask<QueueItem?> TryPeekRetryQueue();
 }
 
 public interface IInMemoryQueueReader : IDisposable

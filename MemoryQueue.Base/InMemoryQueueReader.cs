@@ -18,17 +18,17 @@ namespace MemoryQueue.Base
         private const string LOGMSG_ACK_FAILED_READER_CLOSING = "Failed to ack the message (Request was cancelled or client disconnected)";
         #endregion
 
+        private readonly SemaphoreSlim _semaphoreSlim = new(1);
         private readonly ILogger _logger;
         private readonly IInMemoryQueue _inMemoryQueue;
         private readonly QueueConsumerInfo _consumerInfo;
         private readonly ReaderConsumptionCounter _counters;
-        private readonly BufferBlock<QueueItem> _retryWriter;
+        private readonly ITargetBlock<QueueItem> _retryWriter;
         private readonly ConsumptionConsolidator _consolidator;
         private readonly ActionBlock<QueueItem> _actionBlock;
         private readonly CancellationToken _token;
         private readonly IDisposable _retryLink;
         private readonly IDisposable _mainLink;
-        private readonly SemaphoreSlim _semaphoreSlim = new(1);
         private readonly Func<QueueItem, Task<bool>> _channelCallBack;
 
         public Task Completed => _actionBlock.Completion;
@@ -37,21 +37,22 @@ namespace MemoryQueue.Base
         {
             _logger = inMemoryQueue.LoggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, inMemoryQueue.Name, consumerInfo.ConsumerType, consumerInfo.Name));
             _counters = new ReaderConsumptionCounter(inMemoryQueue.Counters);
+            _consolidator = new ConsumptionConsolidator(_counters.Consolidate);
             _consumerInfo = consumerInfo;
             _consumerInfo.Counters = _counters;
+
             _inMemoryQueue = inMemoryQueue;
             _retryWriter = inMemoryQueue.RetryChannel;
             _channelCallBack = callBack;
             _token = token;
 
-            _consolidator = new ConsumptionConsolidator(_counters.Consolidate);
-            _actionBlock = new ActionBlock<QueueItem>((item) => DeliverItemAsync(item, _token), new ExecutionDataflowBlockOptions()
+            _actionBlock = new ActionBlock<QueueItem>(DeliverItemAsync, new ExecutionDataflowBlockOptions()
             {
                 BoundedCapacity = 1
             });
             _token.Register(() =>
             {
-                _actionBlock.Complete();
+                _actionBlock?.Complete();
             });
 
             _retryLink = inMemoryQueue.RetryChannel.LinkTo(_actionBlock);
@@ -68,13 +69,10 @@ namespace MemoryQueue.Base
         /// Publish an message to some consumer and awaits for the ACK(true)/NACK(false) result
         /// </summary>
         /// <param name="queueItem">Message to be sent</param>
-        private async Task DeliverItemAsync(QueueItem queueItem, CancellationToken token)
+        private async Task DeliverItemAsync(QueueItem queueItem)
         {
-            IDisposable? disposableLocker = await _semaphoreSlim.TryAwaitAsync(token).ConfigureAwait(false);
-
             bool isAcked = false;
             var timestamp = StopwatchEx.GetTimestamp();
-            if (disposableLocker is not null)
             {
                 try
                 {
@@ -99,16 +97,22 @@ namespace MemoryQueue.Base
             }
             else
             {
+                if (_token.IsCancellationRequested)
+                {
+                    _logger.LogError("Ealy completing action block");
+                    _actionBlock.Complete();
+                }
+
                 await _retryWriter.SendAsync(queueItem.Retry()).ConfigureAwait(false);
                 NotAckedStreak++;
                 if (_inMemoryQueue.ConsumersCount > 1 && NotAckedStreak > 1)
                 {
                     _counters.SetThrottled(true);
-                    await TaskEx.SafeDelay(NotAckedStreak * 25, token).ConfigureAwait(false);
+                    await TaskEx.SafeDelay(NotAckedStreak * 25, _token).ConfigureAwait(false);
                 }
             }
 
-            disposableLocker?.Dispose();
+            //disposableLocker?.Dispose();
         }
 
         public void Dispose()

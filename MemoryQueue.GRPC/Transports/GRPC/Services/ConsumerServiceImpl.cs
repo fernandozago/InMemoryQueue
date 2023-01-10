@@ -200,11 +200,10 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     /// <returns></returns>
     private async Task<bool> WriteAndAckAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, IAsyncStreamReader<QueueItemAck> requestStream, ILogger logger, CancellationToken cancellationToken)
     {
-        var result = await WriteItemAsync(item, responseStream, logger, cancellationToken).ConfigureAwait(false)
-            && await ReadAckAsync(requestStream, cancellationToken).ConfigureAwait(false);
-
-        cancellationToken.ThrowIfCancellationRequested();
-        return result;
+        var writeAndAclResults = await Task.WhenAll(
+            WriteItemAsync(item, responseStream, logger, cancellationToken), 
+            ReadAckAsync(requestStream, cancellationToken)).ConfigureAwait(false);
+        return writeAndAclResults[0] && writeAndAclResults[1];
     }
 
     /// <summary>

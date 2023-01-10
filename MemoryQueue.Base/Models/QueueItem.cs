@@ -1,6 +1,6 @@
 ﻿namespace MemoryQueue.Base.Models;
 
-public struct QueueItem
+public record QueueItem
 {
     public QueueItem(string message)
     {
