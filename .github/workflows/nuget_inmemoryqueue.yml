@@ -34,31 +34,31 @@ jobs:
       run: dotnet restore ${{ env.PROJECT_PATH_Base }}
 
     - name: 'Build project InMemoryQueue Base'
-      run: dotnet build ${{ env.PROJECT_PATH_Base }} --no-restore --configuration Release
+      run: dotnet build ${{ env.PROJECT_PATH_Base }} --no-restore --configuration Release -p:Version=${{ steps.version.outputs.version-without-v }}
 
     - name: 'Restore packages InMemoryQueue Server GRPC'
       run: dotnet restore ${{ env.PROJECT_PATH_Server_GRPC }}
 
     - name: 'Build project InMemoryQueue Server GRPC'
-      run: dotnet build ${{ env.PROJECT_PATH_Server_GRPC }} --no-restore --configuration Release
+      run: dotnet build ${{ env.PROJECT_PATH_Server_GRPC }} --no-restore --configuration Release -p:Version=${{ steps.version.outputs.version-without-v }}
 
     - name: 'Restore packages InMemoryQueue Server SignalR'
       run: dotnet restore ${{ env.PROJECT_PATH_Server_SignalR }}
 
     - name: 'Build project InMemoryQueue Server SignalR'
-      run: dotnet build ${{ env.PROJECT_PATH_Server_SignalR }} --no-restore --configuration Release
+      run: dotnet build ${{ env.PROJECT_PATH_Server_SignalR }} --no-restore --configuration Release -p:Version=${{ steps.version.outputs.version-without-v }}
 
     - name: 'Restore packages InMemoryQueue Client GRPC'
       run: dotnet restore ${{ env.PROJECT_PATH_Client_GRPC }}
 
     - name: 'Build project InMemoryQueue Client GRPC'
-      run: dotnet build ${{ env.PROJECT_PATH_Client_GRPC }} --no-restore --configuration Release
+      run: dotnet build ${{ env.PROJECT_PATH_Client_GRPC }} --no-restore --configuration Release -p:Version=${{ steps.version.outputs.version-without-v }}
 
     - name: 'Restore packages InMemoryQueue Client SignalR'
       run: dotnet restore ${{ env.PROJECT_PATH_Client_SignalR }}
 
     - name: 'Build project InMemoryQueue Client SignalR'
-      run: dotnet build ${{ env.PROJECT_PATH_Client_SignalR }} --no-restore --configuration Release
+      run: dotnet build ${{ env.PROJECT_PATH_Client_SignalR }} --no-restore --configuration Release -p:Version=${{ steps.version.outputs.version-without-v }}
 
     - name: 'Get Version'
       id: version
@@ -73,10 +73,10 @@ jobs:
     - name: 'Pack project InMemoryQueue Server SignalR'
       run: dotnet pack ${{ env.PROJECT_PATH_Server_SignalR }} --no-restore --no-build --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
 
-    - name: 'Pack project MemoryQueue.Client.Grpc'
+    - name: 'Pack project InMemoryQueue Client GRPC'
       run: dotnet pack ${{ env.PROJECT_PATH_Client_GRPC }} --no-restore --no-build --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
 
-    - name: 'Pack project MemoryQueue.Client.SignalR'
+    - name: 'Pack project InMemoryQueue Client SignalR'
       run: dotnet pack ${{ env.PROJECT_PATH_Client_SignalR }} --no-restore --no-build --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
 
     - name: 'Push packages'
