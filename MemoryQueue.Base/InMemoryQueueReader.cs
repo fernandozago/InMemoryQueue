@@ -88,6 +88,10 @@ namespace MemoryQueue.Base
             }
 
             _counters.UpdateCounters(queueItem.Retrying, isAcked, timestamp);
+            if (_token.IsCancellationRequested)
+            {
+                _actionBlock.Complete();
+            }
             if (isAcked)
             {
                 NotAckedStreak--;
@@ -98,12 +102,6 @@ namespace MemoryQueue.Base
             }
             else
             {
-                if (_token.IsCancellationRequested)
-                {
-                    _logger.LogError("Ealy completing action block");
-                    _actionBlock.Complete();
-                }
-
                 await _retryWriter.SendAsync(queueItem.Retry()).ConfigureAwait(false);
                 NotAckedStreak++;
                 if (_inMemoryQueue.ConsumersCount > 1 && NotAckedStreak > 1)
