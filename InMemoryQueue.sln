@@ -56,7 +56,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InMemoryQueue.Console.Signa
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MemoryQueue.Client.SignalR", "MemoryQueue.Client.SignalR\MemoryQueue.Client.SignalR.csproj", "{0811FE4F-52C6-44F2-883F-5F2FA846B225}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemoryQueue.SignalR.Models", "MemoryQueue.SignalR.Models\MemoryQueue.SignalR.Models.csproj", "{E44B380F-9800-4709-BD2E-531677C1203B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MemoryQueue.SignalR.Models", "MemoryQueue.SignalR.Models\MemoryQueue.SignalR.Models.csproj", "{E44B380F-9800-4709-BD2E-531677C1203B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{37A15E34-7033-41C6-890D-1973B938C008}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{2F44A629-E053-463C-9614-8932CA3E3981}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\nuget_inmemoryqueue.yml = .github\workflows\nuget_inmemoryqueue.yml
+		.github\workflows\nuget_inmemoryqueue_base.yml = .github\workflows\nuget_inmemoryqueue_base.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -155,6 +163,7 @@ Global
 		{0420D1FF-2D9D-42C5-B095-940512CD4FFF} = {9A35E823-9EBE-49A1-A7B0-9024CADBD265}
 		{0811FE4F-52C6-44F2-883F-5F2FA846B225} = {4B9E49B1-55EC-4EE1-85A6-B844D3B9A646}
 		{E44B380F-9800-4709-BD2E-531677C1203B} = {69EE0F82-BEA2-49DD-B34D-8984ECAE99D6}
+		{2F44A629-E053-463C-9614-8932CA3E3981} = {37A15E34-7033-41C6-890D-1973B938C008}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D7773216-7FFF-4DED-9FCB-A63B5C247D9E}
