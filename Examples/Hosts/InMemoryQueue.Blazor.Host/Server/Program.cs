@@ -33,7 +33,7 @@ else
 }
 
 //app.MapGrpcService<ConsumerServiceImpl>();
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();

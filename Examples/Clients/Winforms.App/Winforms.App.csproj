@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="RandomNameGeneratorLibrary" Version="1.2.2" />
-    <PackageReference Include="ScottPlot.WinForms" Version="4.1.59" />
+    <PackageReference Include="ScottPlot.WinForms" Version="4.1.60" />
   </ItemGroup>
 
   <ItemGroup>
