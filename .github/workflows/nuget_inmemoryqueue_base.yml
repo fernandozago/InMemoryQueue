@@ -1,4 +1,4 @@
-name: "Deploy InMemoryQueue to NuGet"
+name: "Deploy InMemoryQueue Base Package to NuGet"
 
 on:
   push:
