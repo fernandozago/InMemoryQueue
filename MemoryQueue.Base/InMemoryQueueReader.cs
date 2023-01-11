@@ -26,6 +26,7 @@ namespace MemoryQueue.Base
         private readonly ConsumptionConsolidator _consolidator;
         private readonly ActionBlock<QueueItem> _actionBlock;
         private readonly CancellationToken _token;
+        private readonly CancellationTokenRegistration _tokenRegistration;
         private readonly IDisposable _retryLink;
         private readonly IDisposable _mainLink;
         private readonly Func<QueueItem, Task<bool>> _channelCallBack;
@@ -40,7 +41,8 @@ namespace MemoryQueue.Base
                 BoundedCapacity = 1
             });
 
-            _token.Register(() =>
+            _token = token;
+            _tokenRegistration = _token.Register(() =>
             {
                 _actionBlock.Complete();
             });
@@ -53,7 +55,6 @@ namespace MemoryQueue.Base
             _inMemoryQueue = inMemoryQueue;
             _retryWriter = inMemoryQueue.RetryChannel;
             _channelCallBack = callBack;
-            _token = token;
 
             //Enable Link InMemoryQueue to ActionBlock
             _retryLink = inMemoryQueue.RetryChannel.LinkTo(_actionBlock);
@@ -114,6 +115,7 @@ namespace MemoryQueue.Base
 
         public void Dispose()
         {
+            _tokenRegistration.Dispose();
             _retryLink.Dispose();
             _mainLink.Dispose();
             _semaphoreSlim.Dispose();

@@ -177,12 +177,15 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
         };
 
         var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.Name, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
-        context.CancellationToken.Register(() => logger.LogInformation(LOGMSG_GRPC_REQUEST_CANCELLED));
+        using var registration = context.CancellationToken.Register(() =>
+        {
+            logger.LogInformation(LOGMSG_GRPC_REQUEST_CANCELLED);
+        });
 
         var reader = memoryQueue.AddQueueReader(
                 consumerQueueInfo,
                 (item) => WriteAndAckAsync(item, responseStream, requestStream, logger, context.CancellationToken),
-                context.CancellationToken);
+                context.CancellationToken);        
 
         await reader.Completed.ConfigureAwait(false);
         memoryQueue.RemoveReader(reader);

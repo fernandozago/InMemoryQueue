@@ -1,6 +1,7 @@
 ﻿using MemoryQueue.Base;
 using MemoryQueue.Base.Models;
 using MemoryQueue.Transports.SignalR;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System.Threading.Channels;
@@ -100,11 +101,12 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                 Acker.SetResult(true);
 
                 var memoryQueue = _queueManager.GetOrCreateQueue(queue);
+                var httpConnectionFeature = base.Context.Features.Get<IHttpConnectionFeature>();
                 var consumerQueueInfo = new QueueConsumerInfo(QueueConsumerType.SignalR)
                 {
                     Id = Guid.NewGuid().ToString(),
-                    Host = Context.ConnectionId,
-                    Ip = Context.ConnectionId,
+                    Host = httpConnectionFeature.LocalIpAddress.ToString() + ":" + httpConnectionFeature.LocalPort,
+                    Ip = httpConnectionFeature.RemoteIpAddress.ToString() + ":" + httpConnectionFeature.RemotePort,
                     Name = clientName ?? "Unknown"
                 };
 
@@ -115,7 +117,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                     logger.LogInformation(LOGMSG_SIGNALR_REQUEST_CANCELLED);
                     channel.Writer.Complete();
                 });
-                
+
                 var reader = memoryQueue.AddQueueReader(consumerQueueInfo, (item) => WriteAndAckAsync(channel.Writer, item, cancellationToken), cancellationToken);
 
                 try
@@ -126,7 +128,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                         //Context may be disposed at this point.
                         Acker.TrySetCanceled();
                     }
-                    catch (Exception ex)
+                    catch
                     {
                         //_logger.LogError(ex, "Error Trying to set acker to cancelled");
                         //silently ignore exception
