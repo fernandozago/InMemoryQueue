@@ -63,7 +63,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{2F44A629-E053-463C-9614-8932CA3E3981}"
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\nuget_inmemoryqueue.yml = .github\workflows\nuget_inmemoryqueue.yml
-		.github\workflows\nuget_inmemoryqueue_base.yml = .github\workflows\nuget_inmemoryqueue_base.yml
 	EndProjectSection
 EndProject
 Global
