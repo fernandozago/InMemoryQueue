@@ -182,7 +182,7 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
             logger.LogInformation(LOGMSG_GRPC_REQUEST_CANCELLED);
         });
 
-        var reader = memoryQueue.AddQueueReader(
+        using var reader = memoryQueue.AddQueueReader(
                 consumerQueueInfo,
                 (item) => WriteAndAckAsync(item, responseStream, requestStream, logger, context.CancellationToken),
                 context.CancellationToken);        
@@ -203,10 +203,11 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     /// <returns></returns>
     private async Task<bool> WriteAndAckAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, IAsyncStreamReader<QueueItemAck> requestStream, ILogger logger, CancellationToken cancellationToken)
     {
-        var writeAndAclResults = await Task.WhenAll(
+        var writeAndAckResults = await Task.WhenAll(
             WriteItemAsync(item, responseStream, logger, cancellationToken), 
-            ReadAckAsync(requestStream, cancellationToken)).ConfigureAwait(false);
-        return writeAndAclResults[0] && writeAndAclResults[1];
+            ReadAckAsync(requestStream, cancellationToken)
+        ).ConfigureAwait(false);
+        return writeAndAckResults[0] && writeAndAckResults[1];
     }
 
     /// <summary>
