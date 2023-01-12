@@ -3,8 +3,8 @@
 public enum QueueConsumerType
 {
     GRPC = 1,
-    InMemory = 2
-    //WebSocket = 3,
+    InMemory = 2,
+    SignalR = 3
 }
 
 public record Queue
