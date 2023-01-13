@@ -1,7 +1,4 @@
 ﻿using MemoryQueue.Base.Models;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace MemoryQueue.Base.InMemoryConsumer;
 

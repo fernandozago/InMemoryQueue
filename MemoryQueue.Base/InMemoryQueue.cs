@@ -1,12 +1,8 @@
 ﻿using MemoryQueue.Base.Counters;
 using MemoryQueue.Base.Models;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
 namespace MemoryQueue.Base;
@@ -82,29 +78,29 @@ public sealed class InMemoryQueue : IInMemoryQueue
         }
     }
 
-    public async ValueTask<QueueItem?> TryPeekMainQueue()
+    public async ValueTask<QueueItem?> TryPeekMainQueueAsync()
     {
         var ts = Stopwatch.GetTimestamp();
         if (MainChannel.TryReceive(out var item))
         {
-            await AddToRetryChannel(item.Retrying, item, ts).ConfigureAwait(false);
+            await AddToRetryQueueAsync(item.Retrying, item, ts).ConfigureAwait(false);
             return item;
         }
         return null;
     }
 
-    public async ValueTask<QueueItem?> TryPeekRetryQueue()
+    public async ValueTask<QueueItem?> TryPeekRetryQueueAsync()
     {
         var ts = Stopwatch.GetTimestamp();
         if (RetryChannel.TryReceive(out var item))
         {
-            await AddToRetryChannel(item.Retrying, item, ts).ConfigureAwait(false);
+            await AddToRetryQueueAsync(item.Retrying, item, ts).ConfigureAwait(false);
             return item;
         }
         return null;
     }
 
-    private async Task AddToRetryChannel(bool isRetrying, QueueItem item, long ts)
+    private async Task AddToRetryQueueAsync(bool isRetrying, QueueItem item, long ts)
     {
         await RetryChannel.SendAsync(item.Retry());
         Counters.UpdateCounters(isRetrying, false, ts);

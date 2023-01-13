@@ -2,9 +2,7 @@
 using MemoryQueue.Base.Models;
 using MemoryQueue.Base.Utils;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Diagnostics;
 using System.Threading.Tasks.Dataflow;
 
 namespace MemoryQueue.Base
@@ -65,7 +63,7 @@ namespace MemoryQueue.Base
         private int NotAckedStreak
         {
             get => _notAckedStreak;
-            set => _notAckedStreak = Math.Min(30, Math.Max(value, 0));
+            set => _notAckedStreak = Math.Clamp(value, 0, 30);
         }
         /// <summary>
         /// Publish an message to some consumer and awaits for the ACK(true)/NACK(false) result
@@ -74,18 +72,16 @@ namespace MemoryQueue.Base
         private async Task DeliverItemAsync(QueueItem queueItem)
         {
             bool isAcked = false;
-            var timestamp = StopwatchEx.GetTimestamp();
+            var timestamp = Stopwatch.GetTimestamp();
+            try
             {
-                try
-                {
-                    isAcked = await _channelCallBack(queueItem).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, LOGMSG_ACK_FAILED_READER_CLOSING);
-                    _actionBlock.Complete();
-                    isAcked = false;
-                }
+                isAcked = await _channelCallBack(queueItem).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, LOGMSG_ACK_FAILED_READER_CLOSING);
+                _actionBlock.Complete();
+                isAcked = false;
             }
 
             _counters.UpdateCounters(queueItem.Retrying, isAcked, timestamp);

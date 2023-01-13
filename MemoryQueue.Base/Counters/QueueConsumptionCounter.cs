@@ -70,9 +70,9 @@ public sealed class QueueConsumptionCounter
         Interlocked.Exchange(ref _avgConsumptionMs, 0);
     }
 
-    internal void UpdateCounters(bool isRedeliver, bool processed, long timestamp)
+    internal void UpdateCounters(bool isRedeliver, bool isAcked, long startTimestamp)
     {
-        ConsumeAvgTime(StopwatchEx.GetElapsedTime(timestamp).TotalMilliseconds);
+        ConsumeAvgTime(StopwatchEx.GetElapsedTime(startTimestamp).TotalMilliseconds);
 
         if (isRedeliver)
         {
@@ -83,7 +83,7 @@ public sealed class QueueConsumptionCounter
             Delivered();
         }
 
-        if (processed)
+        if (isAcked)
         {
             Ack();
         }

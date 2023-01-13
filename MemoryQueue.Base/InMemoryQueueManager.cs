@@ -1,9 +1,6 @@
 ﻿using MemoryQueue.Base.Extensions;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace MemoryQueue.Base;
@@ -21,12 +18,11 @@ public sealed partial class InMemoryQueueManager
     #endregion
 
 
-    private static Regex QUEUENAME_REGEX_VALIDATOR = new Regex("^[a-z0-9-_.]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static Regex QUEUENAME_REGEX_VALIDATOR = new("^[a-z0-9-_.]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private readonly ConcurrentDictionary<int, Lazy<IInMemoryQueue>> _queues = new();
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<InMemoryQueueManager> _logger;
-    private readonly object _locker = new();
 
     public IReadOnlyCollection<Lazy<IInMemoryQueue>> ActiveQueues =>
         (IReadOnlyCollection<Lazy<IInMemoryQueue>>)_queues.Values;

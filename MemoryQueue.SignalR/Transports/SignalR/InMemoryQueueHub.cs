@@ -118,7 +118,10 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                     channel.Writer.Complete();
                 });
 
-                using var reader = memoryQueue.AddQueueReader(consumerQueueInfo, (item) => WriteAndAckAsync(channel.Writer, item, cancellationToken), cancellationToken);
+                using var reader = memoryQueue.AddQueueReader(
+                    consumerQueueInfo, 
+                    (item) => WriteAndAckAsync(channel.Writer, item, cancellationToken), 
+                    cancellationToken);
 
                 try
                 {

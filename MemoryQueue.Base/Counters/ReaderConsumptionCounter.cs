@@ -1,5 +1,4 @@
 ﻿using MemoryQueue.Base.Utils;
-using System.Threading;
 
 namespace MemoryQueue.Base.Counters;
 
@@ -21,8 +20,6 @@ public sealed record ReaderConsumptionCounter
 
     private double _avgConsumptionMs = 0;
 
-    private bool _throttled = false;
-
     public long AckCounter => _ackCounter;
     public long AckPerSecond => _ackPerSecond;
 
@@ -34,7 +31,7 @@ public sealed record ReaderConsumptionCounter
 
     public double AvgConsumptionMs => _avgConsumptionMs;
 
-    public bool Throttled => _throttled;
+    public bool Throttled { get; private set; }
 
     public ReaderConsumptionCounter(QueueConsumptionCounter queueCounter)
     {
@@ -43,19 +40,19 @@ public sealed record ReaderConsumptionCounter
 
     public void SetThrottled(bool throttled)
     {
-        if (_throttled != throttled)
+        if (Throttled != throttled)
         {
-            _throttled = throttled;
+            Throttled = throttled;
         }
     }
 
-    public void UpdateCounters(bool isRedeliver, bool processed, long timestamp)
+    public void UpdateCounters(bool isRedeliver, bool isAcked, long startTimestamp)
     {
-        ConsumeAvgTime(StopwatchEx.GetElapsedTime(timestamp).TotalMilliseconds);
+        ConsumeAvgTime(StopwatchEx.GetElapsedTime(startTimestamp).TotalMilliseconds);
 
         Delivered();
 
-        if (processed)
+        if (isAcked)
         {
             Ack();
         }
@@ -64,7 +61,7 @@ public sealed record ReaderConsumptionCounter
             Nack();
         }
 
-        _queueCounter.UpdateCounters(isRedeliver, processed, timestamp);
+        _queueCounter.UpdateCounters(isRedeliver, isAcked, startTimestamp);
     }
 
     private void Ack() =>

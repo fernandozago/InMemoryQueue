@@ -36,7 +36,7 @@ namespace InMemoryQueue.Blazor_Host.Server.Controllers
             Ok(new QueueItemWrapper(await TryGetQueueItem(_inMemoryQueueManager.GetOrCreateQueue(queueName)).ConfigureAwait(false)));
 
         private async Task<QueueItem?> TryGetQueueItem(IInMemoryQueue queue) =>
-            (await queue.TryPeekRetryQueue().ConfigureAwait(false)) ?? (await queue.TryPeekMainQueue().ConfigureAwait(false));
+            (await queue.TryPeekRetryQueueAsync().ConfigureAwait(false)) ?? (await queue.TryPeekMainQueueAsync().ConfigureAwait(false));
 
         private class QueueItemWrapper
         {

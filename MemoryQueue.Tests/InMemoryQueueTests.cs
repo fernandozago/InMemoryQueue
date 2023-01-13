@@ -21,16 +21,16 @@ namespace MemoryQueue.Tests
             Assert.AreEqual(0, queue.RetryChannelCount);
 
 
-            QueueItem? retryEmptyItem = await queue.TryPeekRetryQueue().ConfigureAwait(false);
+            QueueItem? retryEmptyItem = await queue.TryPeekRetryQueueAsync().ConfigureAwait(false);
             Assert.IsNull(retryEmptyItem);
 
-            QueueItem? mainItem = await queue.TryPeekMainQueue().ConfigureAwait(false);
+            QueueItem? mainItem = await queue.TryPeekMainQueueAsync().ConfigureAwait(false);
             Assert.IsNotNull(mainItem);
             Assert.AreEqual(data, mainItem.Message);
             Assert.IsFalse(mainItem.Retrying);
             Assert.AreEqual(0, mainItem.RetryCount);
 
-            QueueItem? retryItem = await queue.TryPeekRetryQueue().ConfigureAwait(false);
+            QueueItem? retryItem = await queue.TryPeekRetryQueueAsync().ConfigureAwait(false);
             Assert.IsNotNull(retryItem);
             Assert.AreEqual(data, retryItem.Message);
             Assert.IsTrue(retryItem.Retrying);

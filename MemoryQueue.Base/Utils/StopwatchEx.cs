@@ -1,28 +1,19 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace MemoryQueue.Base.Utils;
 
 public class StopwatchEx
 {
+    private static readonly double TimestampToTicks = TimeSpan.TicksPerSecond / (double)Stopwatch.Frequency;
 
     /// <summary>Gets the elapsed time since the <paramref name="startingTimestamp"/> value retrieved using <see cref="GetTimestamp"/>.</summary>
     /// <param name="startingTimestamp">The timestamp marking the beginning of the time period.</param>
     /// <returns>A <see cref="TimeSpan"/> for the elapsed time between the starting timestamp and the time of this call.</returns>
-    public static TimeSpan GetElapsedTime(long startingTimestamp) =>
-        GetElapsedTime(startingTimestamp, GetTimestamp());
-
-    public static long GetTimestamp() =>
-        Stopwatch.GetTimestamp();
-
-    /// <summary>Gets the elapsed time between two timestamps retrieved using <see cref="GetTimestamp"/>.</summary>
-    /// <param name="startingTimestamp">The timestamp marking the beginning of the time period.</param>
-    /// <param name="endingTimestamp">The timestamp marking the end of the time period.</param>
-    /// <returns>A <see cref="TimeSpan"/> for the elapsed time between the starting and ending timestamps.</returns>
-    private static TimeSpan GetElapsedTime(long startingTimestamp, long endingTimestamp)
+    public static TimeSpan GetElapsedTime(long startingTimestamp)
     {
-        return new(endingTimestamp - startingTimestamp);
+        long end = Stopwatch.GetTimestamp();
+        long timestampDelta = end - startingTimestamp;
+        long ticks = (long)(TimestampToTicks * timestampDelta);
+        return new TimeSpan(ticks);
     }
-
-
 }
