@@ -7,11 +7,17 @@ namespace MemoryQueue.Client.SignalR;
 public delegate void QueueInfoReplyEventHandler(QueueInfoReply reply);
 public sealed class InMemoryQueueSignalrClient : IAsyncDisposable
 {
+    const string HubPublishMethodName = "Publish";
+    const string HubResetCountersMethodName = "ResetCounters";
+    const string HubQueueInfoMethodName = "QueueInfo";
+    const string HubConsumeMethodName = "Consume";
+    const string HubAckMethodName = "Ack";
+
     private readonly CancellationTokenSource _cts;
     private readonly CancellationToken _token;
     private readonly string _address;
     private readonly string? _queueName;
-    private readonly HubConnection _connection;
+    private readonly Lazy<Task<HubConnection>> _connection;
     public event QueueInfoReplyEventHandler? OnQueueInfo;
 
     public InMemoryQueueSignalrClient(string address, string? queueName = null)
@@ -20,25 +26,46 @@ public sealed class InMemoryQueueSignalrClient : IAsyncDisposable
         _token = _cts.Token;
         _address = address;
         _queueName = queueName;
-        _connection = new HubConnectionBuilder()
-            .WithUrl(address)
-            .WithAutomaticReconnect()
-            .Build();
-
-
-        _connection.On<QueueInfoReply>(nameof(QueueInfoReply), v => OnQueueInfo?.Invoke(v));
-        _connection.StartAsync().GetAwaiter().GetResult();
+        _connection = new Lazy<Task<HubConnection>>(async () =>
+        {
+            var conn = new HubConnectionBuilder()
+                .WithUrl(address)
+                .WithAutomaticReconnect()
+                .Build();
+            conn.On<QueueInfoReply>(nameof(QueueInfoReply), v => OnQueueInfo?.Invoke(v));
+            await conn.StartAsync(_token).ConfigureAwait(false);
+            return conn;
+        });
     }
 
-    public Task PublishAsync(string message) =>
-        _connection.SendAsync("Publish", message, _queueName);
+    public async Task PublishAsync(string message)
+    {
+        if (!_connection.IsValueCreated)
+        {
+            await _connection.Value.ConfigureAwait(false);
+        }
+        await _connection.Value.Result.SendAsync(HubPublishMethodName, message, _queueName, _token).ConfigureAwait(false);
+    }
 
-    public Task ResetCountersAsync() =>
-        _connection.SendAsync("ResetCounters", _queueName);
-    public Task QueueInfoAsync() =>
-        _connection.SendAsync("QueueInfo", _queueName);
 
-    public async Task Consume(string clientName, Func<string, CancellationToken, Task<bool>> callBack, CancellationToken consumerToken)
+    public async Task ResetCountersAsync()
+    {
+        if (!_connection.IsValueCreated)
+        {
+            await _connection.Value.ConfigureAwait(false);
+        }
+        await _connection.Value.Result.SendAsync(HubResetCountersMethodName, _queueName, _token).ConfigureAwait(false);
+    }
+    public async Task QueueInfoAsync()
+    {
+        if (!_connection.IsValueCreated)
+        {
+            await _connection.Value.ConfigureAwait(false);
+        }
+        await _connection.Value.Result.SendAsync(HubQueueInfoMethodName, _queueName, _token).ConfigureAwait(false);
+    }
+
+    public async Task ConsumeAsync(string clientName, Func<string, CancellationToken, Task<bool>> callBack, CancellationToken consumerToken)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(consumerToken, _token);
         while (!cts.IsCancellationRequested)
@@ -50,16 +77,16 @@ public sealed class InMemoryQueueSignalrClient : IAsyncDisposable
                     .WithAutomaticReconnect()
                     .Build();
 
-                await connection.StartAsync(consumerToken);
-                await foreach (var item in connection.StreamAsync<QueueItemReply>("Consume", clientName, _queueName, cts.Token))
+                await connection.StartAsync(consumerToken).ConfigureAwait(false);
+                await foreach (var item in connection.StreamAsync<QueueItemReply>(HubConsumeMethodName, clientName, _queueName, cts.Token))
                 {
                     try
                     {
-                        await connection.SendAsync("Ack", await callBack(item.Message, cts.Token), cts.Token);
+                        await connection.SendAsync(HubAckMethodName, await callBack(item.Message, cts.Token).ConfigureAwait(false), cts.Token).ConfigureAwait(false);
                     }
                     catch (Exception)
                     {
-                        await connection.SendAsync("Ack", false, cts.Token);
+                        await connection.SendAsync(HubAckMethodName, false, cts.Token).ConfigureAwait(false);
                     }
                 }
             }
@@ -85,7 +112,10 @@ public sealed class InMemoryQueueSignalrClient : IAsyncDisposable
         using (_cts)
         {
             _cts.Cancel();
-            await _connection.StopAsync();
+            if (_connection.IsValueCreated)
+            {
+                await _connection.Value.Result.StopAsync().ConfigureAwait(false);
+            }
         }
     }
 }

@@ -162,7 +162,7 @@ namespace GrpcClient2
             try
             {
                 var cts = new CancellationTokenSource();
-                var consumerTask = _signalR.Consume(_personNameGenerator.GenerateRandomFirstAndLastName(), static (item, token) =>
+                var consumerTask = _signalR.ConsumeAsync(_personNameGenerator.GenerateRandomFirstAndLastName(), static (item, token) =>
                 {
                     token.ThrowIfCancellationRequested();
                     return Task.FromResult(true);
@@ -247,7 +247,7 @@ namespace GrpcClient2
             try
             {
                 var cts = new CancellationTokenSource();
-                var consumerTask = _signalR.Consume(_personNameGenerator.GenerateRandomFirstAndLastName(), static (item, token) =>
+                var consumerTask = _signalR.ConsumeAsync(_personNameGenerator.GenerateRandomFirstAndLastName(), static (item, token) =>
                 {
                     token.ThrowIfCancellationRequested();
                     return Task.FromResult(true);
