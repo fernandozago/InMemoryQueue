@@ -47,7 +47,6 @@ public sealed class InMemoryQueueSignalrClient : IAsyncDisposable
         await _connection.Value.Result.SendAsync(HubPublishMethodName, message, _queueName, _token).ConfigureAwait(false);
     }
 
-
     public async Task ResetCountersAsync()
     {
         if (!_connection.IsValueCreated)
@@ -56,6 +55,7 @@ public sealed class InMemoryQueueSignalrClient : IAsyncDisposable
         }
         await _connection.Value.Result.SendAsync(HubResetCountersMethodName, _queueName, _token).ConfigureAwait(false);
     }
+
     public async Task QueueInfoAsync()
     {
         if (!_connection.IsValueCreated)
