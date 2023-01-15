@@ -16,12 +16,12 @@ var producer = Task.Run(async () =>
 {
     while (!cts.Token.IsCancellationRequested)
     {
-        await Task.Delay(TimeSpan.FromSeconds(1));
+        await Task.Delay(TimeSpan.FromMilliseconds(1));
         try
         {
             await queueConsumer.PublishAsync(new QueueItemRequest()
             {
-                Message = "teste"
+                Message = $"teste - {DateTime.Now}"
             });
         }
         catch (Exception)
@@ -37,8 +37,8 @@ cts.Cancel();
 await consumer;
 
 
-static async Task<bool> CallBack(QueueItemReply queueItem, CancellationToken arg2)
+static Task<bool> CallBack(QueueItemReply queueItem, CancellationToken arg2)
 {
     Console.WriteLine(queueItem);
-    return false;
+    return Task.FromResult(true);
 }
