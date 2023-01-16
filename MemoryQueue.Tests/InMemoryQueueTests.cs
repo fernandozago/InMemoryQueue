@@ -17,6 +17,7 @@ namespace MemoryQueue.Tests
 
             await queue.EnqueueAsync(data).ConfigureAwait(false);
 
+            await Task.Delay(1000);
             Assert.AreEqual(1, queue.GetInfo().MainQueueSize);
             Assert.AreEqual(0, queue.GetInfo().RetryQueueSize);
 
@@ -36,7 +37,7 @@ namespace MemoryQueue.Tests
             Assert.IsTrue(retryItem.Retrying);
             Assert.AreEqual(1, retryItem.RetryCount);
 
-            Assert.AreEqual(0, queue.Consumers.Count);
+            Assert.AreEqual(0, queue.GetInfo().Consumers.Count);
             Assert.AreEqual(0, queue.GetInfo().ConcurrentConsumers);
         }
     }

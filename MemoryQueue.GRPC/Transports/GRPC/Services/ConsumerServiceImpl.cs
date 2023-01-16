@@ -83,7 +83,7 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
         {
             _queueManager
                 .GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME))
-                .Counters.ResetCounters();
+                    .ResetCounters();
             return Task.FromResult(_empty);
         }
         catch (Exception ex)
@@ -131,7 +131,7 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
         using var reader = memoryQueue.AddQueueReader(
                 consumerQueueInfo,
                 (item) => WriteAndAckAsync(item, responseStream, requestStream, context.CancellationToken),
-                context.CancellationToken);        
+                context.CancellationToken);
 
         await reader.Completed.ConfigureAwait(false);
         memoryQueue.RemoveReader(reader);
@@ -150,7 +150,7 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     private async Task<bool> WriteAndAckAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, IAsyncStreamReader<QueueItemAck> requestStream, CancellationToken cancellationToken)
     {
         var writeAndAckResults = await Task.WhenAll(
-            WriteItemAsync(item, responseStream, cancellationToken), 
+            WriteItemAsync(item, responseStream, cancellationToken),
             ReadAckAsync(requestStream, cancellationToken)
         ).ConfigureAwait(false);
         return writeAndAckResults[0] && writeAndAckResults[1];

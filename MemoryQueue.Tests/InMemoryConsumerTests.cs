@@ -62,7 +62,7 @@ namespace MemoryQueue.Tests
                 while (true)
                 {
                     retryCount++;
-                    if (queue.Counters.AckCounter < 3 || queue.Counters.PubCounter < 3)
+                    if (queue.GetInfo().AckCounter < 3 || queue.GetInfo().PubCounter < 3)
                     {
                         await Task.Delay(200).ConfigureAwait(false);
                     }
@@ -78,22 +78,23 @@ namespace MemoryQueue.Tests
                 }
 
                 Assert.AreEqual(3, counter);
-                Assert.AreEqual(3, queue.Consumers.Count);
-                Assert.IsNotNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
-                Assert.IsNotNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer2"));
-                Assert.IsNotNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer3"));
+                Assert.AreEqual(3, queue.ConsumersCount);
+                Assert.IsNotNull(queue.GetInfo().Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
+                Assert.IsNotNull(queue.GetInfo().Consumers.SingleOrDefault(x => x.Name == "Consumer2"));
+                Assert.IsNotNull(queue.GetInfo().Consumers.SingleOrDefault(x => x.Name == "Consumer3"));
 
-                Assert.AreEqual(QueueConsumerType.InMemory, queue.Consumers.SingleOrDefault(x => x.Name == "Consumer1")!.ConsumerType);
-                Assert.AreEqual(QueueConsumerType.InMemory, queue.Consumers.SingleOrDefault(x => x.Name == "Consumer2")!.ConsumerType);
-                Assert.AreEqual(QueueConsumerType.InMemory, queue.Consumers.SingleOrDefault(x => x.Name == "Consumer3")!.ConsumerType);
+                Assert.AreEqual(QueueConsumerType.InMemory.ToString(), queue.GetInfo().Consumers.SingleOrDefault(x => x.Name == "Consumer1")!.Type);
+                Assert.AreEqual(QueueConsumerType.InMemory.ToString(), queue.GetInfo().Consumers.SingleOrDefault(x => x.Name == "Consumer2")!.Type);
+                Assert.AreEqual(QueueConsumerType.InMemory.ToString(), queue.GetInfo().Consumers.SingleOrDefault(x => x.Name == "Consumer3")!.Type);
 
                 cts.Cancel();
                 await Task.WhenAll(consumers);
 
-                Assert.AreEqual(0, queue.Consumers.Count);
-                Assert.IsNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
-                Assert.IsNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer2"));
-                Assert.IsNull(queue.Consumers.SingleOrDefault(x => x.Name == "Consumer3"));
+                await Task.Delay(1000);
+                Assert.AreEqual(0, queue.GetInfo().Consumers.Count);
+                Assert.IsNull(queue.GetInfo().Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
+                Assert.IsNull(queue.GetInfo().Consumers.SingleOrDefault(x => x.Name == "Consumer2"));
+                Assert.IsNull(queue.GetInfo().Consumers.SingleOrDefault(x => x.Name == "Consumer3"));
             }
             catch
             {
@@ -135,7 +136,7 @@ namespace MemoryQueue.Tests
                 while (true)
                 {
                     retryCount++;
-                    if (queue.Counters.AckCounter < 30 || queue.Counters.PubCounter < 30)
+                    if (queue.GetInfo().AckCounter < 30 || queue.GetInfo().PubCounter < 30)
                     {
                         await Task.Delay(200).ConfigureAwait(false);
                     }
@@ -201,7 +202,7 @@ namespace MemoryQueue.Tests
                 while (true)
                 {
                     retryCount++;
-                    if (queue.Counters.AckCounter < 30 || queue.Counters.PubCounter < 30)
+                    if (queue.GetInfo().AckCounter < 30 || queue.GetInfo().PubCounter < 30)
                     {
                         await Task.Delay(200).ConfigureAwait(false);
                     }

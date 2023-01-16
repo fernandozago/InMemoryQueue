@@ -26,18 +26,21 @@ public sealed class InMemoryQueue : IInMemoryQueue
     private readonly ConcurrentDictionary<IInMemoryQueueReader, QueueConsumerInfo> _readers = new();
     #endregion
 
+    #region Internal Properties
     internal ILoggerFactory LoggerFactory { get; private set; }
     internal BufferBlock<QueueItem> RetryChannel { get; private set; }
     internal BufferBlock<QueueItem> MainChannel { get; private set; }
-
-    public string Name { get; private set; }
-    public QueueConsumptionCounter Counters { get; private set; }
-    public int ConsumersCount => _readers.Count;
-    public int MainChannelCount => MainChannel.Count;
-    public int RetryChannelCount => RetryChannel.Count;
-
-    public IReadOnlyCollection<QueueConsumerInfo> Consumers =>
+    internal QueueConsumptionCounter Counters { get; private set; }
+    internal string Name { get; private set; }
+    internal int MainChannelCount => MainChannel.Count;
+    internal int RetryChannelCount => RetryChannel.Count;
+    internal IReadOnlyCollection<QueueConsumerInfo> Consumers =>
         (IReadOnlyCollection<QueueConsumerInfo>)_readers.Values;
+    #endregion
+
+    #region Public Properties
+    public int ConsumersCount => _readers.Count; 
+    #endregion
 
     public InMemoryQueue(string queueName, ILoggerFactory loggerFactory)
     {
@@ -103,12 +106,15 @@ public sealed class InMemoryQueue : IInMemoryQueue
         return null;
     }
 
+    public void ResetCounters() =>
+        Counters.ResetCounters();
+
+    public QueueInfo GetInfo() =>
+        _inMemoryQueueInfoService.GetQueueInfo();
+
     private async Task AddToRetryQueueAsync(bool isRetrying, QueueItem item, long ts)
     {
         await RetryChannel.SendAsync(item.Retry());
         Counters.UpdateCounters(isRetrying, false, ts);
     }
-
-    public QueueInfo GetInfo() =>
-        _inMemoryQueueInfoService.GetQueueInfo();
 }
