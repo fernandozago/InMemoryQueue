@@ -5,7 +5,7 @@ namespace MemoryQueue.Base
 {
     public class InMemoryQueueInfo
     {
-        private readonly SemaphoreSlim _semaphore = new (1);
+        private readonly SemaphoreSlim _semaphore = new(1);
         private readonly InMemoryQueue _inMemoryQueue;
         private QueueInfo _queueInfo;
         private int _lastGeneratedSecond;
@@ -13,13 +13,13 @@ namespace MemoryQueue.Base
         public InMemoryQueueInfo(InMemoryQueue inMemoryQueue)
         {
             _inMemoryQueue = inMemoryQueue;
-            _lastGeneratedSecond = new TimeSpan(Stopwatch.GetTimestamp()).Seconds;
+            _lastGeneratedSecond = GetCurrentSecond();
             _queueInfo = InternalGetQueueInfo();
         }
 
         public QueueInfo GetQueueInfo()
         {
-            var second = new TimeSpan(Stopwatch.GetTimestamp()).Seconds;
+            var second = GetCurrentSecond();
             if (_lastGeneratedSecond != second && _semaphore.Wait(0))
             {
                 _lastGeneratedSecond = second;
@@ -28,6 +28,9 @@ namespace MemoryQueue.Base
             }
             return _queueInfo;
         }
+
+        private int GetCurrentSecond() =>
+            new TimeSpan(Stopwatch.GetTimestamp()).Seconds;
 
         private QueueInfo InternalGetQueueInfo()
         {
@@ -65,27 +68,25 @@ namespace MemoryQueue.Base
             return queueInfo;
         }
 
-        private static ConsumerInfo ParseConsumer(QueueConsumerInfo info)
-        {
-            var consumerInfo = new ConsumerInfo();
-            consumerInfo.Counters ??= new Models.Counters();
-
-            consumerInfo.Host = info.Host;
-            consumerInfo.Id = info.Id;
-            consumerInfo.Ip = info.Ip;
-            consumerInfo.Name = info.Name;
-            consumerInfo.Type = info.ConsumerType.ToString();
-
-            consumerInfo.Counters.AckCounter = info.Counters?.AckCounter ?? 0;
-            consumerInfo.Counters.AckPerSecond = info.Counters?.AckPerSecond ?? 0;
-            consumerInfo.Counters.AvgConsumptionMs = info.Counters?.AvgConsumptionMs ?? 0;
-            consumerInfo.Counters.DeliverCounter = info.Counters?.DeliverCounter ?? 0;
-            consumerInfo.Counters.DeliverPerSecond = info.Counters?.DeliverPerSecond ?? 0;
-            consumerInfo.Counters.NackCounter = info.Counters?.NackCounter ?? 0;
-            consumerInfo.Counters.NackPerSecond = info.Counters?.NackPerSecond ?? 0;
-            consumerInfo.Counters.Throttled = info.Counters?.Throttled ?? false;
-
-            return consumerInfo;
-        }
+        private static ConsumerInfo ParseConsumer(QueueConsumerInfo info) =>
+            new ()
+            {
+                Host = info.Host,
+                Id = info.Id,
+                Ip = info.Ip,
+                Name = info.Name,
+                Type = info.ConsumerType.ToString(),
+                Counters = new ()
+                {
+                    AckCounter = info.Counters?.AckCounter ?? 0,
+                    AckPerSecond = info.Counters?.AckPerSecond ?? 0,
+                    AvgConsumptionMs = info.Counters?.AvgConsumptionMs ?? 0,
+                    DeliverCounter = info.Counters?.DeliverCounter ?? 0,
+                    DeliverPerSecond = info.Counters?.DeliverPerSecond ?? 0,
+                    NackCounter = info.Counters?.NackCounter ?? 0,
+                    NackPerSecond = info.Counters?.NackPerSecond ?? 0,
+                    Throttled = info.Counters?.Throttled ?? false
+                }
+            };
     }
 }
