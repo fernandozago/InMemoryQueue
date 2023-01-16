@@ -1,14 +1,14 @@
 using InMemoryQueue.Blazor.Host.Grpc;
 using InMemoryQueue.Blazor.Host.Grpc.InMemoryConsumers;
-using MemoryQueue.Base;
+using MemoryQueue.Base.Extensions;
 using MemoryQueue.GRPC.Transports.GRPC.Services;
 using MemoryQueue.SignalR.Transports.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddInMemoryQueue();
 builder.Services.AddSingleton<GrpcServer>();
-builder.Services.AddSingleton<InMemoryQueueManager>();
 builder.Services.AddSingleton<ConsumerServiceImpl>();
 builder.Services.AddHostedService<InMemoryConsumerBackgroundService>();
 

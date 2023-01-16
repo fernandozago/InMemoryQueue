@@ -31,21 +31,21 @@
             return;
         }
 
-        if (_queue.Counters.PubPerSecond == 0
-            && _queue.Counters.NackPerSecond == 0
-            && _queue.Counters.AckPerSecond == 0
-            && _queue.Counters.DeliverPerSecond == 0
-            && _queue.Counters.RedeliverPerSecond == 0)
+        if (_queue.PubPerSecond == 0
+            && _queue.NackPerSecond == 0
+            && _queue.AckPerSecond == 0
+            && _queue.DeliverPerSecond == 0
+            && _queue.RedeliverPerSecond == 0)
         {
             cssClass = "success";
             data = "Idle";
         }
-        else if (_queue.Counters.NackPerSecond > 0 && _queue.Counters.AckPerSecond > 0)
+        else if (_queue.NackPerSecond > 0 && _queue.AckPerSecond > 0)
         {
             cssClass = "warning";
             data = "Processing With Nacks";
         }
-        else if (_queue.Counters.NackPerSecond > 0 && _queue.Counters.AckPerSecond == 0)
+        else if (_queue.NackPerSecond > 0 && _queue.AckPerSecond == 0)
         {
             cssClass = "danger";
             data = "Not Processing";

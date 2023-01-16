@@ -5,7 +5,7 @@ namespace MemoryQueue.GRPC.Transports.GRPC.Services
 {
     public static class ConsumerServiceImplExtensions
     {
-        public static ServerServiceDefinition GetServerServiceDefinition(this ConsumerServiceImpl impl) =>
+        public static ServerServiceDefinition GetServiceDefinition(this ConsumerServiceImpl impl) =>
             ConsumerService.BindService(impl);
     }
 }

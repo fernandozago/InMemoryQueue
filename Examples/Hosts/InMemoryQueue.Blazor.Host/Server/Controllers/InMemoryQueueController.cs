@@ -8,24 +8,18 @@ namespace InMemoryQueue.Blazor_Host.Server.Controllers
     [Route("[controller]")]
     public class InMemoryQueueController : ControllerBase
     {
-        private readonly InMemoryQueueManager _inMemoryQueueManager;
+        private readonly IInMemoryQueueManager _inMemoryQueueManager;
         private readonly ILogger<InMemoryQueueController> _logger;
 
-        public InMemoryQueueController(InMemoryQueueManager inMemoryQueueManager, ILogger<InMemoryQueueController> logger)
+        public InMemoryQueueController(IInMemoryQueueManager inMemoryQueueManager, ILogger<InMemoryQueueController> logger)
         {
-            this._inMemoryQueueManager = inMemoryQueueManager;
+            _inMemoryQueueManager = inMemoryQueueManager;
             _logger = logger;
         }
 
         [HttpGet(nameof(GetActiveQueues))]
         public Task<IActionResult> GetActiveQueues() =>
-            Task.FromResult((IActionResult)Ok(_inMemoryQueueManager.ActiveQueues.OrderBy(x => x.Value.Name).Select(x => new
-            {
-                x.Value.Name,
-                QueueCount = x.Value.MainChannelCount + x.Value.RetryChannelCount,
-                x.Value.ConsumersCount,
-                x.Value.Counters
-            })));
+            Task.FromResult((IActionResult)Ok(_inMemoryQueueManager.ActiveQueues.Select(x => x.Value.GetInfo())));
 
         [HttpGet(nameof(GetQueueData))]
         public Task<IActionResult> GetQueueData(string queueName) =>
@@ -35,7 +29,7 @@ namespace InMemoryQueue.Blazor_Host.Server.Controllers
         public async Task<IActionResult?> PeekMessage(string queueName) =>
             Ok(new QueueItemWrapper(await TryGetQueueItem(_inMemoryQueueManager.GetOrCreateQueue(queueName)).ConfigureAwait(false)));
 
-        private async Task<QueueItem?> TryGetQueueItem(IInMemoryQueue queue) =>
+        private static async Task<QueueItem?> TryGetQueueItem(IInMemoryQueue queue) =>
             (await queue.TryPeekRetryQueueAsync().ConfigureAwait(false)) ?? (await queue.TryPeekMainQueueAsync().ConfigureAwait(false));
 
         private class QueueItemWrapper

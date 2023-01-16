@@ -137,7 +137,8 @@ namespace GrpcClient2
         {
             try
             {
-                _progress.Report(await _consumer.QueueInfoAsync());
+                var qi = await _consumer.QueueInfoAsync();
+                _progress.Report(qi);
             }
             catch (Exception ex)
             {

@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace MemoryQueue.Base;
 
-public sealed partial class InMemoryQueueManager
+public sealed partial class InMemoryQueueManager : IInMemoryQueueManager
 {
     #region Constants
 
@@ -18,7 +18,7 @@ public sealed partial class InMemoryQueueManager
     #endregion
 
 
-    private static Regex QUEUENAME_REGEX_VALIDATOR = new("^[a-z0-9-_.]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private readonly static Regex QUEUENAME_REGEX_VALIDATOR = new("^[a-z0-9-_.]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private readonly ConcurrentDictionary<int, Lazy<IInMemoryQueue>> _queues = new();
     private readonly ILoggerFactory _loggerFactory;

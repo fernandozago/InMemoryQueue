@@ -9,10 +9,23 @@ public enum QueueConsumerType
 
 public record Queue
 {
-    public string Name { get; set; }
-    public int QueueCount { get; set; }
-    public int ConsumersCount { get; set; }
-    public Counters Counters { get; set; }
+    public DateTime CollectDate { get; set; }
+    public string QueueName { get; set; }
+    public int QueueSize { get; set; }
+    public int MainQueueSize { get; set; }
+    public int RetryQueueSize { get; set; }
+    public int ConcurrentConsumers { get; set; }
+    public long AckCounter { get; set; }
+    public long AckPerSecond { get; set; }
+    public long NackCounter { get; set; }
+    public long NackPerSecond { get; set; }
+    public long PubCounter { get; set; }
+    public long PubPerSecond { get; set; }
+    public long RedeliverCounter { get; set; }
+    public long RedeliverPerSecond { get; set; }
+    public long DeliverCounter { get; set; }
+    public long DeliverPerSecond { get; set; }
+    public double AvgAckTimeMilliseconds { get; set; }
 }
 
 public record Consumer

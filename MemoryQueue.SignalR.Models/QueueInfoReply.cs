@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace MemoryQueue.Transports.SignalR;
 
@@ -21,6 +22,7 @@ public class QueueInfoReply
     public long DeliverPerSecond { get; set; }
     public double AvgAckTimeMilliseconds { get; set; }
     public List<ConsumerInfoReply> Consumers { get; set; } = new List<ConsumerInfoReply>();
+    public DateTime CollectDate { get; set; }
 }
 
 public class ConsumerInfoReply

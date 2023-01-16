@@ -4,6 +4,7 @@ namespace MemoryQueue.Base.Models;
 
 public sealed record QueueConsumerInfo
 {
+    private const string ToStringFormat = "{{ ConsumerType = {0}, Id = {1}, Name = {2}, Ip = {3}, Host = {4} }}";
     public QueueConsumerInfo(QueueConsumerType consumerType)
     {
         ConsumerType = consumerType;
@@ -17,8 +18,6 @@ public sealed record QueueConsumerInfo
     required public string Ip { get; set; }
     required public string Host { get; set; }
 
-    public override string ToString()
-    {
-        return $"{{ ConsumerType = {ConsumerType}, Id = {Id}, Name = {Name}, Ip = {Ip}, Host = {Host} }}";
-    }
+    public override string ToString() =>
+        string.Format(ToStringFormat, ConsumerType, Id, Name, Ip, Host);
 }

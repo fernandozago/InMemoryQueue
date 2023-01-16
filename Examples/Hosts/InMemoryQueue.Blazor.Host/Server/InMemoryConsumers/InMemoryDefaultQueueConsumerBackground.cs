@@ -5,10 +5,10 @@ namespace InMemoryQueue.Blazor.Host.Grpc.InMemoryConsumers;
 
 public class InMemoryConsumerBackgroundService : BackgroundService
 {
-    private readonly InMemoryQueueManager _inMemoryQueueManager;
+    private readonly IInMemoryQueueManager _inMemoryQueueManager;
     private readonly ILogger<InMemoryConsumerBackgroundService> _logger;
 
-    public InMemoryConsumerBackgroundService(InMemoryQueueManager inMemoryQueueManager, ILogger<InMemoryConsumerBackgroundService> logger)
+    public InMemoryConsumerBackgroundService(IInMemoryQueueManager inMemoryQueueManager, ILogger<InMemoryConsumerBackgroundService> logger)
     {
         _inMemoryQueueManager = inMemoryQueueManager;
         _logger = logger;

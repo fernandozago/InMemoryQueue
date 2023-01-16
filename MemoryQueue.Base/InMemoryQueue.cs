@@ -21,6 +21,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
 
     #region Fields
     private readonly ILogger _logger;
+    private readonly InMemoryQueueInfo _inMemoryQueueInfoService;
     private readonly ConsumptionConsolidator _consolidator;
     private readonly ConcurrentDictionary<IInMemoryQueueReader, QueueConsumerInfo> _readers = new();
     #endregion
@@ -49,6 +50,8 @@ public sealed class InMemoryQueue : IInMemoryQueue
 
         MainChannel = new();
         RetryChannel = new();
+
+        _inMemoryQueueInfoService = new InMemoryQueueInfo(this);
     }
 
     public IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken cancellationToken)
@@ -105,4 +108,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
         await RetryChannel.SendAsync(item.Retry());
         Counters.UpdateCounters(isRetrying, false, ts);
     }
+
+    public QueueInfo GetInfo() =>
+        _inMemoryQueueInfoService.GetQueueInfo();
 }

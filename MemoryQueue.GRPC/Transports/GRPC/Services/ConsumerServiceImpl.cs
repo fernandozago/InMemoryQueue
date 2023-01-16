@@ -2,6 +2,7 @@
 using Grpc.Core;
 using MemoryQueue.Base;
 using MemoryQueue.Base.Models;
+using MemoryQueue.GRPC.Parsers;
 using MemoryQueue.Transports.GRPC;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -25,10 +26,10 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     private readonly QueueItemAck _ackTrue = new() { Ack = true };
     private readonly Empty _empty = new();
     private readonly bool _isKestrel;
-    private readonly InMemoryQueueManager _queueManager;
+    private readonly IInMemoryQueueManager _queueManager;
     private readonly ILoggerFactory _loggerFactory;
 
-    public ConsumerServiceImpl(InMemoryQueueManager queueManager, IConfiguration configuration, ILoggerFactory loggerFactory)
+    public ConsumerServiceImpl(IInMemoryQueueManager queueManager, IConfiguration configuration, ILoggerFactory loggerFactory)
     {
         _isKestrel = bool.TryParse(configuration[GRPC_HOSTED_ON_KESTREL_CONFIG], out bool isKestrel) && isKestrel;
         _queueManager = queueManager;
@@ -61,68 +62,13 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     {
         try
         {
-            var inMemoryQueue = _queueManager.GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME));
-            int mainQueueSize = inMemoryQueue.MainChannelCount;
-            int retryQueueSize = inMemoryQueue.RetryChannelCount;
-
-            var reply = new QueueInfoReply()
-            {
-                QueueName = inMemoryQueue.Name,
-                QueueSize = mainQueueSize + retryQueueSize,
-                MainQueueSize = mainQueueSize,
-                RetryQueueSize = retryQueueSize,
-
-                ConcurrentConsumers = inMemoryQueue.ConsumersCount,
-
-                AckCounter = inMemoryQueue.Counters.AckCounter,
-                AckPerSecond = inMemoryQueue.Counters.AckPerSecond,
-
-                NackCounter = inMemoryQueue.Counters.NackCounter,
-                NackPerSecond = inMemoryQueue.Counters.NackPerSecond,
-
-                PubCounter = inMemoryQueue.Counters.PubCounter,
-                PubPerSecond = inMemoryQueue.Counters.PubPerSecond,
-
-                RedeliverCounter = inMemoryQueue.Counters.RedeliverCounter,
-                RedeliverPerSecond = inMemoryQueue.Counters.RedeliverPerSecond,
-
-                DeliverCounter = inMemoryQueue.Counters.DeliverCounter,
-                DeliverPerSecond = inMemoryQueue.Counters.DeliverPerSecond,
-
-                AvgAckTimeMilliseconds = inMemoryQueue.Counters.AvgConsumptionMs
-            };
-            reply.Consumers.AddRange(inMemoryQueue.Consumers.Select(x => ToGrpc(x)));
-
-            return Task.FromResult(reply);
+            return Task.FromResult(_queueManager.GetOrCreateQueue(context.RequestHeaders.GetValue(GRPC_HEADER_QUEUENAME)).GetInfo().ToReply());
         }
         catch (Exception ex)
         {
             context.ResponseTrailers.Add(GRPC_TRAIL_SERVER_EXCEPTION, ex.Message);
             throw;
         }
-    }
-
-    private ConsumerInfoReply ToGrpc(QueueConsumerInfo info)
-    {
-        var _consumerInfo = new ConsumerInfoReply();
-        _consumerInfo.Counters ??= new ConsumerCounters();
-
-        _consumerInfo.Host = info.Host;
-        _consumerInfo.Id = info.Id;
-        _consumerInfo.Ip = info.Ip;
-        _consumerInfo.Name = info.Name;
-        _consumerInfo.Type = info.ConsumerType.ToString();
-
-        _consumerInfo.Counters.AckCounter = info.Counters?.AckCounter ?? 0;
-        _consumerInfo.Counters.AckPerSecond = info.Counters?.AckPerSecond ?? 0;
-        _consumerInfo.Counters.AvgConsumptionMs = info.Counters?.AvgConsumptionMs ?? 0;
-        _consumerInfo.Counters.DeliverCounter = info.Counters?.DeliverCounter ?? 0;
-        _consumerInfo.Counters.DeliverPerSecond = info.Counters?.DeliverPerSecond ?? 0;
-        _consumerInfo.Counters.NackCounter = info.Counters?.NackCounter ?? 0;
-        _consumerInfo.Counters.NackPerSecond = info.Counters?.NackPerSecond ?? 0;
-        _consumerInfo.Counters.Throttled = info.Counters?.Throttled ?? false;
-
-        return _consumerInfo;
     }
 
     /// <summary>
@@ -176,7 +122,7 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
             Name = context.RequestHeaders.GetValue(GRPC_HEADER_CLIENTNAME) ?? id
         };
 
-        var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.Name, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
+        var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.GetInfo().QueueName, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
         using var registration = context.CancellationToken.Register(() =>
         {
             logger.LogInformation(LOGMSG_GRPC_REQUEST_CANCELLED);
@@ -184,7 +130,7 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
 
         using var reader = memoryQueue.AddQueueReader(
                 consumerQueueInfo,
-                (item) => WriteAndAckAsync(item, responseStream, requestStream, logger, context.CancellationToken),
+                (item) => WriteAndAckAsync(item, responseStream, requestStream, context.CancellationToken),
                 context.CancellationToken);        
 
         await reader.Completed.ConfigureAwait(false);
@@ -201,10 +147,10 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     /// <param name="requestStream"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    private async Task<bool> WriteAndAckAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, IAsyncStreamReader<QueueItemAck> requestStream, ILogger logger, CancellationToken cancellationToken)
+    private async Task<bool> WriteAndAckAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, IAsyncStreamReader<QueueItemAck> requestStream, CancellationToken cancellationToken)
     {
         var writeAndAckResults = await Task.WhenAll(
-            WriteItemAsync(item, responseStream, logger, cancellationToken), 
+            WriteItemAsync(item, responseStream, cancellationToken), 
             ReadAckAsync(requestStream, cancellationToken)
         ).ConfigureAwait(false);
         return writeAndAckResults[0] && writeAndAckResults[1];
@@ -218,7 +164,7 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     /// <param name="logger"></param>
     /// <param name="token"></param>
     /// <returns>true if succeded, otherwise false</returns>
-    private async Task<bool> WriteItemAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, ILogger logger, CancellationToken token)
+    private async Task<bool> WriteItemAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, CancellationToken token)
     {
         await responseStream.WriteAsync(new QueueItemReply()
         {

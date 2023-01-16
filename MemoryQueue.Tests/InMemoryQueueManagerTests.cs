@@ -13,10 +13,10 @@ namespace MemoryQueue.Tests
             Assert.AreEqual(0, sut.ActiveQueues.Count);
 
             var queue = sut.GetOrCreateQueue(null);
-            Assert.AreEqual("Default", queue.Name);
+            Assert.AreEqual("Default", queue.GetInfo().QueueName);
 
             queue = sut.GetOrCreateQueue("");
-            Assert.AreEqual("Default", queue.Name);
+            Assert.AreEqual("Default", queue.GetInfo().QueueName);
 
             Assert.AreEqual(1, sut.ActiveQueues.Count);
         }
@@ -32,10 +32,10 @@ namespace MemoryQueue.Tests
             Assert.AreEqual(0, sut.ActiveQueues.Count);
 
             var queue = sut.GetOrCreateQueue(queueName);
-            Assert.AreEqual(queueName, queue.Name);
+            Assert.AreEqual(queueName, queue.GetInfo().QueueName);
 
             queue = sut.GetOrCreateQueue(queueName);
-            Assert.AreEqual(queueName, queue.Name);
+            Assert.AreEqual(queueName, queue.GetInfo().QueueName);
 
             Assert.AreEqual(1, sut.ActiveQueues.Count);
         }

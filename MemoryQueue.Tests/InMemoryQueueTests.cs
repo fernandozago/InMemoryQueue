@@ -17,8 +17,8 @@ namespace MemoryQueue.Tests
 
             await queue.EnqueueAsync(data).ConfigureAwait(false);
 
-            Assert.AreEqual(1, queue.MainChannelCount);
-            Assert.AreEqual(0, queue.RetryChannelCount);
+            Assert.AreEqual(1, queue.GetInfo().MainQueueSize);
+            Assert.AreEqual(0, queue.GetInfo().RetryQueueSize);
 
 
             QueueItem? retryEmptyItem = await queue.TryPeekRetryQueueAsync().ConfigureAwait(false);
@@ -37,7 +37,7 @@ namespace MemoryQueue.Tests
             Assert.AreEqual(1, retryItem.RetryCount);
 
             Assert.AreEqual(0, queue.Consumers.Count);
-            Assert.AreEqual(0, queue.ConsumersCount);
+            Assert.AreEqual(0, queue.GetInfo().ConcurrentConsumers);
         }
     }
 }

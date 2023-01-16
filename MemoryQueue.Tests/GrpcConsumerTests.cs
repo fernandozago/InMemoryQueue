@@ -42,7 +42,7 @@ namespace MemoryQueue.Tests
         public GrpcConsumerTests()
         {
             _grpcConsumer = SubjectUnderTestFactory.CreateGrpcConsumer();
-            _server = new SimpleGrpcServer(_grpcConsumer.GetServerServiceDefinition());
+            _server = new SimpleGrpcServer(_grpcConsumer.GetServiceDefinition());
         }
 
         [DataTestMethod]
@@ -127,6 +127,7 @@ namespace MemoryQueue.Tests
                         Assert.AreEqual(queueName.Trim(), queueInfoReply.QueueName);
                     }
 
+                    await Task.Delay(TimeSpan.FromSeconds(1));
                     Assert.AreEqual(3, counter);
                     Assert.AreEqual(3, queueInfoReply.Consumers.Count);
                     Assert.IsNotNull(queueInfoReply.Consumers.SingleOrDefault(x => x.Name == "Consumer1"));

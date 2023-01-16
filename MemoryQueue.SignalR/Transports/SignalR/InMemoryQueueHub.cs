@@ -1,5 +1,6 @@
 ﻿using MemoryQueue.Base;
 using MemoryQueue.Base.Models;
+using MemoryQueue.SignalR.Parsers;
 using MemoryQueue.Transports.SignalR;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
@@ -12,83 +13,28 @@ namespace MemoryQueue.SignalR.Transports.SignalR
     {
         private const string GRPC_QUEUEREADER_LOGGER_CATEGORY = $"{nameof(InMemoryQueueReader)}.{{0}}.{{1}}-[{{2}}]";
         private const string LOGMSG_SIGNALR_REQUEST_CANCELLED = "Request cancelled and client is being removed";
+        private const string UNKNOWN_CLIENT_NAME = "Unknown";
+        private const string ADDRESS_PORT_FORMAT = "{0}:{1}";
 
-        private readonly InMemoryQueueManager _queueManager;
+        private readonly IInMemoryQueueManager _queueManager;
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<InMemoryQueueHub> _logger;
 
-        public InMemoryQueueHub(InMemoryQueueManager inMemoryQueueManager, ILoggerFactory loggerFactory)
+        public InMemoryQueueHub(IInMemoryQueueManager inMemoryQueueManager, ILoggerFactory loggerFactory)
         {
+            _logger = loggerFactory.CreateLogger<InMemoryQueueHub>();
             _queueManager = inMemoryQueueManager;
             _loggerFactory = loggerFactory;
-            _logger = loggerFactory.CreateLogger<InMemoryQueueHub>();
         }
 
-        public async Task QueueInfo(string? queue)
-        {
-            var inMemoryQueue = _queueManager.GetOrCreateQueue(queue);
-            int mainQueueSize = inMemoryQueue.MainChannelCount;
-            int retryQueueSize = inMemoryQueue.RetryChannelCount;
-
-            var reply = new QueueInfoReply()
-            {
-                QueueName = inMemoryQueue.Name,
-                QueueSize = mainQueueSize + retryQueueSize,
-                MainQueueSize = mainQueueSize,
-                RetryQueueSize = retryQueueSize,
-
-                ConcurrentConsumers = inMemoryQueue.ConsumersCount,
-
-                AckCounter = inMemoryQueue.Counters.AckCounter,
-                AckPerSecond = inMemoryQueue.Counters.AckPerSecond,
-
-                NackCounter = inMemoryQueue.Counters.NackCounter,
-                NackPerSecond = inMemoryQueue.Counters.NackPerSecond,
-
-                PubCounter = inMemoryQueue.Counters.PubCounter,
-                PubPerSecond = inMemoryQueue.Counters.PubPerSecond,
-
-                RedeliverCounter = inMemoryQueue.Counters.RedeliverCounter,
-                RedeliverPerSecond = inMemoryQueue.Counters.RedeliverPerSecond,
-
-                DeliverCounter = inMemoryQueue.Counters.DeliverCounter,
-                DeliverPerSecond = inMemoryQueue.Counters.DeliverPerSecond,
-
-                AvgAckTimeMilliseconds = inMemoryQueue.Counters.AvgConsumptionMs
-            };
-            reply.Consumers.AddRange(inMemoryQueue.Consumers.Select(x => ToSignalR(x)));
-
-            await Clients.Caller.SendAsync(nameof(QueueInfoReply), reply);
-        }
-
-        private ConsumerInfoReply ToSignalR(QueueConsumerInfo info)
-        {
-            var _consumerInfo = new ConsumerInfoReply();
-            _consumerInfo.Counters ??= new ConsumerCounters();
-
-            _consumerInfo.Host = info.Host;
-            _consumerInfo.Id = info.Id;
-            _consumerInfo.Ip = info.Ip;
-            _consumerInfo.Name = info.Name;
-            _consumerInfo.Type = info.ConsumerType.ToString();
-
-            _consumerInfo.Counters.AckCounter = info.Counters?.AckCounter ?? 0;
-            _consumerInfo.Counters.AckPerSecond = info.Counters?.AckPerSecond ?? 0;
-            _consumerInfo.Counters.AvgConsumptionMs = info.Counters?.AvgConsumptionMs ?? 0;
-            _consumerInfo.Counters.DeliverCounter = info.Counters?.DeliverCounter ?? 0;
-            _consumerInfo.Counters.DeliverPerSecond = info.Counters?.DeliverPerSecond ?? 0;
-            _consumerInfo.Counters.NackCounter = info.Counters?.NackCounter ?? 0;
-            _consumerInfo.Counters.NackPerSecond = info.Counters?.NackPerSecond ?? 0;
-            _consumerInfo.Counters.Throttled = info.Counters?.Throttled ?? false;
-
-            return _consumerInfo;
-        }
+        public Task QueueInfo(string? queue) =>
+            Clients.Caller.SendAsync(nameof(QueueInfoReply), _queueManager.GetOrCreateQueue(queue).GetInfo().ToReply());
 
         public async Task Publish(string item, string? queue)
         {
             await _queueManager
-                    .GetOrCreateQueue(queue)
-                    .EnqueueAsync(item).ConfigureAwait(false);
+                .GetOrCreateQueue(queue)
+                .EnqueueAsync(item).ConfigureAwait(false);
         }
 
         public ChannelReader<QueueItemReply> Consume(string clientName, string? queue, CancellationToken cancellationToken)
@@ -105,12 +51,12 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                 var consumerQueueInfo = new QueueConsumerInfo(QueueConsumerType.SignalR)
                 {
                     Id = Guid.NewGuid().ToString(),
-                    Host = httpConnectionFeature.LocalIpAddress.ToString() + ":" + httpConnectionFeature.LocalPort,
-                    Ip = httpConnectionFeature.RemoteIpAddress.ToString() + ":" + httpConnectionFeature.RemotePort,
-                    Name = clientName ?? "Unknown"
+                    Host = string.Format(ADDRESS_PORT_FORMAT, httpConnectionFeature.LocalIpAddress.ToString(), httpConnectionFeature.LocalPort),
+                    Ip = string.Format(ADDRESS_PORT_FORMAT, httpConnectionFeature.RemoteIpAddress.ToString(), httpConnectionFeature.RemotePort),
+                    Name = clientName ?? UNKNOWN_CLIENT_NAME
                 };
 
-                var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.Name, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
+                var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.GetInfo().QueueName, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
 
                 using var channelCancelRegistration = cancellationToken.Register(() =>
                 {
@@ -119,8 +65,8 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                 });
 
                 using var reader = memoryQueue.AddQueueReader(
-                    consumerQueueInfo, 
-                    (item) => WriteAndAckAsync(channel.Writer, item, cancellationToken), 
+                    consumerQueueInfo,
+                    (item) => WriteAndAckAsync(channel.Writer, item, cancellationToken),
                     cancellationToken);
 
                 try
@@ -138,7 +84,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                     }
                     await reader.Completed.ConfigureAwait(false);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed completing this consumer");
                 }

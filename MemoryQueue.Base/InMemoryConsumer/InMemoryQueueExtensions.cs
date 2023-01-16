@@ -22,7 +22,7 @@ public static class InMemoryQueueExtensions
         inMemoryQueue.RemoveReader(reader);
     }
 
-    public static Task CreateInMemoryConsumer(this InMemoryQueueManager inMemoryQueueManager,
+    public static Task CreateInMemoryConsumer(this IInMemoryQueueManager inMemoryQueueManager,
         Func<QueueItem, Task<bool>> callBack, string? consumerName = null, string? queueName = null, CancellationToken cancellationToken = default) =>
             inMemoryQueueManager.GetOrCreateQueue(queueName).CreateInMemoryConsumer(callBack, consumerName, cancellationToken);
 }

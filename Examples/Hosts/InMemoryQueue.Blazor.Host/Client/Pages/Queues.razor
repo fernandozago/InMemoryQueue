@@ -29,16 +29,16 @@
             @foreach (var queue in _activeQueues ?? Array.Empty<Queue>())
             {
                 <tr>
-                    <td><NavLink class="nav-link" href="@($"dashboard?queueName={queue.Name}")">@queue.Name</NavLink></td>
-                    <td class="text-center">@queue.ConsumersCount.ToString("N0")</td>
+                    <td><NavLink class="nav-link" href="@($"dashboard?queueName={queue.QueueName}")">@queue.QueueName</NavLink></td>
+                    <td class="text-center">@queue.ConcurrentConsumers.ToString("N0")</td>
                     <td class="text-center"><QueueStateBadge Queue="queue" /></td>
-                    <td class="text-center">@queue.QueueCount.ToString("N0")</td>
-                    <td class="text-right">@queue.Counters.PubPerSecond.ToString("N0")</td>
-                    <td class="text-right">@(queue.Counters.DeliverPerSecond.ToString("N0"))</td>
-                    <td class="text-right">@(queue.Counters.RedeliverPerSecond.ToString("N0"))</td>
-                    <td class="text-right">@queue.Counters.AckPerSecond.ToString("N0")</td>
-                    <td class="text-right">@queue.Counters.NackPerSecond.ToString("N0")</td>
-                    <td class="text-right">@queue.Counters.AvgConsumptionMs.ToString("N5") ms</td>
+                    <td class="text-center">@queue.QueueSize.ToString("N0")</td>
+                    <td class="text-right">@queue.PubPerSecond.ToString("N0")</td>
+                    <td class="text-right">@(queue.DeliverPerSecond.ToString("N0"))</td>
+                    <td class="text-right">@(queue.RedeliverPerSecond.ToString("N0"))</td>
+                    <td class="text-right">@queue.AckPerSecond.ToString("N0")</td>
+                    <td class="text-right">@queue.NackPerSecond.ToString("N0")</td>
+                    <td class="text-right">@queue.AvgAckTimeMilliseconds.ToString("N5") ms</td>
                 </tr>
             }
         </tbody>
@@ -67,7 +67,7 @@
         {
             try
             {
-                _activeQueues = (await Http.GetFromJsonAsync<Queue[]?>("InMemoryQueue/GetActiveQueues"))?.OrderBy(x => x.Name).ToArray();
+                _activeQueues = (await Http.GetFromJsonAsync<Queue[]?>("InMemoryQueue/GetActiveQueues"))?.OrderBy(x => x.QueueName).ToArray();
             }
             catch
             {
