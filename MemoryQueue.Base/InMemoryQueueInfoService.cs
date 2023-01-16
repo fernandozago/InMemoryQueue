@@ -7,14 +7,14 @@ namespace MemoryQueue.Base
     {
         private readonly SemaphoreSlim _semaphore = new (1);
         private readonly InMemoryQueue _inMemoryQueue;
-        private QueueInfo _queueInfo;
+        private QueueInfo _queueInfo = new QueueInfo();
         private int _lastGeneratedSecond;
 
         public InMemoryQueueInfo(InMemoryQueue inMemoryQueue)
         {
             _inMemoryQueue = inMemoryQueue;
             _lastGeneratedSecond = new TimeSpan(Stopwatch.GetTimestamp()).Seconds;
-            _queueInfo = InternalGetQueueInfo();
+            InternalSetQueueInfo();
         }
 
         public QueueInfo GetQueueInfo()
@@ -23,46 +23,45 @@ namespace MemoryQueue.Base
             if (_lastGeneratedSecond != second && _semaphore.Wait(0))
             {
                 _lastGeneratedSecond = second;
-                _queueInfo = InternalGetQueueInfo();
+                InternalSetQueueInfo();
                 _semaphore.Release();
             }
-            return _queueInfo;
+
+            return _queueInfo!;
         }
 
-        private QueueInfo InternalGetQueueInfo()
+        private void InternalSetQueueInfo()
         {
-            var collectDate = DateTime.Now;
             int mainQueueSize = _inMemoryQueue.MainChannelCount;
             int retryQueueSize = _inMemoryQueue.RetryChannelCount;
-            var queueInfo = new QueueInfo()
-            {
-                CollectDate = collectDate,
-                QueueName = _inMemoryQueue.Name,
-                QueueSize = mainQueueSize + retryQueueSize,
-                MainQueueSize = mainQueueSize,
-                RetryQueueSize = retryQueueSize,
 
-                ConcurrentConsumers = _inMemoryQueue.ConsumersCount,
+            _queueInfo.CollectDate = DateTime.Now;
+            _queueInfo.QueueName = _inMemoryQueue.Name;
+            _queueInfo.QueueSize = mainQueueSize + retryQueueSize;
+            _queueInfo.MainQueueSize = mainQueueSize;
+            _queueInfo.RetryQueueSize = retryQueueSize;
 
-                AckCounter = _inMemoryQueue.Counters.AckCounter,
-                AckPerSecond = _inMemoryQueue.Counters.AckPerSecond,
+            _queueInfo.ConcurrentConsumers = _inMemoryQueue.ConsumersCount;
 
-                NackCounter = _inMemoryQueue.Counters.NackCounter,
-                NackPerSecond = _inMemoryQueue.Counters.NackPerSecond,
+            _queueInfo.AckCounter = _inMemoryQueue.Counters.AckCounter;
+            _queueInfo.AckPerSecond = _inMemoryQueue.Counters.AckPerSecond;
 
-                PubCounter = _inMemoryQueue.Counters.PubCounter,
-                PubPerSecond = _inMemoryQueue.Counters.PubPerSecond,
+            _queueInfo.NackCounter = _inMemoryQueue.Counters.NackCounter;
+            _queueInfo.NackPerSecond = _inMemoryQueue.Counters.NackPerSecond;
 
-                RedeliverCounter = _inMemoryQueue.Counters.RedeliverCounter,
-                RedeliverPerSecond = _inMemoryQueue.Counters.RedeliverPerSecond,
+            _queueInfo.PubCounter = _inMemoryQueue.Counters.PubCounter;
+            _queueInfo.PubPerSecond = _inMemoryQueue.Counters.PubPerSecond;
 
-                DeliverCounter = _inMemoryQueue.Counters.DeliverCounter,
-                DeliverPerSecond = _inMemoryQueue.Counters.DeliverPerSecond,
+            _queueInfo.RedeliverCounter = _inMemoryQueue.Counters.RedeliverCounter;
+            _queueInfo.RedeliverPerSecond = _inMemoryQueue.Counters.RedeliverPerSecond;
 
-                AvgAckTimeMilliseconds = _inMemoryQueue.Counters.AvgConsumptionMs
-            };
-            queueInfo.Consumers.AddRange(_inMemoryQueue.Consumers.Select(ParseConsumer));
-            return queueInfo;
+            _queueInfo.DeliverCounter = _inMemoryQueue.Counters.DeliverCounter;
+            _queueInfo.DeliverPerSecond = _inMemoryQueue.Counters.DeliverPerSecond;
+
+            _queueInfo.AvgAckTimeMilliseconds = _inMemoryQueue.Counters.AvgConsumptionMs;
+
+            _queueInfo.Consumers.Clear();
+            _queueInfo.Consumers.AddRange(_inMemoryQueue.Consumers.Select(ParseConsumer));
         }
 
         private static ConsumerInfo ParseConsumer(QueueConsumerInfo info)
