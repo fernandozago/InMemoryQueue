@@ -62,7 +62,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
 
                 using var reader = memoryQueue.AddQueueReader(
                     consumerQueueInfo,
-                    (item) => WriteAndAckAsync(channel.Writer, item, token),
+                    item => WriteAndAckAsync(channel.Writer, item, token),
                     token);
 
                 try
