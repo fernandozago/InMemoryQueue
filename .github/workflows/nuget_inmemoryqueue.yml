@@ -13,6 +13,7 @@ env:
 
   PROJECT_PATH_Server_SignalR: 'MemoryQueue.SignalR/MemoryQueue.SignalR.csproj'
   PROJECT_PATH_Client_SignalR: 'MemoryQueue.Client.SignalR/MemoryQueue.Client.SignalR.csproj'
+  PROJECT_PATH_SignalR_Models: 'MemoryQueue.SignalR.Models/MemoryQueue.SignalR.Models.csproj'
 
   PACKAGE_OUTPUT_DIRECTORY: ${{ github.workspace }}\output
   NUGET_SOURCE_URL: 'https://api.nuget.org/v3/index.json'
@@ -57,6 +58,12 @@ jobs:
 
     - name: 'Build project InMemoryQueue Client GRPC'
       run: dotnet build ${{ env.PROJECT_PATH_Client_GRPC }} --no-restore --configuration Release -p:Version=${{ steps.version.outputs.version-without-v }}
+
+    - name: 'Restore packages InMemoryQueue SignalR Models'
+      run: dotnet restore ${{ env.PROJECT_PATH_Client_SignalR }}
+
+    - name: 'Build project InMemoryQueue SignalR Models'
+      run: dotnet build ${{ env.PROJECT_PATH_Client_SignalR }} --no-restore --configuration Release -p:Version=${{ steps.version.outputs.version-without-v }}
 
     - name: 'Restore packages InMemoryQueue Client SignalR'
       run: dotnet restore ${{ env.PROJECT_PATH_Client_SignalR }}
