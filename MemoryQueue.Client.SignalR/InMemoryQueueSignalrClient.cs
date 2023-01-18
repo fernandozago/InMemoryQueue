@@ -90,7 +90,7 @@ public sealed class InMemoryQueueSignalrClient : IAsyncDisposable
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 if (!cts.Token.IsCancellationRequested)
                 {

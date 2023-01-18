@@ -6,10 +6,10 @@ namespace GrpcClient4.QueueInfoPropertyGrid;
 [TypeConverter(typeof(ExpandableObjectConverter))]
 public class ConsumerCollection : ICustomTypeDescriptor
 {
-    private readonly ConcurrentDictionary<Guid, (QueueInfoReplyConsumer consumerInfo, EmployeeCollectionPropertyDescriptor descriptor)> List = new();
+    private readonly ConcurrentDictionary<string, (QueueInfoReplyConsumer consumerInfo, EmployeeCollectionPropertyDescriptor descriptor)> List = new();
     private readonly PropertyDescriptorCollection _propertyDescriptorCollection = new(null);
 
-    public QueueInfoReplyConsumer this[Guid refId]
+    public QueueInfoReplyConsumer this[string refId]
     {
         get => List[refId].consumerInfo;
     }
@@ -35,7 +35,7 @@ public class ConsumerCollection : ICustomTypeDescriptor
         }
     }
 
-    public void RemoveRemovedConsumers(IEnumerable<Guid> existingConsumers)
+    public void RemoveRemovedConsumers(IEnumerable<string> existingConsumers)
     {
         foreach (var item in List.Select(x => x.Key).Except(existingConsumers))
         {

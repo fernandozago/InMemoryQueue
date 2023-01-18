@@ -17,7 +17,6 @@ public sealed partial class InMemoryQueueManager : IInMemoryQueueManager
 
     #endregion
 
-
     private readonly static Regex QUEUENAME_REGEX_VALIDATOR = new("^[a-z0-9-_.]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private readonly ConcurrentDictionary<int, Lazy<IInMemoryQueue>> _queues = new();
@@ -35,18 +34,17 @@ public sealed partial class InMemoryQueueManager : IInMemoryQueueManager
 
     public IInMemoryQueue GetOrCreateQueue(string? name = null)
     {
-        string queueName = GetValidOrDefaultQueueName(name);
-        var hash = QueueNameHashesGenerator.GenerateHash(queueName);
-        return _queues.GetOrAdd(hash, new Lazy<IInMemoryQueue>(() => CreateInMemoryQueue(hash, queueName))).Value;
+        var queueHashName = GetValidOrDefaultQueueName(name);
+        return _queues.GetOrAdd(queueHashName.Item1, new Lazy<IInMemoryQueue>(() => CreateInMemoryQueue(queueHashName))).Value;
     }
 
-    private string GetValidOrDefaultQueueName(string? name)
+    private Tuple<int, string> GetValidOrDefaultQueueName(string? name)
     {
         name = name?.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
             _logger.LogTrace(LOGMS_TRACE_USINGDEFAULT_QUEUENAME, DEFAULT_QUEUE_NAME);
-            return DEFAULT_QUEUE_NAME;
+            return new (QueueNameHashesGenerator.GenerateHash(DEFAULT_QUEUE_NAME), DEFAULT_QUEUE_NAME);
         }
         else if (!QUEUENAME_REGEX_VALIDATOR.IsMatch(name))
         {
@@ -55,18 +53,18 @@ public sealed partial class InMemoryQueueManager : IInMemoryQueueManager
             throw ex;
         }
 
-        return name;
+        return new (QueueNameHashesGenerator.GenerateHash(name), name);
     }
 
-    private IInMemoryQueue CreateInMemoryQueue(int hash, string queueName)
+    private IInMemoryQueue CreateInMemoryQueue(Tuple<int, string> queueHashName)
     {
         try
         {
-            return new InMemoryQueue(queueName, _loggerFactory);
+            return new InMemoryQueue(queueHashName.Item2, _loggerFactory);
         }
         finally
         {
-            _logger.LogInformation(LOGMSG_QUEUE_CREATED, queueName, hash);
+            _logger.LogInformation(LOGMSG_QUEUE_CREATED, queueHashName.Item2, queueHashName.Item1);
         }
     }
 }

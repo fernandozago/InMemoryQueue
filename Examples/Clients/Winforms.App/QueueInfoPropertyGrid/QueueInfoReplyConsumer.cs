@@ -9,7 +9,7 @@ public sealed record QueueInfoReplyConsumer
 {
     [DisplayName("Id")]
     [Description("Id of the consumer")]
-    public Guid Id { get; internal set; } = Guid.Empty;
+    public string Id { get; internal set; } = "";
 
     [DisplayName("Name")]
     [Description("Name of the consumer")]

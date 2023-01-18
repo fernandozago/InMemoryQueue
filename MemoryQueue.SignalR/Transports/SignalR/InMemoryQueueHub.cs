@@ -13,7 +13,6 @@ namespace MemoryQueue.SignalR.Transports.SignalR
     {
         private const string GRPC_QUEUEREADER_LOGGER_CATEGORY = $"{nameof(InMemoryQueueReader)}.{{0}}.{{1}}-[{{2}}]";
         private const string LOGMSG_SIGNALR_REQUEST_CANCELLED = "Request cancelled and client is being removed";
-        private const string UNKNOWN_CLIENT_NAME = "Unknown";
         private const string ADDRESS_PORT_FORMAT = "{0}:{1}";
 
         private readonly IInMemoryQueueManager _queueManager;
@@ -40,28 +39,27 @@ namespace MemoryQueue.SignalR.Transports.SignalR
         public ChannelReader<QueueItemReply> Consume(string clientName, string? queue, CancellationToken cancellationToken)
         {
             var channel = Channel.CreateBounded<QueueItemReply>(1);
+            AckTaskCompletionSource = new TaskCompletionSource<bool>();
+            AckTaskCompletionSource.SetResult(true);
 
             _ = Task.Run(async () =>
             {
-                Acker = new TaskCompletionSource<bool>();
-                Acker.SetResult(true);
-
                 var memoryQueue = _queueManager.GetOrCreateQueue(queue);
                 var httpConnectionFeature = base.Context.Features.Get<IHttpConnectionFeature>();
                 var consumerQueueInfo = new QueueConsumerInfo(QueueConsumerType.SignalR)
                 {
-                    Id = Guid.NewGuid().ToString(),
+                    Id = Context.ConnectionId,
                     Host = string.Format(ADDRESS_PORT_FORMAT, httpConnectionFeature.LocalIpAddress.ToString(), httpConnectionFeature.LocalPort),
                     Ip = string.Format(ADDRESS_PORT_FORMAT, httpConnectionFeature.RemoteIpAddress.ToString(), httpConnectionFeature.RemotePort),
-                    Name = clientName ?? UNKNOWN_CLIENT_NAME
+                    Name = clientName ?? Context.ConnectionId
                 };
 
                 var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.GetInfo().QueueName, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
 
                 using var channelCancelRegistration = cancellationToken.Register(() =>
                 {
-                    logger.LogInformation(LOGMSG_SIGNALR_REQUEST_CANCELLED);
                     channel.Writer.Complete();
+                    logger.LogInformation(LOGMSG_SIGNALR_REQUEST_CANCELLED);
                 });
 
                 using var reader = memoryQueue.AddQueueReader(
@@ -75,7 +73,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                     try
                     {
                         //Context may be disposed at this point.
-                        Acker.TrySetCanceled();
+                        AckTaskCompletionSource.TrySetCanceled();
                     }
                     catch
                     {
@@ -100,16 +98,12 @@ namespace MemoryQueue.SignalR.Transports.SignalR
         private async Task<bool> WriteAndAckAsync(ChannelWriter<QueueItemReply> writer, QueueItem item, CancellationToken token)
         {
             var tcs = new TaskCompletionSource<bool>();
+            AckTaskCompletionSource = tcs; //Expose local reference for the Hub Context
+
             using var registration = token.Register(() => tcs.TrySetCanceled());
-            Acker = tcs;
             token.ThrowIfCancellationRequested();
 
-            if (writer.WriteAsync(new QueueItemReply()
-            {
-                Message = item.Message,
-                RetryCount = item.RetryCount,
-                Retrying = item.Retrying
-            }, token) is ValueTask write && !write.IsCompletedSuccessfully)
+            if (writer.WriteAsync(item, token) is ValueTask write && !write.IsCompletedSuccessfully)
             {
                 await write;
             }
@@ -120,34 +114,18 @@ namespace MemoryQueue.SignalR.Transports.SignalR
 
         public Task Ack(bool acked)
         {
-            if (Acker.Task.IsCompleted)
+            if (AckTaskCompletionSource.Task.IsCompleted)
             {
                 _logger.LogError("Acker should never be completed here");
             }
-            Acker.TrySetResult(acked);
+            AckTaskCompletionSource.TrySetResult(acked);
             return Task.CompletedTask;
         }
 
-        private TaskCompletionSource<bool> Acker
+        private TaskCompletionSource<bool> AckTaskCompletionSource
         {
-            set
-            {
-                lock (Context)
-                {
-                    if (Context.Items.ContainsKey(nameof(Acker)))
-                    {
-                        Context.Items[nameof(Acker)] = value;
-                    }
-                    else
-                    {
-                        Context.Items.TryAdd(nameof(Acker), value);
-                    }
-                }
-            }
-            get
-            {
-                return (TaskCompletionSource<bool>)Context.Items[(nameof(Acker))];
-            }
+            set => Context.Items[nameof(AckTaskCompletionSource)] = value;
+            get => (TaskCompletionSource<bool>)Context.Items[nameof(AckTaskCompletionSource)];
         }
     }
 }

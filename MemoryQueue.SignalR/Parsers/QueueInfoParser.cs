@@ -1,5 +1,6 @@
 ﻿using MemoryQueue.Base.Models;
 using MemoryQueue.Transports.SignalR;
+using System.Xml.Linq;
 
 namespace MemoryQueue.SignalR.Parsers
 {
@@ -34,34 +35,35 @@ namespace MemoryQueue.SignalR.Parsers
                 DeliverCounter = info.DeliverCounter,
                 DeliverPerSecond = info.DeliverPerSecond,
 
-                AvgConsumptionMs = info.AvgConsumptionMs
+                AvgConsumptionMs = info.AvgConsumptionMs,
+
+                Consumers = ParseConsumers(info.Consumers).ToList()
             };
-            reply.Consumers.AddRange(info.Consumers.Select(ParseConsumer));
 
             return reply;
         }
 
-        private static ConsumerInfoReply ParseConsumer(ConsumerInfo info)
+        private static IEnumerable<ConsumerInfoReply> ParseConsumers(List<ConsumerInfo> consumers)
         {
-            var _consumerInfo = new ConsumerInfoReply();
-            _consumerInfo.Counters ??= new ConsumerCounters();
-
-            _consumerInfo.Host = info.Host;
-            _consumerInfo.Id = info.Id;
-            _consumerInfo.Ip = info.Ip;
-            _consumerInfo.Name = info.Name;
-            _consumerInfo.Type = info.Type;
-
-            _consumerInfo.Counters.AckCounter = info.Counters.AckCounter;
-            _consumerInfo.Counters.AckPerSecond = info.Counters.AckPerSecond;
-            _consumerInfo.Counters.AvgConsumptionMs = info.Counters.AvgConsumptionMs;
-            _consumerInfo.Counters.DeliverCounter = info.Counters.DeliverCounter;
-            _consumerInfo.Counters.DeliverPerSecond = info.Counters.DeliverPerSecond;
-            _consumerInfo.Counters.NackCounter = info.Counters.NackCounter;
-            _consumerInfo.Counters.NackPerSecond = info.Counters.NackPerSecond;
-            _consumerInfo.Counters.Throttled = info.Counters.Throttled;
-
-            return _consumerInfo;
+            return consumers.Select(info => new ConsumerInfoReply()
+            {
+                Host = info.Host,
+                Id = info.Id,
+                Ip = info.Ip,
+                Name = info.Name,
+                Type = info.Type,
+                Counters = new ConsumerCounters()
+                {
+                    AckCounter = info.Counters.AckCounter,
+                    AckPerSecond = info.Counters.AckPerSecond,
+                    AvgConsumptionMs = info.Counters.AvgConsumptionMs,
+                    DeliverCounter = info.Counters.DeliverCounter,
+                    DeliverPerSecond = info.Counters.DeliverPerSecond,
+                    NackCounter = info.Counters.NackCounter,
+                    NackPerSecond = info.Counters.NackPerSecond,
+                    Throttled = info.Counters.Throttled
+                }
+            });
         }
 
     }

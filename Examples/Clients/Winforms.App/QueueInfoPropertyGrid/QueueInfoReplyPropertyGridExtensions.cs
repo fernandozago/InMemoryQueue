@@ -63,12 +63,12 @@ public static class QueueInfoReplyPropertyGridExtensions
 
     private static void MergeConsumers(MemoryQueue.Transports.GRPC.QueueInfoReply reply, QueueInfoReplyPropertyGrid refVal)
     {
-        refVal.Consumers.RemoveRemovedConsumers(reply.Consumers.Select(x => Guid.Parse(x.Id)));
+        refVal.Consumers.RemoveRemovedConsumers(reply.Consumers.Select(x => x.Id));
         foreach (var consumer in reply.Consumers)
         {
             var result = new QueueInfoReplyConsumer()
             {
-                Id = Guid.Parse(consumer.Id),
+                Id = consumer.Id,
                 Peer = consumer.Ip,
                 Name = consumer.Name,
                 Host = consumer.Host,
@@ -92,12 +92,12 @@ public static class QueueInfoReplyPropertyGridExtensions
 
     private static void MergeConsumers(MemoryQueue.Transports.SignalR.QueueInfoReply reply, QueueInfoReplyPropertyGrid refVal)
     {
-        refVal.Consumers.RemoveRemovedConsumers(reply.Consumers.Select(x => Guid.Parse(x.Id)));
+        refVal.Consumers.RemoveRemovedConsumers(reply.Consumers.Select(x => x.Id));
         foreach (var consumer in reply.Consumers)
         {
             var result = new QueueInfoReplyConsumer()
             {
-                Id = Guid.Parse(consumer.Id),
+                Id = consumer.Id,
                 Peer = consumer.Ip,
                 Name = consumer.Name,
                 Host = consumer.Host,

@@ -62,21 +62,22 @@ namespace MemoryQueue.Base
                 DeliverCounter = _inMemoryQueue.Counters.DeliverCounter,
                 DeliverPerSecond = _inMemoryQueue.Counters.DeliverPerSecond,
 
-                AvgConsumptionMs = _inMemoryQueue.Counters.AvgConsumptionMs
+                AvgConsumptionMs = _inMemoryQueue.Counters.AvgConsumptionMs,
+
+                Consumers = ParseConsumers(_inMemoryQueue.Consumers).ToList()
             };
-            queueInfo.Consumers.AddRange(_inMemoryQueue.Consumers.Select(ParseConsumer));
             return queueInfo;
         }
 
-        private static ConsumerInfo ParseConsumer(QueueConsumerInfo info) =>
-            new ()
+        private static IEnumerable<ConsumerInfo> ParseConsumers(IReadOnlyCollection<QueueConsumerInfo> consumers) =>
+            consumers.Select(info => new ConsumerInfo()
             {
                 Host = info.Host,
                 Id = info.Id,
                 Ip = info.Ip,
                 Name = info.Name,
                 Type = info.ConsumerType.ToString(),
-                Counters = new ()
+                Counters = new()
                 {
                     AckCounter = info.Counters?.AckCounter ?? 0,
                     AckPerSecond = info.Counters?.AckPerSecond ?? 0,
@@ -87,6 +88,6 @@ namespace MemoryQueue.Base
                     NackPerSecond = info.Counters?.NackPerSecond ?? 0,
                     Throttled = info.Counters?.Throttled ?? false
                 }
-            };
+            });
     }
 }

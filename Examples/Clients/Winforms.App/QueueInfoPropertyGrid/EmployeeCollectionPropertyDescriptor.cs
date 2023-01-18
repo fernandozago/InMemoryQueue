@@ -4,9 +4,9 @@ namespace GrpcClient4.QueueInfoPropertyGrid;
 public class EmployeeCollectionPropertyDescriptor : PropertyDescriptor
 {
     private readonly ConsumerCollection _collection;
-    private readonly Guid _refId;
+    private readonly string _refId;
 
-    public EmployeeCollectionPropertyDescriptor(ConsumerCollection collection, Guid refId)
+    public EmployeeCollectionPropertyDescriptor(ConsumerCollection collection, string refId)
         : base("#" + refId.ToString(), null)
     {
         _collection = collection;
