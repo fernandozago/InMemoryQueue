@@ -5,9 +5,9 @@ namespace MemoryQueue.Base;
 public interface IInMemoryQueue
 {
     public int ConsumersCount { get; }
-    IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken cancellationToken);
+    IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken token);
     void RemoveReader(IInMemoryQueueReader reader);
-    ValueTask EnqueueAsync(string item, CancellationToken cancellationToken = default);
+    ValueTask EnqueueAsync(string item, CancellationToken token = default);
     ValueTask<QueueItem?> TryPeekMainQueueAsync();
     ValueTask<QueueItem?> TryPeekRetryQueueAsync();
     QueueInfo GetInfo();

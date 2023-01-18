@@ -54,9 +54,9 @@ public sealed class InMemoryQueue : IInMemoryQueue
         _inMemoryQueueInfoService = new InMemoryQueueInfo(this);
     }
 
-    public IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken cancellationToken)
+    public IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken token)
     {
-        var reader = new InMemoryQueueReader(this, consumerInfo, channelCallBack, cancellationToken);
+        var reader = new InMemoryQueueReader(this, consumerInfo, channelCallBack, token);
         _readers.TryAdd(reader, consumerInfo);
         _logger.LogInformation(LOGMSG_READER_ADDED, consumerInfo);
         return reader;
@@ -71,10 +71,10 @@ public sealed class InMemoryQueue : IInMemoryQueue
         }
     }
 
-    public async ValueTask EnqueueAsync(string item, CancellationToken cancellationToken = default)
+    public async ValueTask EnqueueAsync(string item, CancellationToken token = default)
     {
         var queueItem = new QueueItem(item);
-        if (await MainChannel.SendAsync(queueItem, cancellationToken))
+        if (await MainChannel.SendAsync(queueItem, token))
         {
             Counters.Publish();
             _logger.LogTrace(LOGMSG_TRACE_ITEM_QUEUED, queueItem);

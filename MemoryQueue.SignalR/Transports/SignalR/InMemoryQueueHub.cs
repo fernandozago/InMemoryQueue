@@ -36,7 +36,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                 .EnqueueAsync(item).ConfigureAwait(false);
         }
 
-        public ChannelReader<QueueItemReply> Consume(string clientName, string? queue, CancellationToken cancellationToken)
+        public ChannelReader<QueueItemReply> Consume(string clientName, string? queue, CancellationToken token)
         {
             var channel = Channel.CreateBounded<QueueItemReply>(1);
             AckTaskCompletionSource = new TaskCompletionSource<bool>();
@@ -56,7 +56,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
 
                 var logger = _loggerFactory.CreateLogger(string.Format(GRPC_QUEUEREADER_LOGGER_CATEGORY, memoryQueue.GetInfo().QueueName, consumerQueueInfo.ConsumerType, consumerQueueInfo.Name));
 
-                using var channelCancelRegistration = cancellationToken.Register(() =>
+                using var tokenRegistration = token.Register(() =>
                 {
                     logger.LogInformation(LOGMSG_SIGNALR_REQUEST_CANCELLED);
                     channel.Writer.Complete();
@@ -64,8 +64,8 @@ namespace MemoryQueue.SignalR.Transports.SignalR
 
                 using var reader = memoryQueue.AddQueueReader(
                     consumerQueueInfo,
-                    (item) => WriteAndAckAsync(channel.Writer, item, cancellationToken),
-                    cancellationToken);
+                    (item) => WriteAndAckAsync(channel.Writer, item, token),
+                    token);
 
                 try
                 {
@@ -90,7 +90,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                 {
                     memoryQueue.RemoveReader(reader);
                 }
-            }, cancellationToken);
+            }, token);
 
             return channel.Reader;
         }

@@ -29,7 +29,7 @@ _ = Task.Run(async () =>
 });
 
 using CancellationTokenSource cts = new ();
-var consumer = InMemoryQueueManager.CreateInMemoryConsumer(Consume, cancellationToken: cts.Token);
+var consumer = InMemoryQueueManager.CreateInMemoryConsumer(Consume, token: cts.Token);
 
 Console.ReadKey();
 cts.Cancel();
