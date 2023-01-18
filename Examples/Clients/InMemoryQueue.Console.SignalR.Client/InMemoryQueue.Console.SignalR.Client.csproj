@@ -12,8 +12,8 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<ProjectReference Include="..\MemoryQueue.Client.SignalR\MemoryQueue.Client.SignalR.csproj" />
-		<ProjectReference Include="..\MemoryQueue.SignalR.Models\MemoryQueue.SignalR.Models.csproj" />		
+		<ProjectReference Include="..\..\..\MemoryQueue.Client.SignalR\MemoryQueue.Client.SignalR.csproj" />
+		<ProjectReference Include="..\..\..\MemoryQueue.SignalR.Models\MemoryQueue.SignalR.Models.csproj" />
 	</ItemGroup>
 
 </Project>
