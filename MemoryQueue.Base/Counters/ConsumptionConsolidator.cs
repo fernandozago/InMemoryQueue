@@ -1,6 +1,8 @@
 ﻿namespace MemoryQueue.Base.Counters;
 
-public sealed class ConsumptionConsolidator : IDisposable
+internal delegate void ConsumptionConsolidatorEventHandler();
+
+internal sealed class ConsumptionConsolidator : IDisposable
 {
     private static class ConsumptionConsolidatorTimer
     {
@@ -15,7 +17,7 @@ public sealed class ConsumptionConsolidator : IDisposable
 
     private readonly ConsumptionConsolidatorEventHandler _delegate;
 
-    public ConsumptionConsolidator(Action consolidateAction)
+    internal ConsumptionConsolidator(Action consolidateAction)
     {
         _delegate = new ConsumptionConsolidatorEventHandler(consolidateAction);
         ConsumptionConsolidatorTimer.OnConsolidate += _delegate;
