@@ -54,9 +54,9 @@ public sealed class InMemoryQueue : IInMemoryQueue
         _inMemoryQueueInfoService = new InMemoryQueueInfo(this);
     }
 
-    public IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, CancellationToken, Task<bool>> channelCallBack, CancellationToken token)
+    public IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, CancellationToken, Task<bool>> callBack, CancellationToken token)
     {
-        var reader = new InMemoryQueueReader(this, consumerInfo, channelCallBack, token);
+        var reader = new InMemoryQueueReader(this, consumerInfo, callBack, token);
         _readers.TryAdd(reader, consumerInfo);
         _logger.LogInformation(LOGMSG_READER_ADDED, consumerInfo);
         return reader;
