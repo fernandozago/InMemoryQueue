@@ -14,8 +14,8 @@ public sealed class InMemoryQueue : IInMemoryQueue
 
     private const string LOGGER_CATEGORY = $"{nameof(InMemoryQueue)}.{{0}}";
     private const string LOGMSG_TRACE_ITEM_QUEUED = "Item Queued {queueItem}";
-    private const string LOGMSG_READER_ADDED = "Reader added for {consumerInfo}";
-    private const string LOGMSG_READER_REMOVED = "Reader removed from {consumerInfo}";
+    private const string LOGMSG_READER_ADDED = "Reader added for consumer {consumerInfo}";
+    private const string LOGMSG_READER_REMOVED = "Reader removed for consumer {consumerInfo}";
 
     #endregion
 
@@ -71,10 +71,10 @@ public sealed class InMemoryQueue : IInMemoryQueue
         }
     }
 
-    public async ValueTask EnqueueAsync(string item)
+    public async ValueTask EnqueueAsync(string item, CancellationToken cancellationToken = default)
     {
         var queueItem = new QueueItem(item);
-        if (await MainChannel.SendAsync(queueItem))
+        if (await MainChannel.SendAsync(queueItem, cancellationToken))
         {
             Counters.Publish();
             _logger.LogTrace(LOGMSG_TRACE_ITEM_QUEUED, queueItem);

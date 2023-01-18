@@ -6,27 +6,25 @@ namespace InMemoryQueue.Blazor.Host.Grpc.InMemoryConsumers;
 public class InMemoryConsumerBackgroundService : BackgroundService
 {
     private readonly IInMemoryQueueManager _inMemoryQueueManager;
-    private readonly ILogger<InMemoryConsumerBackgroundService> _logger;
 
-    public InMemoryConsumerBackgroundService(IInMemoryQueueManager inMemoryQueueManager, ILogger<InMemoryConsumerBackgroundService> logger)
+    public InMemoryConsumerBackgroundService(IInMemoryQueueManager inMemoryQueueManager)
     {
         _inMemoryQueueManager = inMemoryQueueManager;
-        _logger = logger;
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        string queueName1 = "InMemoryQueue.Test-1";
-        string queueName2 = "InMemoryQueue.Test-2";
+        const string queueName1 = "InMemoryQueue.Test-1";
+        const string queueName2 = "InMemoryQueue.Test-2";
         return Task.WhenAll(
             Publisher(queueName1, stoppingToken),
-            Consumer("InMemory-Consumer-0", queueName1, true, stoppingToken),
-            Consumer("InMemory-Consumer-1", queueName1, false, stoppingToken),
-            ConsumerMayNackSome("InMemory-Consumer-RandomNack", queueName1, stoppingToken),
 
-            Publisher(queueName2, stoppingToken),
+            ConsumeAndRepub("InMemory-Consumer-0", queueName1, queueName2, stoppingToken),
+            ConsumeAndRepub("InMemory-Consumer-1", queueName1, queueName2, stoppingToken),
+
             Consumer("InMemory-Consumer-0", queueName2, true, stoppingToken),
-            Consumer("InMemory-Consumer-1", queueName2, true, stoppingToken)
+            Consumer("InMemory-Consumer-1", queueName2, false, stoppingToken),
+            ConsumerMayNackSome("InMemory-Consumer-RandomNack", queueName2, stoppingToken)
         );
     }
 
@@ -39,13 +37,24 @@ public class InMemoryConsumerBackgroundService : BackgroundService
         var queue = _inMemoryQueueManager.GetOrCreateQueue(queueName);
         while (!token.IsCancellationRequested)
         {
-            await Task.Delay(1);
-            await queue.EnqueueAsync(DateTime.Now.ToString());
-            await queue.EnqueueAsync(DateTime.Now.ToString());
+            await Task.Delay(1, token);
+            await queue.EnqueueAsync(DateTime.Now.ToString(), token);
+            await queue.EnqueueAsync(DateTime.Now.ToString(), token);
         }
     }
 
     private Task Consumer(string consumerName, string queueName, bool alwaysAck, CancellationToken token) =>
         _inMemoryQueueManager.CreateInMemoryConsumer(i => Task.FromResult(alwaysAck), consumerName, queueName, token);
+
+    private Task ConsumeAndRepub(string consumerName, string queueName, string repubQueueName, CancellationToken token)
+    {
+        var repubQueue = _inMemoryQueueManager.GetOrCreateQueue(repubQueueName);
+        return _inMemoryQueueManager.CreateInMemoryConsumer(async queueItem => 
+        { 
+            await repubQueue.EnqueueAsync(queueItem.Message, token); 
+            return true; 
+        }, consumerName, queueName, token);
+    }
+        
 
 }

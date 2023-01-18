@@ -58,8 +58,8 @@ namespace MemoryQueue.SignalR.Transports.SignalR
 
                 using var channelCancelRegistration = cancellationToken.Register(() =>
                 {
-                    channel.Writer.Complete();
                     logger.LogInformation(LOGMSG_SIGNALR_REQUEST_CANCELLED);
+                    channel.Writer.Complete();
                 });
 
                 using var reader = memoryQueue.AddQueueReader(
