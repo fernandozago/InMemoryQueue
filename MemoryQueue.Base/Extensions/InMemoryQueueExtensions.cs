@@ -1,15 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace MemoryQueue.Base.Extensions
+namespace MemoryQueue.Base.Extensions;
+
+public static class InMemoryQueueExtensions
 {
-    public static class InMemoryQueueExtensions
-    {
-
-        public static IServiceCollection AddInMemoryQueue(this IServiceCollection provider)
-        {
-            return provider
-                .AddSingleton<IInMemoryQueueManager, InMemoryQueueManager>();
-        }
-
-    }
+    public static IServiceCollection AddInMemoryQueue(this IServiceCollection provider) =>
+        provider
+            .AddSingleton<IInMemoryQueueManager, InMemoryQueueManager>();
 }
