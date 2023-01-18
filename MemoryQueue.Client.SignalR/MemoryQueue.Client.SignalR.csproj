@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
@@ -18,11 +18,12 @@
 		<RepositoryType>git</RepositoryType>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+		<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="QueueInfoReply.cs" />
-	  <Compile Remove="QueueItemReply.cs" />
+		<Compile Remove="QueueInfoReply.cs" />
+		<Compile Remove="QueueItemReply.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -35,13 +36,23 @@
 			<PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
-		
+
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="7.0.2" />
 	</ItemGroup>
-		
+
 	<ItemGroup>
-	  <ProjectReference Include="..\MemoryQueue.SignalR.Models\MemoryQueue.SignalR.Models.csproj" />
+		<ProjectReference Include="..\MemoryQueue.SignalR.Models\MemoryQueue.SignalR.Models.csproj">
+			<ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+			<IncludeAssets>MemoryQueue.SignalR.Models.dll</IncludeAssets>
+		</ProjectReference>
 	</ItemGroup>
+
+	<!-- added this section -->
+	<Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
+		<ItemGroup>
+			<BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))"/>
+		</ItemGroup>
+	</Target>
 
 </Project>
