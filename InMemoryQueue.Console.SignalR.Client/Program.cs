@@ -1,27 +1,23 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using Microsoft.AspNetCore.SignalR.Client;
+using MemoryQueue.Client.SignalR;
+using MemoryQueue.Transports.SignalR;
 
 Console.WriteLine("Hello, World!");
+InMemoryQueueSignalrClient inMemoryQueueSignalr = new InMemoryQueueSignalrClient("https://localhost:7134/inmemoryqueue/hub");
 
 await Task.Delay(5000);
-var connection = new HubConnectionBuilder()
-    .WithUrl("https://localhost:7134/inmemoryqueue/hub")
-    .WithAutomaticReconnect()
-    .Build();
+await inMemoryQueueSignalr.PublishAsync("TESTE1");
+await inMemoryQueueSignalr.PublishAsync("TESTE2");
+await inMemoryQueueSignalr.PublishAsync("TESTE3");
+await inMemoryQueueSignalr.PublishAsync("TESTE4");
+await inMemoryQueueSignalr.PublishAsync("TESTE5");
 
-connection.On<string>("SetVal", c => Console.WriteLine(c));
-await connection.StartAsync();
-
-await connection.SendAsync("Publish", "TESTE1", null);
-await connection.SendAsync("Publish", "TESTE2", null);
-await connection.SendAsync("Publish", "TESTE3", null);
-await connection.SendAsync("Publish", "TESTE4", null);
-await connection.SendAsync("Publish", "TESTE5", null);
-
-await foreach (var item in connection.StreamAsync<string>("Consume", null, CancellationToken.None))
-{
-    //Console.WriteLine(item);
-    await connection.SendAsync("Ack");
-}
+var consumer = inMemoryQueueSignalr.ConsumeAsync("Consumer", ConsumeMessage, CancellationToken.None);
 
 Console.ReadKey();
+
+static Task<bool> ConsumeMessage(QueueItemReply item, CancellationToken arg2)
+{
+    Console.WriteLine(item.Message);
+    return Task.FromResult(true);
+}

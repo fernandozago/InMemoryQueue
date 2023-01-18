@@ -69,11 +69,6 @@ namespace GrpcClient2
             formsPlot1.Refresh();
         }
 
-        private void _signalR_OnQueueInfo(MemoryQueue.Transports.SignalR.QueueInfoReply reply)
-        {
-            throw new NotImplementedException();
-        }
-
         private async Task RandomPub()
         {
             while (_playPause)

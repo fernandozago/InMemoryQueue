@@ -65,7 +65,7 @@ public sealed class InMemoryQueueSignalrClient : IAsyncDisposable
         await _connection.Value.Result.SendAsync(HubQueueInfoMethodName, _queueName, _token).ConfigureAwait(false);
     }
 
-    public async Task ConsumeAsync(string clientName, Func<string, CancellationToken, Task<bool>> callBack, CancellationToken consumerToken)
+    public async Task ConsumeAsync(string clientName, Func<QueueItemReply, CancellationToken, Task<bool>> callBack, CancellationToken consumerToken)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(consumerToken, _token);
         while (!cts.IsCancellationRequested)
@@ -82,7 +82,7 @@ public sealed class InMemoryQueueSignalrClient : IAsyncDisposable
                 {
                     try
                     {
-                        await connection.SendAsync(HubAckMethodName, await callBack(item.Message, cts.Token).ConfigureAwait(false), cts.Token).ConfigureAwait(false);
+                        await connection.SendAsync(HubAckMethodName, await callBack(item, cts.Token).ConfigureAwait(false), cts.Token).ConfigureAwait(false);
                     }
                     catch (Exception)
                     {
