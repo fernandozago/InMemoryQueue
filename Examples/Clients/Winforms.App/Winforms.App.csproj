@@ -11,8 +11,6 @@
   <ItemGroup>
 	  <PackageReference Include="RandomNameGeneratorLibrary" Version="1.2.2" />
 	  <PackageReference Include="ScottPlot.WinForms" Version="4.1.60" />
-	  <!--<PackageReference Include="InMemoryQueue.Client.SignalR" Version="1.0.14" />
-	  <PackageReference Include="InMemoryQueue.Client.Grpc" Version="1.0.14" />-->
   </ItemGroup>
 
   <ItemGroup>
