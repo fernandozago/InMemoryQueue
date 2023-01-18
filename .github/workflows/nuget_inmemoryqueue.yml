@@ -60,10 +60,10 @@ jobs:
       run: dotnet build ${{ env.PROJECT_PATH_Client_GRPC }} --no-restore --configuration Release -p:Version=${{ steps.version.outputs.version-without-v }}
 
     - name: 'Restore packages InMemoryQueue SignalR Models'
-      run: dotnet restore ${{ env.PROJECT_PATH_Client_SignalR }}
+      run: dotnet restore ${{ env.PROJECT_PATH_SignalR_Models }}
 
     - name: 'Build project InMemoryQueue SignalR Models'
-      run: dotnet build ${{ env.PROJECT_PATH_Client_SignalR }} --no-restore --configuration Release -p:Version=${{ steps.version.outputs.version-without-v }}
+      run: dotnet build ${{ env.PROJECT_PATH_SignalR_Models }} --no-restore --configuration Release -p:Version=${{ steps.version.outputs.version-without-v }}
 
     - name: 'Restore packages InMemoryQueue Client SignalR'
       run: dotnet restore ${{ env.PROJECT_PATH_Client_SignalR }}
