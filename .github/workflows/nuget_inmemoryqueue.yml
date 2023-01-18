@@ -65,19 +65,19 @@ jobs:
       run: dotnet build ${{ env.PROJECT_PATH_Client_SignalR }} --no-restore --configuration Release -p:Version=${{ steps.version.outputs.version-without-v }}
 
     - name: 'Pack project InMemoryQueue Base'
-      run: dotnet pack ${{ env.PROJECT_PATH_Base }} --no-restore --no-build --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
+      run: dotnet pack ${{ env.PROJECT_PATH_Base }} --no-restore --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
 
     - name: 'Pack project InMemoryQueue Server GRPC'
-      run: dotnet pack ${{ env.PROJECT_PATH_Server_GRPC }} --no-restore --no-build --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
+      run: dotnet pack ${{ env.PROJECT_PATH_Server_GRPC }} --no-restore --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
 
     - name: 'Pack project InMemoryQueue Server SignalR'
-      run: dotnet pack ${{ env.PROJECT_PATH_Server_SignalR }} --no-restore --no-build --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
+      run: dotnet pack ${{ env.PROJECT_PATH_Server_SignalR }} --no-restore --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
 
     - name: 'Pack project InMemoryQueue Client GRPC'
-      run: dotnet pack ${{ env.PROJECT_PATH_Client_GRPC }} --no-restore --no-build --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
+      run: dotnet pack ${{ env.PROJECT_PATH_Client_GRPC }} --no-restore --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
 
     - name: 'Pack project InMemoryQueue Client SignalR'
-      run: dotnet pack ${{ env.PROJECT_PATH_Client_SignalR }} --no-restore --no-build --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
+      run: dotnet pack ${{ env.PROJECT_PATH_Client_SignalR }} --no-restore --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
 
     - name: 'Push packages'
       run: dotnet nuget push ${{ env.PACKAGE_OUTPUT_DIRECTORY }}\*.symbols.nupkg -k ${{ secrets.NUGET_AUTH_TOKEN }} -s ${{ env.NUGET_SOURCE_URL }}

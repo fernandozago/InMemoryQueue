@@ -18,7 +18,6 @@
 		<RepositoryType>git</RepositoryType>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-		<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -42,16 +41,24 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\MemoryQueue.SignalR.Models\MemoryQueue.SignalR.Models.csproj">
-			<ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-			<IncludeAssets>MemoryQueue.SignalR.Models.dll</IncludeAssets>
-		</ProjectReference>
+		<ProjectReference Include="..\MemoryQueue.SignalR.Models\MemoryQueue.SignalR.Models.csproj" PrivateAssets="All" />
 	</ItemGroup>
 
-	<!-- added this section -->
-	<Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
+	<PropertyGroup>
+		<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+	</PropertyGroup>
+	<Target Name="CopyProjectReferencesToPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">
 		<ItemGroup>
-			<BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))"/>
+			<!-- Filter out unnecessary files -->
+			<_ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')->WithMetadataValue('PrivateAssets', 'All'))"/>
+		</ItemGroup>
+
+		<!-- Print batches for debug purposes -->
+		<Message Text="Batch for .nupkg: ReferenceCopyLocalPaths = @(_ReferenceCopyLocalPaths), ReferenceCopyLocalPaths.DestinationSubDirectory = %(_ReferenceCopyLocalPaths.DestinationSubDirectory) Filename = %(_ReferenceCopyLocalPaths.Filename) Extension = %(_ReferenceCopyLocalPaths.Extension)" Importance="High" Condition="'@(_ReferenceCopyLocalPaths)' != ''" />
+
+		<ItemGroup>
+			<!-- Add file to package with consideration of sub folder. If empty, the root folder is chosen. -->
+			<BuildOutputInPackage Include="@(_ReferenceCopyLocalPaths)" TargetPath="%(_ReferenceCopyLocalPaths.DestinationSubDirectory)"/>
 		</ItemGroup>
 	</Target>
 
