@@ -17,10 +17,10 @@ namespace MemoryQueue.Base
             _queueInfo = InternalGetQueueInfo();
         }
 
-        public QueueInfo GetQueueInfo()
+        public QueueInfo GetQueueInfo(bool forceUpdate = false)
         {
             var second = GetCurrentSecond();
-            if (_lastGeneratedSecond != second && _semaphore.Wait(0))
+            if (forceUpdate || (_lastGeneratedSecond != second && _semaphore.Wait(0)))
             {
                 _lastGeneratedSecond = second;
                 _queueInfo = InternalGetQueueInfo();

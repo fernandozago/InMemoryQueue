@@ -20,9 +20,7 @@ namespace MemoryQueue.Tests
                         .GetOrCreateQueue("Queue1");
 
                 int counter = 0;
-                var consumers = new List<Task>()
-            {
-                queue.CreateInMemoryConsumer((item) =>
+                Task<bool> ConsumerCallback(QueueItem item, CancellationToken token)
                 {
                     if (item.Message.Equals("teste"))
                     {
@@ -30,52 +28,22 @@ namespace MemoryQueue.Tests
                         return Task.FromResult(true);
                     }
                     return Task.FromResult(false);
-                }, "Consumer1", cts.Token),
-
-                queue.CreateInMemoryConsumer((item) =>
-                {
-                    if (item.Message.Equals("teste"))
-                    {
-                        Interlocked.Increment(ref counter);
-                        return Task.FromResult(true);
-                    }
-                    return Task.FromResult(false);
-                }, "Consumer2", cts.Token),
-
-                queue.CreateInMemoryConsumer((item) =>
-                {
-                    if (item.Message.Equals("teste"))
-                    {
-                        Interlocked.Increment(ref counter);
-                        return Task.FromResult(true);
-                    }
-                    return Task.FromResult(false);
-                }, "Consumer3", cts.Token)
-            };
-
-
-                await queue.EnqueueAsync("teste").ConfigureAwait(false);
-                await queue.EnqueueAsync("teste").ConfigureAwait(false);
-                await queue.EnqueueAsync("teste").ConfigureAwait(false);
-
-                int retryCount = 0;
-                while (true)
-                {
-                    retryCount++;
-                    if (queue.GetInfo().AckCounter < 3 || queue.GetInfo().PubCounter < 3)
-                    {
-                        await Task.Delay(200).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        break;
-                    }
-
-                    if (retryCount > 10)
-                    {
-                        Assert.Fail("Fail to validate queue consumer");
-                    }
                 }
+
+                List<Task> consumers = new ()
+                {
+                    queue.CreateInMemoryConsumer(ConsumerCallback, "Consumer1", cts.Token),
+                    queue.CreateInMemoryConsumer(ConsumerCallback, "Consumer2", cts.Token),
+                    queue.CreateInMemoryConsumer(ConsumerCallback, "Consumer3", cts.Token)
+                };
+
+                await queue.EnqueueAsync("teste").ConfigureAwait(false);
+                await queue.EnqueueAsync("teste").ConfigureAwait(false);
+                await queue.EnqueueAsync("teste").ConfigureAwait(false);
+
+                await Task.Delay(1000);
+                Assert.AreEqual(3, queue.GetInfo().PubCounter);
+                Assert.AreEqual(3, queue.GetInfo().AckCounter);
 
                 Assert.AreEqual(3, counter);
                 Assert.AreEqual(3, queue.ConsumersCount);
@@ -90,8 +58,7 @@ namespace MemoryQueue.Tests
                 cts.Cancel();
                 await Task.WhenAll(consumers);
 
-                await Task.Delay(1000);
-                Assert.AreEqual(0, queue.GetInfo().Consumers.Count);
+                Assert.AreEqual(0, queue.GetInfo(true).Consumers.Count);
                 Assert.IsNull(queue.GetInfo().Consumers.SingleOrDefault(x => x.Name == "Consumer1"));
                 Assert.IsNull(queue.GetInfo().Consumers.SingleOrDefault(x => x.Name == "Consumer2"));
                 Assert.IsNull(queue.GetInfo().Consumers.SingleOrDefault(x => x.Name == "Consumer3"));
@@ -118,7 +85,7 @@ namespace MemoryQueue.Tests
             try
             {
                 int counter = 0;
-                var consumer = queue.CreateInMemoryConsumer((item) =>
+                var consumer = queue.CreateInMemoryConsumer((item, token) =>
                 {
                     if (item.Message.Equals(data))
                     {
@@ -178,7 +145,7 @@ namespace MemoryQueue.Tests
             {
                 int totalCounter = 0;
                 int retryCounter = 0;
-                var consumer = manager.CreateInMemoryConsumer((item) =>
+                var consumer = manager.CreateInMemoryConsumer((item, token) =>
                 {
                     totalCounter++;
                     if (!item.Retrying)

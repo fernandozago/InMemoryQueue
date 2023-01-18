@@ -25,7 +25,8 @@ namespace MemoryQueue.Tests
         [DataRow("Custom1")]
         [DataRow("Custom2")]
         [DataRow("1Custom1")]
-        public void AssertGetOrCreateQueue_CustomNaame(string queueName)
+        [DataRow("Teste.Custom_Queue_Name")]
+        public void AssertGetOrCreateQueue_CustomName(string queueName)
         {
             var sut = SubjectUnderTestFactory.CreateInMemoryQueueManager();
 

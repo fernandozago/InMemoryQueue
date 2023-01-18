@@ -13,32 +13,53 @@ namespace MemoryQueue.Tests
         public async Task AssertCanEnqueueItem(string data)
         {
             var sut = SubjectUnderTestFactory.CreateInMemoryQueueManager();
-            var queue = sut.GetOrCreateQueue(string.Empty);
+            var sutQueue = sut.GetOrCreateQueue();
 
-            await queue.EnqueueAsync(data).ConfigureAwait(false);
+            await sutQueue.EnqueueAsync(data).ConfigureAwait(false);
+            var queueInfo = sutQueue.GetInfo(true);
+            Assert.AreEqual(1, queueInfo.QueueSize);
+            Assert.AreEqual(1, queueInfo.MainQueueSize);
+            Assert.AreEqual(0, queueInfo.RetryQueueSize); 
 
-            await Task.Delay(1000);
-            Assert.AreEqual(1, queue.GetInfo().MainQueueSize);
-            Assert.AreEqual(0, queue.GetInfo().RetryQueueSize);
-
-
-            QueueItem? retryEmptyItem = await queue.TryPeekRetryQueueAsync().ConfigureAwait(false);
+            QueueItem? retryEmptyItem = await sutQueue.TryPeekRetryQueueAsync().ConfigureAwait(false);
             Assert.IsNull(retryEmptyItem);
 
-            QueueItem? mainItem = await queue.TryPeekMainQueueAsync().ConfigureAwait(false);
+            QueueItem? mainItem = await sutQueue.TryPeekMainQueueAsync().ConfigureAwait(false);
             Assert.IsNotNull(mainItem);
             Assert.AreEqual(data, mainItem.Message);
             Assert.IsFalse(mainItem.Retrying);
             Assert.AreEqual(0, mainItem.RetryCount);
 
-            QueueItem? retryItem = await queue.TryPeekRetryQueueAsync().ConfigureAwait(false);
+            queueInfo = sutQueue.GetInfo(true);
+            Assert.AreEqual(1, queueInfo.QueueSize);
+            Assert.AreEqual(0, queueInfo.MainQueueSize);
+            Assert.AreEqual(1, queueInfo.RetryQueueSize);
+
+            QueueItem? retryItem = await sutQueue.TryPeekRetryQueueAsync().ConfigureAwait(false);
             Assert.IsNotNull(retryItem);
             Assert.AreEqual(data, retryItem.Message);
             Assert.IsTrue(retryItem.Retrying);
             Assert.AreEqual(1, retryItem.RetryCount);
 
-            Assert.AreEqual(0, queue.GetInfo().Consumers.Count);
-            Assert.AreEqual(0, queue.GetInfo().ConcurrentConsumers);
+            queueInfo = sutQueue.GetInfo(true);
+            Assert.AreEqual(1, queueInfo.QueueSize);
+            Assert.AreEqual(0, queueInfo.MainQueueSize);
+            Assert.AreEqual(1, queueInfo.RetryQueueSize);
+
+            retryItem = await sutQueue.TryPeekRetryQueueAsync().ConfigureAwait(false);
+            Assert.IsNotNull(retryItem);
+            Assert.AreEqual(data, retryItem.Message);
+            Assert.IsTrue(retryItem.Retrying);
+            Assert.AreEqual(2, retryItem.RetryCount);
+
+            queueInfo = sutQueue.GetInfo(true);
+            Assert.AreEqual(1, queueInfo.QueueSize);
+            Assert.AreEqual(0, queueInfo.MainQueueSize);
+            Assert.AreEqual(1, queueInfo.RetryQueueSize);
+
+            queueInfo = sutQueue.GetInfo(true);
+            Assert.AreEqual(0, queueInfo.Consumers.Count);
+            Assert.AreEqual(0, queueInfo.ConcurrentConsumers);
         }
     }
 }

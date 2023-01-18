@@ -54,7 +54,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
         _inMemoryQueueInfoService = new InMemoryQueueInfo(this);
     }
 
-    public IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken token)
+    public IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, CancellationToken, Task<bool>> channelCallBack, CancellationToken token)
     {
         var reader = new InMemoryQueueReader(this, consumerInfo, channelCallBack, token);
         _readers.TryAdd(reader, consumerInfo);
@@ -106,8 +106,8 @@ public sealed class InMemoryQueue : IInMemoryQueue
     public void ResetCounters() =>
         Counters.ResetCounters();
 
-    public QueueInfo GetInfo() =>
-        _inMemoryQueueInfoService.GetQueueInfo();
+    public QueueInfo GetInfo(bool forceUpdate = false) =>
+        _inMemoryQueueInfoService.GetQueueInfo(forceUpdate);
 
     private async Task AddToRetryQueueAsync(bool isRetrying, QueueItem item, long ts)
     {

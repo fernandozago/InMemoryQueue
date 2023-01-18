@@ -5,12 +5,12 @@ namespace MemoryQueue.Base;
 public interface IInMemoryQueue
 {
     public int ConsumersCount { get; }
-    IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> channelCallBack, CancellationToken token);
+    IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, CancellationToken, Task<bool>> channelCallBack, CancellationToken token);
     void RemoveReader(IInMemoryQueueReader reader);
     Task EnqueueAsync(string item, CancellationToken token = default);
     ValueTask<QueueItem?> TryPeekMainQueueAsync();
     ValueTask<QueueItem?> TryPeekRetryQueueAsync();
-    QueueInfo GetInfo();
+    QueueInfo GetInfo(bool forceUpdate = false);
     void ResetCounters();
 }
 

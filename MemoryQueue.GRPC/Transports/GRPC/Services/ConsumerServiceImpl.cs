@@ -130,7 +130,7 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
 
         using var reader = memoryQueue.AddQueueReader(
                 consumerQueueInfo,
-                (item) => WriteAndAckAsync(item, responseStream, requestStream, context.CancellationToken),
+                (item, token) => WriteAndAckAsync(item, responseStream, requestStream, _isKestrel, token),
                 context.CancellationToken);
 
         await reader.Completed.ConfigureAwait(false);
@@ -147,10 +147,10 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     /// <param name="requestStream"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    private async Task<bool> WriteAndAckAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, IAsyncStreamReader<QueueItemAck> requestStream, CancellationToken token)
+    private static async Task<bool> WriteAndAckAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, IAsyncStreamReader<QueueItemAck> requestStream, bool isKestrel, CancellationToken token)
     {
         var writeAndAckResults = await Task.WhenAll(
-            WriteItemAsync(item, responseStream, token),
+            WriteItemAsync(item, responseStream, isKestrel, token),
             ReadAckAsync(requestStream, token)
         ).ConfigureAwait(false);
         return writeAndAckResults[0] && writeAndAckResults[1];
@@ -164,14 +164,14 @@ public class ConsumerServiceImpl : ConsumerService.ConsumerServiceBase
     /// <param name="logger"></param>
     /// <param name="token"></param>
     /// <returns>true if succeded, otherwise false</returns>
-    private async Task<bool> WriteItemAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, CancellationToken token)
+    private static async Task<bool> WriteItemAsync(QueueItem item, IServerStreamWriter<QueueItemReply> responseStream, bool isKestrel, CancellationToken token)
     {
         await responseStream.WriteAsync(new QueueItemReply()
         {
             Message = item.Message,
             Retrying = item.Retrying,
             RetryCount = item.RetryCount
-        }, _isKestrel ? token : CancellationToken.None).ConfigureAwait(false);
+        }, isKestrel ? token : CancellationToken.None).ConfigureAwait(false);
         return true;
     }
 

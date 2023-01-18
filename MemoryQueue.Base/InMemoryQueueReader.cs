@@ -26,11 +26,11 @@ namespace MemoryQueue.Base
         private readonly CancellationTokenRegistration _tokenRegistration;
         private readonly IDisposable _retryLink;
         private readonly IDisposable _mainLink;
-        private readonly Func<QueueItem, Task<bool>> _channelCallBack;
+        private readonly Func<QueueItem, CancellationToken, Task<bool>> _channelCallBack;
 
         public Task Completed => _actionBlock.Completion;
 
-        public InMemoryQueueReader(InMemoryQueue inMemoryQueue, QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> callBack, CancellationToken token)
+        public InMemoryQueueReader(InMemoryQueue inMemoryQueue, QueueConsumerInfo consumerInfo, Func<QueueItem, CancellationToken, Task<bool>> callBack, CancellationToken token)
         {
             _token = token;
             _logger = inMemoryQueue.LoggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, inMemoryQueue.Name, consumerInfo.ConsumerType, consumerInfo.Name));
@@ -69,7 +69,7 @@ namespace MemoryQueue.Base
             var timestamp = Stopwatch.GetTimestamp();
             try
             {
-                isAcked = await _channelCallBack(queueItem).ConfigureAwait(false);
+                isAcked = await _channelCallBack(queueItem, _token).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

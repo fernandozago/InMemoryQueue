@@ -35,7 +35,7 @@ Console.ReadKey();
 cts.Cancel();
 await consumer;
 
-Task<bool> Consume(QueueItem item)
+Task<bool> Consume(QueueItem item, CancellationToken token)
 {
     _logger.LogInformation("Message Received: {message} at {dateTime}", item.Message, DateTime.Now);
     return Task.FromResult(true);

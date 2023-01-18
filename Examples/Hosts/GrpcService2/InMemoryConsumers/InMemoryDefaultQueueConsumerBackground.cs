@@ -18,7 +18,7 @@ namespace GrpcService2.Services
         protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
             _inMemoryQueueManager.CreateInMemoryConsumer(ProcessItem, nameof(InMemoryDefaultQueueConsumerBackground), "InMemoryConsumerQueue", stoppingToken);
 
-        private Task<bool> ProcessItem(QueueItem queueItem)
+        private Task<bool> ProcessItem(QueueItem queueItem, CancellationToken token)
         {
             _logger.LogInformation(queueItem.Message);
             return Task.FromResult(true);

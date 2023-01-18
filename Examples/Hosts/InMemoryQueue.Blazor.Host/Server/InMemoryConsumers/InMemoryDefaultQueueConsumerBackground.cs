@@ -29,7 +29,7 @@ public class InMemoryConsumerBackgroundService : BackgroundService
     }
 
     private Task ConsumerMayNackSome(string consumerName, string queueName, CancellationToken token) =>
-        _inMemoryQueueManager.CreateInMemoryConsumer(i => Task.FromResult(Random.Shared.Next(1, 10) >= 3), consumerName, queueName, token);
+        _inMemoryQueueManager.CreateInMemoryConsumer((i, _) => Task.FromResult(Random.Shared.Next(1, 10) >= 3), consumerName, queueName, token);
 
     private async Task Publisher(string queueName, CancellationToken token)
     {
@@ -44,14 +44,14 @@ public class InMemoryConsumerBackgroundService : BackgroundService
     }
 
     private Task Consumer(string consumerName, string queueName, bool alwaysAck, CancellationToken token) =>
-        _inMemoryQueueManager.CreateInMemoryConsumer(i => Task.FromResult(alwaysAck), consumerName, queueName, token);
+        _inMemoryQueueManager.CreateInMemoryConsumer((i, _) => Task.FromResult(alwaysAck), consumerName, queueName, token);
 
     private Task ConsumeAndRepub(string consumerName, string queueName, string repubQueueName, CancellationToken token)
     {
         var repubQueue = _inMemoryQueueManager.GetOrCreateQueue(repubQueueName);
-        return _inMemoryQueueManager.CreateInMemoryConsumer(async queueItem => 
+        return _inMemoryQueueManager.CreateInMemoryConsumer(async (queueItem, callbackToken) => 
         { 
-            await repubQueue.EnqueueAsync(queueItem.Message, token); 
+            await repubQueue.EnqueueAsync(queueItem.Message, callbackToken); 
             return true; 
         }, consumerName, queueName, token);
     }
