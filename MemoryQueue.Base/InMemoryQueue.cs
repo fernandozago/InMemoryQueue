@@ -22,7 +22,6 @@ public sealed class InMemoryQueue : IInMemoryQueue
     #region Fields
     private readonly ILogger _logger;
     private readonly InMemoryQueueInfo _inMemoryQueueInfoService;
-    private readonly ConsumptionConsolidator _consolidator;
     private readonly ConcurrentDictionary<IInMemoryQueueReader, QueueConsumerInfo> _readers = new();
     #endregion
 
@@ -49,8 +48,6 @@ public sealed class InMemoryQueue : IInMemoryQueue
         Name = queueName;
 
         Counters = new();
-        _consolidator = new ConsumptionConsolidator(Counters.Consolidate);
-
         MainChannel = new();
         RetryChannel = new();
 

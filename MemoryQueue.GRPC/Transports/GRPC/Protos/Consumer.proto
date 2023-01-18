@@ -55,7 +55,7 @@ message QueueInfoReply {
 	int64 deliverCounter = 13;
 	int64 deliverPerSecond = 14;
 
-	double avgAckTimeMilliseconds = 15;
+	double avgConsumptionMs = 15;
 
 	string queueName = 16;
 

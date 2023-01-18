@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading;
-
-namespace MemoryQueue.Base.Counters;
+﻿namespace MemoryQueue.Base.Counters;
 
 public sealed class ConsumptionConsolidator : IDisposable
 {
@@ -21,7 +18,7 @@ public sealed class ConsumptionConsolidator : IDisposable
     public ConsumptionConsolidator(Action consolidateAction)
     {
         _delegate = new ConsumptionConsolidatorEventHandler(consolidateAction);
-        ConsumptionConsolidatorTimer.OnConsolidate += new ConsumptionConsolidatorEventHandler(consolidateAction);
+        ConsumptionConsolidatorTimer.OnConsolidate += _delegate;
     }
 
     public void Dispose()

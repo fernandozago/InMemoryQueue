@@ -3,7 +3,7 @@
 @inject NavigationManager Navigation
 @using Microsoft.AspNetCore.WebUtilities;
 @using Microsoft.Extensions.Primitives;
-@*@implements IDisposable
+@implements IDisposable
 
 <PageTitle>InMemory Queue Dashboard</PageTitle>
 
@@ -47,15 +47,19 @@
                                     </tr>
                                     <tr>
                                         <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Consumers</td>
-                                        <td style="padding-left:10px">@selectedQueueInfo.ConsumersCount.ToString("N0")</td>
+                                        <td style="padding-left:10px">@selectedQueueInfo.ConcurrentConsumers.ToString("N0")</td>
                                     </tr>
                                     <tr>
                                         <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Pending Messages</td>
-                                        <td style="padding-left:10px">@((selectedQueueInfo.MainChannelCount + selectedQueueInfo.RetryChannelCount).ToString("N0"))</td>
+                                        <td style="padding-left:10px">@((selectedQueueInfo.MainQueueSize + selectedQueueInfo.RetryQueueSize).ToString("N0"))</td>
                                     </tr>
                                     <tr>
                                         <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Avg. Consumption</td>
-                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.AvgConsumptionMs.ToString("N5")) ms</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.AvgConsumptionMs.ToString("N5")) ms</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Last Collection</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.CollectDate.ToString("HH:mm:ss"))</td>
                                     </tr>
                                 </table>
                             </div>
@@ -67,27 +71,27 @@
                                     </tr>
                                     <tr>
                                         <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Incoming</td>
-                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.PubPerSecond.ToString("N0"))</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.PubPerSecond.ToString("N0"))</td>
                                     </tr>
                                     <tr>
                                         <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Outgoing</td>
-                                        <td style="padding-left:10px">@((selectedQueueInfo.Counters.DeliverPerSecond + selectedQueueInfo.Counters.RedeliverPerSecond).ToString("N0"))</td>
+                                        <td style="padding-left:10px">@((selectedQueueInfo.DeliverPerSecond + selectedQueueInfo.RedeliverPerSecond).ToString("N0"))</td>
                                     </tr>
                                     <tr>
                                         <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Deliver</td>
-                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.DeliverPerSecond.ToString("N0")) (Outgoing)</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.DeliverPerSecond.ToString("N0")) (Outgoing)</td>
                                     </tr>
                                     <tr>
                                         <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Redeliver</td>
-                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.RedeliverPerSecond.ToString("N0")) (Outgoing)</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.RedeliverPerSecond.ToString("N0")) (Outgoing)</td>
                                     </tr>
                                     <tr>
                                         <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Ack</td>
-                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.AckPerSecond.ToString("N0"))</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.AckPerSecond.ToString("N0"))</td>
                                     </tr>
                                     <tr>
                                         <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Nack</td>
-                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.NackPerSecond.ToString("N0"))</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.NackPerSecond.ToString("N0"))</td>
                                     </tr>
                                 </table>
                             </div>
@@ -99,23 +103,23 @@
                                     </tr>
                                     <tr>
                                         <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Published</td>
-                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.PubCounter.ToString("N0"))</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.PubCounter.ToString("N0"))</td>
                                     </tr>
                                     <tr>
                                         <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Delivered</td>
-                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.DeliverCounter.ToString("N0"))</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.DeliverCounter.ToString("N0"))</td>
                                     </tr>
                                     <tr>
                                         <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Redelivered</td>
-                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.RedeliverCounter.ToString("N0"))</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.RedeliverCounter.ToString("N0"))</td>
                                     </tr>
                                     <tr>
                                         <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Acked</td>
-                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.AckCounter.ToString("N0"))</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.AckCounter.ToString("N0"))</td>
                                     </tr>
                                     <tr>
                                         <td class="text-right" style="border-right:1px solid gray; padding-right:10px">Nacked</td>
-                                        <td style="padding-left:10px">@(selectedQueueInfo.Counters.NackCounter.ToString("N0"))</td>
+                                        <td style="padding-left:10px">@(selectedQueueInfo.NackCounter.ToString("N0"))</td>
                                     </tr>
                                 </table>
                             </div>
@@ -264,11 +268,11 @@
             <tbody>
                 <tr>
                     <td>Name:</td>
-                    <td>@selectedQueueInfo.Name</td>
+                    <td>@selectedQueueInfo.QueueName</td>
                 </tr>
                 <tr>
                     <td>Active Consumers:</td>
-                    <td>@selectedQueueInfo.ConsumersCount</td>
+                    <td>@selectedQueueInfo.ConcurrentConsumers.ToString("N0")</td>
                 </tr>
                 <tr>
                     <td>ETA:</td>
@@ -276,7 +280,7 @@
                 </tr>
                 <tr>
                     <td>Pending Items:</td>
-                    <td>@(selectedQueueInfo.MainChannelCount + selectedQueueInfo.RetryChannelCount)</td>
+                    <td>@((selectedQueueInfo.MainQueueSize + selectedQueueInfo.RetryQueueSize).ToString("N0"))</td>
                 </tr>
             </tbody>
         </table>
@@ -344,7 +348,7 @@
         peekMessage = null;
         try
         {
-            peekMessage = (await Http.GetFromJsonAsync<QueueItemWrapper?>($"InMemoryQueue/PeekMessage?queueName={queueName}"))?.Item;
+            peekMessage = (await Http.GetFromJsonAsync<QueueItem?>($"InMemoryQueue/PeekMessage?queueName={queueName}"));
         }
         catch
         {
@@ -358,4 +362,3 @@
         _timer?.Dispose();
     }
 }
-*@

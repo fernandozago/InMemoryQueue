@@ -20,7 +20,7 @@ public class QueueInfoReply
     public long RedeliverPerSecond { get; set; }
     public long DeliverCounter { get; set; }
     public long DeliverPerSecond { get; set; }
-    public double AvgAckTimeMilliseconds { get; set; }
+    public double AvgConsumptionMs { get; set; }
     public List<ConsumerInfoReply> Consumers { get; set; } = new List<ConsumerInfoReply>();
     public DateTime CollectDate { get; set; }
 }

@@ -1,10 +1,11 @@
 ﻿using MemoryQueue.Base.Utils;
-using System.Threading;
 
 namespace MemoryQueue.Base.Counters;
 
-public sealed class QueueConsumptionCounter
+public sealed class QueueConsumptionCounter : IDisposable
 {
+    private readonly ConsumptionConsolidator _consolidator;
+
     private long _ackCounter = 0;
     private long _ackPerSecond = 0;
     private long _ackPerSecond_Counter = 0;
@@ -43,6 +44,11 @@ public sealed class QueueConsumptionCounter
     public long DeliverPerSecond => _deliverPerSecond;
 
     public double AvgConsumptionMs => _avgConsumptionMs;
+
+    public QueueConsumptionCounter()
+    {
+        _consolidator = new ConsumptionConsolidator(Consolidate);
+    }
 
     public void ResetCounters()
     {
@@ -128,5 +134,10 @@ public sealed class QueueConsumptionCounter
 
         Interlocked.Exchange(ref _nackPerSecond, Interlocked.Exchange(ref _nackPerSecond_Counter, 0));
         Interlocked.Add(ref _nackCounter, _nackPerSecond);
+    }
+
+    public void Dispose()
+    {
+        _consolidator.Dispose();
     }
 }

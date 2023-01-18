@@ -23,7 +23,7 @@ public sealed record QueueInfoReplyPropertyGrid
     [DisplayName("Avg. Consume (ms)")]
     [Description("Average time in milliseconds for consuming a message (Ack | Nack)")]
     [TypeConverter(typeof(CustomDoubleTypeConverter))]
-    public double AvgConsumptionMS { get; internal set; }
+    public double AvgConsumptionMs { get; internal set; }
     #endregion
 
     #region Messages p/ Second

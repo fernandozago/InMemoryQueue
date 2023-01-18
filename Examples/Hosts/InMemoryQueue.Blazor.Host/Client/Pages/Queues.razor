@@ -26,7 +26,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var queue in _activeQueues ?? Array.Empty<Queue>())
+            @foreach (var queue in _activeQueues ?? Array.Empty<QueueInfo>())
             {
                 <tr>
                     <td><NavLink class="nav-link" href="@($"dashboard?queueName={queue.QueueName}")">@queue.QueueName</NavLink></td>
@@ -38,7 +38,7 @@
                     <td class="text-right">@(queue.RedeliverPerSecond.ToString("N0"))</td>
                     <td class="text-right">@queue.AckPerSecond.ToString("N0")</td>
                     <td class="text-right">@queue.NackPerSecond.ToString("N0")</td>
-                    <td class="text-right">@queue.AvgAckTimeMilliseconds.ToString("N5") ms</td>
+                    <td class="text-right">@queue.AvgConsumptionMs.ToString("N5") ms</td>
                 </tr>
             }
         </tbody>
@@ -47,7 +47,7 @@
 
 
 @code {
-    private Queue[]? _activeQueues = null;
+    private QueueInfo[]? _activeQueues = null;
     private Timer? _timer;
 
     protected override void OnAfterRender(bool firstRender)
@@ -67,7 +67,7 @@
         {
             try
             {
-                _activeQueues = (await Http.GetFromJsonAsync<Queue[]?>("InMemoryQueue/GetActiveQueues"))?.OrderBy(x => x.QueueName).ToArray();
+                _activeQueues = (await Http.GetFromJsonAsync<QueueInfo[]?>("InMemoryQueue/GetActiveQueues"))?.OrderBy(x => x.QueueName).ToArray();
             }
             catch
             {

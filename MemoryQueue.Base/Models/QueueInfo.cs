@@ -18,7 +18,7 @@
         public long RedeliverPerSecond { get; set; }
         public long DeliverCounter { get; set; }
         public long DeliverPerSecond { get; set; }
-        public double AvgAckTimeMilliseconds { get; set; }
+        public double AvgConsumptionMs { get; set; }
         public List<ConsumerInfo> Consumers { get; set; } = new List<ConsumerInfo>();
     }
 

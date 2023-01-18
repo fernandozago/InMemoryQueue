@@ -21,7 +21,6 @@ namespace MemoryQueue.Base
         private readonly QueueConsumerInfo _consumerInfo;
         private readonly ReaderConsumptionCounter _counters;
         private readonly ITargetBlock<QueueItem> _retryWriter;
-        private readonly ConsumptionConsolidator _consolidator;
         private readonly ActionBlock<QueueItem> _actionBlock;
         private readonly CancellationToken _token;
         private readonly CancellationTokenRegistration _tokenRegistration;
@@ -33,20 +32,18 @@ namespace MemoryQueue.Base
 
         public InMemoryQueueReader(InMemoryQueue inMemoryQueue, QueueConsumerInfo consumerInfo, Func<QueueItem, Task<bool>> callBack, CancellationToken token)
         {
+            _token = token;
             _logger = inMemoryQueue.LoggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, inMemoryQueue.Name, consumerInfo.ConsumerType, consumerInfo.Name));
             _actionBlock = new ActionBlock<QueueItem>(DeliverItemAsync, new ExecutionDataflowBlockOptions()
             {
                 BoundedCapacity = 1
             });
-
-            _token = token;
             _tokenRegistration = _token.Register(() =>
             {
                 _actionBlock.Complete();
             });
 
             _counters = new ReaderConsumptionCounter(inMemoryQueue.Counters);
-            _consolidator = new ConsumptionConsolidator(_counters.Consolidate);
             _consumerInfo = consumerInfo;
             _consumerInfo.Counters = _counters;
 
@@ -115,7 +112,7 @@ namespace MemoryQueue.Base
             _retryLink.Dispose();
             _mainLink.Dispose();
             _semaphoreSlim.Dispose();
-            _consolidator.Dispose();
+            _counters.Dispose();
         }
     }
 

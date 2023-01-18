@@ -34,7 +34,7 @@ namespace MemoryQueue.GRPC.Parsers
                 DeliverCounter = info.DeliverCounter,
                 DeliverPerSecond = info.DeliverPerSecond,
 
-                AvgAckTimeMilliseconds = info.AvgAckTimeMilliseconds
+                AvgConsumptionMs = info.AvgConsumptionMs
             };
             reply.Consumers.AddRange(info.Consumers.Select(ParseConsumer));
 

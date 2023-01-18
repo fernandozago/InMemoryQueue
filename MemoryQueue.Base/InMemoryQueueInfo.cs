@@ -62,7 +62,7 @@ namespace MemoryQueue.Base
                 DeliverCounter = _inMemoryQueue.Counters.DeliverCounter,
                 DeliverPerSecond = _inMemoryQueue.Counters.DeliverPerSecond,
 
-                AvgAckTimeMilliseconds = _inMemoryQueue.Counters.AvgConsumptionMs
+                AvgConsumptionMs = _inMemoryQueue.Counters.AvgConsumptionMs
             };
             queueInfo.Consumers.AddRange(_inMemoryQueue.Consumers.Select(ParseConsumer));
             return queueInfo;

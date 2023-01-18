@@ -15,7 +15,7 @@ public static class QueueInfoReplyPropertyGridExtensions
             refVal.Outgoing.RedliveryPerSecond = reply.RedeliverPerSecond;
             refVal.Outgoing.DeliveryPerSecond = reply.DeliverPerSecond;
             refVal.Outgoing.OutgoingTotal = reply.RedeliverPerSecond + reply.DeliverPerSecond;
-            refVal.AvgConsumptionMS = reply.AvgAckTimeMilliseconds;
+            refVal.AvgConsumptionMs = reply.AvgConsumptionMs;
 
             refVal.PubPerSecond = reply.PubPerSecond;
             refVal.TotalQueueSize.QueueSize = reply.QueueSize;
@@ -44,7 +44,7 @@ public static class QueueInfoReplyPropertyGridExtensions
             refVal.Outgoing.RedliveryPerSecond = reply.RedeliverPerSecond;
             refVal.Outgoing.DeliveryPerSecond = reply.DeliverPerSecond;
             refVal.Outgoing.OutgoingTotal = reply.RedeliverPerSecond + reply.DeliverPerSecond;
-            refVal.AvgConsumptionMS = reply.AvgAckTimeMilliseconds;
+            refVal.AvgConsumptionMs = reply.AvgConsumptionMs;
 
             refVal.PubPerSecond = reply.PubPerSecond;
             refVal.TotalQueueSize.QueueSize = reply.QueueSize;

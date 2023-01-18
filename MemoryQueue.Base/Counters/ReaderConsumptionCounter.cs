@@ -2,9 +2,10 @@
 
 namespace MemoryQueue.Base.Counters;
 
-public sealed record ReaderConsumptionCounter
+public sealed record ReaderConsumptionCounter : IDisposable
 {
     private readonly QueueConsumptionCounter _queueCounter;
+    private readonly ConsumptionConsolidator _consolidator;
 
     private long _ackCounter = 0;
     private long _ackPerSecond = 0;
@@ -36,6 +37,7 @@ public sealed record ReaderConsumptionCounter
     public ReaderConsumptionCounter(QueueConsumptionCounter queueCounter)
     {
         _queueCounter = queueCounter;
+        _consolidator = new ConsumptionConsolidator(Consolidate);
     }
 
     public void SetThrottled(bool throttled)
@@ -86,5 +88,10 @@ public sealed record ReaderConsumptionCounter
 
         Interlocked.Exchange(ref _nackPerSecond, Interlocked.Exchange(ref _nackPerSecond_Counter, 0));
         Interlocked.Add(ref _nackCounter, _nackPerSecond);
+    }
+
+    public void Dispose()
+    {
+        _consolidator.Dispose();
     }
 }
