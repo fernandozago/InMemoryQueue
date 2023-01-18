@@ -41,7 +41,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\MemoryQueue.SignalR.Models\MemoryQueue.SignalR.Models.csproj" PrivateAssets="All" />
+		<ProjectReference Include="..\MemoryQueue.SignalR.Models\MemoryQueue.SignalR.Models.csproj" Pack="True" />
 	</ItemGroup>
 
 	<PropertyGroup>
@@ -50,7 +50,7 @@
 	<Target Name="CopyProjectReferencesToPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">
 		<ItemGroup>
 			<!-- Filter out unnecessary files -->
-			<_ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')->WithMetadataValue('PrivateAssets', 'All'))"/>
+			<_ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')->WithMetadataValue('Pack', 'True'))"/>
 		</ItemGroup>
 
 		<!-- Print batches for debug purposes -->
