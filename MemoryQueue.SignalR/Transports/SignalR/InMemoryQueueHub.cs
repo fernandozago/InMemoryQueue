@@ -29,12 +29,10 @@ namespace MemoryQueue.SignalR.Transports.SignalR
         public Task QueueInfo(string? queue) =>
             Clients.Caller.SendAsync(nameof(QueueInfoReply), _queueManager.GetOrCreateQueue(queue).GetInfo().ToReply());
 
-        public async Task Publish(string item, string? queue)
-        {
-            await _queueManager
+        public Task Publish(string item, string? queue) =>
+            _queueManager
                 .GetOrCreateQueue(queue)
-                .EnqueueAsync(item).ConfigureAwait(false);
-        }
+                .EnqueueAsync(item);
 
         public ChannelReader<QueueItemReply> Consume(string clientName, string? queue, CancellationToken token)
         {
@@ -110,7 +108,7 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                 RetryCount = item.RetryCount
             }, token) is ValueTask write && !write.IsCompletedSuccessfully)
             {
-                await write;
+                await write.ConfigureAwait(false);
             }
 
             token.ThrowIfCancellationRequested();

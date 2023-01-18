@@ -71,7 +71,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
         }
     }
 
-    public async ValueTask EnqueueAsync(string item, CancellationToken token = default)
+    public async Task EnqueueAsync(string item, CancellationToken token = default)
     {
         var queueItem = new QueueItem(item);
         if (await MainChannel.SendAsync(queueItem, token))
