@@ -3,6 +3,7 @@ using MemoryQueue.Client.Grpc;
 using MemoryQueue.Tests.SUTFactory;
 using MemoryQueue.Base.Models;
 using MemoryQueue.GRPC.Transports.GRPC.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace MemoryQueue.Tests
 {
@@ -60,7 +61,7 @@ namespace MemoryQueue.Tests
                 try
                 {
                     _server.Start();
-                    var consumerClient = new GrpcQueueConsumer("127.0.0.1:12345", SubjectUnderTestFactory.CreateLoggerFactory(), queueName);
+                    var consumerClient = new GrpcQueueConsumer("127.0.0.1:12345", new NullLoggerFactory(), queueName);
 
                     await consumerClient.PublishAllAsync(Enumerable.Range(0, 3).Select(_ => "teste"));
 
