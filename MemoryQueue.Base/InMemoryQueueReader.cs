@@ -38,10 +38,7 @@ namespace MemoryQueue.Base
             {
                 BoundedCapacity = 1
             });
-            _tokenRegistration = _token.Register(() =>
-            {
-                _actionBlock.Complete();
-            });
+            _tokenRegistration = _token.Register(_actionBlock.Complete);
 
             _counters = new ReaderConsumptionCounter(inMemoryQueue.Counters);
             _consumerInfo = consumerInfo;
