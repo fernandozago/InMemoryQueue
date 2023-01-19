@@ -101,15 +101,12 @@ namespace MemoryQueue.SignalR.Transports.SignalR
             using var registration = token.Register(() => tcs.TrySetCanceled());
             token.ThrowIfCancellationRequested();
 
-            if (writer.WriteAsync(new()
+            await writer.WriteAsync(new()
             {
                 Message = item.Message,
                 Retrying = item.Retrying,
                 RetryCount = item.RetryCount
-            }, token) is ValueTask write && !write.IsCompletedSuccessfully)
-            {
-                await write.ConfigureAwait(false);
-            }
+            }, token);
 
             token.ThrowIfCancellationRequested();
             return await tcs.Task.ConfigureAwait(false);

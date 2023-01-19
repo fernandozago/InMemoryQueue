@@ -67,10 +67,7 @@ namespace MemoryQueue.Base
             }
             finally
             {
-                if (ThrottleCheck(isAcked) is ValueTask throttleTask && !throttleTask.IsCompletedSuccessfully)
-                {
-                    await throttleTask.ConfigureAwait(false);
-                }
+                await ThrottleCheck(isAcked).ConfigureAwait(false);
             }
         }
 
