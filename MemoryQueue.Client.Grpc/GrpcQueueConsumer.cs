@@ -83,6 +83,8 @@ namespace MemoryQueue.Client.Grpc
                         }
                         finally
                         {
+
+                            token.ThrowIfCancellationRequested();
                             await stream.RequestStream.WriteAsync(new QueueItemAck()
                             {
                                 Ack = ack

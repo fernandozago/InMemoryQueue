@@ -3,7 +3,6 @@ using MemoryQueue.Base.Models;
 using MemoryQueue.Base.Utils;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
-using System.Threading.Tasks.Dataflow;
 
 namespace MemoryQueue.Base
 {
@@ -15,42 +14,25 @@ namespace MemoryQueue.Base
         private const string LOGMSG_ACK_FAILED_READER_CLOSING = "Failed to ack the message (Request was cancelled or client disconnected)";
         #endregion
 
-        private readonly SemaphoreSlim _semaphoreSlim = new(1);
         private readonly ILogger _logger;
+        private readonly InMemoryQueueBlock _queueBlock;
         private readonly IInMemoryQueue _inMemoryQueue;
-        private readonly QueueConsumerInfo _consumerInfo;
         private readonly ReaderConsumptionCounter _counters;
-        private readonly ITargetBlock<QueueItem> _retryWriter;
-        private readonly ActionBlock<QueueItem> _actionBlock;
         private readonly CancellationToken _token;
-        private readonly CancellationTokenRegistration _tokenRegistration;
-        private readonly IDisposable _retryLink;
-        private readonly IDisposable _mainLink;
-        private readonly Func<QueueItem, CancellationToken, Task<bool>> _channelCallBack;
+        private readonly Func<QueueItem, CancellationToken, Task<bool>> _consumerCallBack;
 
-        public Task Completed => _actionBlock.Completion;
+        public Task Completed => _queueBlock.Completion;
 
         public InMemoryQueueReader(InMemoryQueue inMemoryQueue, QueueConsumerInfo consumerInfo, Func<QueueItem, CancellationToken, Task<bool>> callBack, CancellationToken token)
         {
-            _token = token;
             _logger = inMemoryQueue.LoggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, inMemoryQueue.Name, consumerInfo.ConsumerType, consumerInfo.Name));
-            _actionBlock = new ActionBlock<QueueItem>(DeliverItemAsync, new ExecutionDataflowBlockOptions()
-            {
-                BoundedCapacity = 1
-            });
-            _tokenRegistration = _token.Register(_actionBlock.Complete);
-
-            _counters = new ReaderConsumptionCounter(inMemoryQueue.Counters);
-            _consumerInfo = consumerInfo;
-            _consumerInfo.Counters = _counters;
-
+            _token = token;
             _inMemoryQueue = inMemoryQueue;
-            _retryWriter = inMemoryQueue.RetryChannel;
-            _channelCallBack = callBack;
+            _consumerCallBack = callBack;
 
-            //Enable Link InMemoryQueue to ActionBlock
-            _retryLink = inMemoryQueue.RetryChannel.LinkTo(_actionBlock);
-            _mainLink = inMemoryQueue.MainChannel.LinkTo(_actionBlock);
+            _counters = consumerInfo.Counters = new ReaderConsumptionCounter(inMemoryQueue.Counters);
+
+            _queueBlock = new InMemoryQueueBlock(DeliverItemAsync, inMemoryQueue, token);
         }
 
         private int _notAckedStreak = 0;
@@ -63,26 +45,37 @@ namespace MemoryQueue.Base
         /// Publish an message to some consumer and awaits for the ACK(true)/NACK(false) result
         /// </summary>
         /// <param name="queueItem">Message to be sent</param>
-        private async Task DeliverItemAsync(QueueItem queueItem)
+        private async Task<bool> DeliverItemAsync(QueueItem queueItem)
         {
             bool isAcked = false;
-            var timestamp = Stopwatch.GetTimestamp();
             try
             {
-                isAcked = await _channelCallBack(queueItem, _token).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, LOGMSG_ACK_FAILED_READER_CLOSING);
-                _actionBlock.Complete();
-                isAcked = false;
-            }
+                var timestamp = Stopwatch.GetTimestamp();
+                try
+                {
+                    isAcked = await _consumerCallBack(queueItem, _token).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, LOGMSG_ACK_FAILED_READER_CLOSING);
+                    _queueBlock.Complete();
+                    isAcked = false;
+                }
 
-            _counters.UpdateCounters(queueItem.Retrying, isAcked, timestamp);
-            if (_token.IsCancellationRequested)
-            {
-                _actionBlock.Complete();
+                _counters.UpdateCounters(queueItem.Retrying, isAcked, timestamp);
+                return isAcked;
             }
+            finally
+            {
+                if (ThrottleCheck(isAcked) is ValueTask throttleTask && !throttleTask.IsCompletedSuccessfully)
+                {
+                    await throttleTask.ConfigureAwait(false);
+                }
+            }
+        }
+
+        private async ValueTask ThrottleCheck(bool isAcked)
+        {
             if (isAcked)
             {
                 NotAckedStreak--;
@@ -90,26 +83,21 @@ namespace MemoryQueue.Base
                 {
                     _counters.SetThrottled(false);
                 }
+                return;
             }
-            else
+
+            NotAckedStreak++;
+            if (_inMemoryQueue.ConsumersCount > 1 && NotAckedStreak > 1)
             {
-                await _retryWriter.SendAsync(queueItem.Retry()).ConfigureAwait(false);
-                NotAckedStreak++;
-                if (_inMemoryQueue.ConsumersCount > 1 && NotAckedStreak > 1)
-                {
-                    _counters.SetThrottled(true);
-                    await TaskEx.SafeDelay(NotAckedStreak * 25, _token).ConfigureAwait(false);
-                }
+                _counters.SetThrottled(true);
+                await TaskEx.SafeDelay(NotAckedStreak * 25, _token).ConfigureAwait(false);
             }
         }
 
         public void Dispose()
         {
-            _tokenRegistration.Dispose();
-            _retryLink.Dispose();
-            _mainLink.Dispose();
-            _semaphoreSlim.Dispose();
             _counters.Dispose();
+            _queueBlock.Dispose();
         }
     }
 
