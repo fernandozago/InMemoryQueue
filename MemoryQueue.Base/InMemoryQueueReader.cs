@@ -59,7 +59,6 @@ namespace MemoryQueue.Base
                 {
                     _logger.LogWarning(ex, LOGMSG_ACK_FAILED_READER_CLOSING);
                     _queueBlock.Complete();
-                    isAcked = false;
                 }
 
                 _counters.UpdateCounters(queueItem.Retrying, isAcked, timestamp);
