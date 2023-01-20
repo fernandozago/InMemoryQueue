@@ -1,11 +1,12 @@
 ﻿using MemoryQueue.Transports.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
+using System.Diagnostics;
 
 namespace MemoryQueue.Client.SignalR;
 
 
 public delegate void QueueInfoReplyEventHandler(QueueInfoReply reply);
-public sealed class InMemoryQueueSignalrClient : IAsyncDisposable
+public sealed class InMemoryQueueSignalRClient : IAsyncDisposable
 {
     const string HubPublishMethodName = "Publish";
     const string HubResetCountersMethodName = "ResetCounters";
@@ -17,53 +18,47 @@ public sealed class InMemoryQueueSignalrClient : IAsyncDisposable
     private readonly CancellationToken _token;
     private readonly string _address;
     private readonly string? _queueName;
-    private readonly Lazy<Task<HubConnection>> _connection;
+    private readonly HubConnection _connection;
     public event QueueInfoReplyEventHandler? OnQueueInfo;
 
-    public InMemoryQueueSignalrClient(string address, string? queueName = null)
+    public InMemoryQueueSignalRClient(string address, string? queueName = null)
     {
         _cts = new CancellationTokenSource();
         _token = _cts.Token;
         _address = address;
         _queueName = queueName;
-        _connection = new Lazy<Task<HubConnection>>(async () =>
-        {
-            var conn = new HubConnectionBuilder()
+        _connection = new HubConnectionBuilder()
                 .WithUrl(address)
                 .WithAutomaticReconnect()
                 .Build();
-            conn.On<QueueInfoReply>(nameof(QueueInfoReply), v => OnQueueInfo?.Invoke(v));
-            await conn.StartAsync(_token).ConfigureAwait(false);
-            return conn;
-        });
+        _connection.On<QueueInfoReply>(nameof(QueueInfoReply), v => OnQueueInfo?.Invoke(v));
+        _connection.Reconnecting += Result_Reconnecting;
     }
 
-    public async Task PublishAsync(string message)
+    private Task Result_Reconnecting(Exception? arg)
     {
-        if (!_connection.IsValueCreated)
-        {
-            await _connection.Value.ConfigureAwait(false);
-        }
-        await _connection.Value.Result.SendAsync(HubPublishMethodName, message, _queueName, _token).ConfigureAwait(false);
+        Debug.WriteLine(arg);
+        return Task.CompletedTask;
     }
 
-    public async Task ResetCountersAsync()
+    private async ValueTask<HubConnection> GetConnection()
     {
-        if (!_connection.IsValueCreated)
+        if (_connection.State == HubConnectionState.Disconnected)
         {
-            await _connection.Value.ConfigureAwait(false);
+            await _connection.StartAsync(_token).ConfigureAwait(false);
         }
-        await _connection.Value.Result.SendAsync(HubResetCountersMethodName, _queueName, _token).ConfigureAwait(false);
+
+        return _connection;
     }
 
-    public async Task QueueInfoAsync()
-    {
-        if (!_connection.IsValueCreated)
-        {
-            await _connection.Value.ConfigureAwait(false);
-        }
-        await _connection.Value.Result.SendAsync(HubQueueInfoMethodName, _queueName, _token).ConfigureAwait(false);
-    }
+    public async Task PublishAsync(string message) =>
+        await (await GetConnection().ConfigureAwait(false)).SendAsync(HubPublishMethodName, message, _queueName, _token).ConfigureAwait(false);
+
+    public async Task ResetCountersAsync() =>
+        await (await GetConnection().ConfigureAwait(false)).SendAsync(HubResetCountersMethodName, _queueName, _token).ConfigureAwait(false);
+
+    public async Task QueueInfoAsync() =>
+        await (await GetConnection().ConfigureAwait(false)).SendAsync(HubQueueInfoMethodName, _queueName, _token).ConfigureAwait(false);
 
     public async Task ConsumeAsync(string clientName, Func<QueueItemReply, CancellationToken, Task<bool>> callBack, CancellationToken consumerToken)
     {
@@ -111,10 +106,16 @@ public sealed class InMemoryQueueSignalrClient : IAsyncDisposable
     {
         using (_cts)
         {
+            await using var conn = _connection;
             _cts.Cancel();
-            if (_connection.IsValueCreated)
+            try
             {
-                await _connection.Value.Result.StopAsync().ConfigureAwait(false);
+                await _connection.StopAsync().ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+
+
             }
         }
     }

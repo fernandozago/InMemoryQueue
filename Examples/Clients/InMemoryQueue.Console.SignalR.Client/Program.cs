@@ -3,7 +3,7 @@ using MemoryQueue.Client.SignalR;
 using MemoryQueue.Transports.SignalR;
 
 Console.WriteLine("Hello, World!");
-InMemoryQueueSignalrClient inMemoryQueueSignalr = new InMemoryQueueSignalrClient("https://localhost:7134/inmemoryqueue/hub");
+InMemoryQueueSignalRClient inMemoryQueueSignalr = new InMemoryQueueSignalRClient("https://localhost:7134/inmemoryqueue/hub");
 
 await Task.Delay(5000);
 await inMemoryQueueSignalr.PublishAsync("TESTE1");

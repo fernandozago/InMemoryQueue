@@ -10,7 +10,7 @@ namespace GrpcClient2
     public partial class frmSignalRClient : Form
     {
         private readonly IProgress<QueueInfoReply> _progress;
-        private readonly InMemoryQueueSignalrClient _signalR;
+        private readonly InMemoryQueueSignalRClient _signalR;
         private readonly Dictionary<Task, CancellationTokenSource> _consumers = new();
         private readonly PersonNameGenerator _personNameGenerator = new();
         private readonly string _queueName;
@@ -27,7 +27,7 @@ namespace GrpcClient2
         {
             _queueName = queueName;
             _progress = new Progress<QueueInfoReply>(UpdateForm);
-            _signalR = new InMemoryQueueSignalrClient(host, queueName);
+            _signalR = new InMemoryQueueSignalRClient(host, queueName);
             _signalR.OnQueueInfo += v => _progress.Report(v);
 
             _ = StartTimer();
@@ -138,7 +138,7 @@ namespace GrpcClient2
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex);
+                //Debug.WriteLine(ex);
             }
         }
 
