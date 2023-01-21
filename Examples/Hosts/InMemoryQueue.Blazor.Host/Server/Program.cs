@@ -1,5 +1,6 @@
 using InMemoryQueue.Blazor.Host.Grpc;
 using InMemoryQueue.Blazor.Host.Grpc.InMemoryConsumers;
+using InMemoryQueue.Blazor.Host.Server.SignalRHub;
 using MemoryQueue.Base.Extensions;
 using MemoryQueue.GRPC.Transports.GRPC.Services;
 using MemoryQueue.SignalR.Transports.SignalR;
@@ -41,6 +42,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.MapHub<InMemoryQueueHub>("/inmemoryqueue/hub");
+app.MapHub<InMemoryQueueHubNew>("/inmemoryqueue/hubnew");
 app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");

@@ -13,6 +13,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\..\..\MemoryQueue.GRPC\MemoryQueue.GRPC.csproj" />
+		<ProjectReference Include="..\..\..\..\MemoryQueue.SignalR.Models\MemoryQueue.SignalR.Models.csproj" />
 		<ProjectReference Include="..\..\..\..\MemoryQueue.SignalR\MemoryQueue.SignalR.csproj" />
 		<ProjectReference Include="..\Client\InMemoryQueue.Blazor.Host.Client.csproj" />
 		<ProjectReference Include="..\Shared\InMemoryQueue.Blazor.Host.Shared.csproj" />
