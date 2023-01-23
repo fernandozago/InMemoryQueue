@@ -27,18 +27,21 @@ public sealed class InMemoryQueue : IInMemoryQueue
 
     #region Internal Properties
     internal ILoggerFactory LoggerFactory { get; private set; }
-    internal BufferBlock<QueueItem> RetryChannel { get; private set; }
-    internal BufferBlock<QueueItem> MainChannel { get; private set; }
+    internal TransformBlock<QueueItem, QueueItem> RetryChannel { get; private set; }
+    internal TransformBlock<QueueItem, QueueItem> MainChannel { get; private set; }
     internal QueueConsumptionCounter Counters { get; private set; }
     internal string Name { get; private set; }
-    internal int MainChannelCount => MainChannel.Count;
-    internal int RetryChannelCount => RetryChannel.Count;
+
+    private InMemoryQueueStore _inMemoryQueueStore;
+
+    internal int MainChannelCount => MainChannel.InputCount;
+    internal int RetryChannelCount => MainChannel.OutputCount;
     internal IReadOnlyCollection<QueueConsumerInfo> Consumers =>
         (IReadOnlyCollection<QueueConsumerInfo>)_readers.Values;
     #endregion
 
     #region Public Properties
-    public int ConsumersCount => _readers.Count; 
+    public int ConsumersCount => _readers.Count;
     #endregion
 
     public InMemoryQueue(string queueName, ILoggerFactory loggerFactory)
@@ -46,13 +49,26 @@ public sealed class InMemoryQueue : IInMemoryQueue
         LoggerFactory = loggerFactory;
         _logger = LoggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, queueName));
         Name = queueName;
+        _inMemoryQueueStore = new InMemoryQueueStore(Name, loggerFactory);
 
         Counters = new();
-        MainChannel = new();
-        RetryChannel = new();
-
+        MainChannel = new(_inMemoryQueueStore.UpsertAsync, new ()
+        {
+            BoundedCapacity = -1,
+            EnsureOrdered = true,
+            MaxDegreeOfParallelism = 1 // How fast you wanna go ?
+        });
+        RetryChannel = new(_inMemoryQueueStore.UpsertAsync, new ()
+        {
+            BoundedCapacity = -1,
+            EnsureOrdered = true,
+            MaxDegreeOfParallelism = 1 // How fast you wanna go ?
+        });
         _inMemoryQueueInfoService = new InMemoryQueueInfo(this);
     }
+
+    public Task DeleteItem(Guid id) =>
+        _inMemoryQueueStore.DeleteAsync(id);
 
     public IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, CancellationToken, Task<bool>> callBack, CancellationToken token)
     {
@@ -76,6 +92,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
         var queueItem = new QueueItem(item);
         if (await MainChannel.SendAsync(queueItem, token))
         {
+            //_logger.LogInformation("Published!");
             Counters.Publish();
             _logger.LogTrace(LOGMSG_TRACE_ITEM_QUEUED, queueItem);
         }
@@ -84,7 +101,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
     public async ValueTask<QueueItem?> TryPeekMainQueueAsync()
     {
         var ts = Stopwatch.GetTimestamp();
-        if (MainChannel.TryReceive(out var item))
+        if (MainChannel.TryReceive(out QueueItem? item))
         {
             await AddToRetryQueueAsync(item.Retrying, item, ts).ConfigureAwait(false);
             return item;
@@ -95,7 +112,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
     public async ValueTask<QueueItem?> TryPeekRetryQueueAsync()
     {
         var ts = Stopwatch.GetTimestamp();
-        if (RetryChannel.TryReceive(out var item))
+        if (RetryChannel.TryReceive(out QueueItem? item))
         {
             await AddToRetryQueueAsync(item.Retrying, item, ts).ConfigureAwait(false);
             return item;

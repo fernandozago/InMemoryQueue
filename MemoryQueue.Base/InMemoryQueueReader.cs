@@ -66,6 +66,10 @@ namespace MemoryQueue.Base
             }
             finally
             {
+                if (isAcked)
+                {
+                    await _inMemoryQueue.DeleteItem(queueItem.Id);
+                }
                 await ThrottleCheck(isAcked).ConfigureAwait(false);
             }
         }

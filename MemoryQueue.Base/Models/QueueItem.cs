@@ -7,9 +7,14 @@ public record QueueItem
         Message = message;
     }
 
-    public string Message { get; private set; }
-    public bool Retrying { get; private set; }
-    public int RetryCount { get; private set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    public string Message { get; set; }
+
+    public bool Retrying { get; set; }
+
+    public int RetryCount { get; set; }
+
 
     public QueueItem Retry()
     {
