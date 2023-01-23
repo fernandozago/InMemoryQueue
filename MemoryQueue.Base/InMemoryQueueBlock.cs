@@ -25,10 +25,10 @@ namespace MemoryQueue.Base
             _tokenRegistration = token.Register(_actionBlock.Complete);
             _callback = action;
             _token = token;
-            _retryBlock = inMemoryQueue.RetryChannel;
+            _retryBlock = inMemoryQueue.RetryQueue;
 
-            _retryChannelLink = inMemoryQueue.RetryChannel.LinkTo(this);
-            _mainChannelLink = inMemoryQueue.MainChannel.LinkTo(this);
+            _retryChannelLink = inMemoryQueue.RetryQueue.LinkTo(this);
+            _mainChannelLink = inMemoryQueue.MainQueue.LinkTo(this);
         }
 
         public Task Completion => 

@@ -27,12 +27,12 @@ public sealed class InMemoryQueue : IInMemoryQueue
 
     #region Internal Properties
     internal ILoggerFactory LoggerFactory { get; private set; }
-    internal BufferBlock<QueueItem> RetryChannel { get; private set; }
-    internal BufferBlock<QueueItem> MainChannel { get; private set; }
+    internal BufferBlock<QueueItem> RetryQueue { get; private set; }
+    internal BufferBlock<QueueItem> MainQueue { get; private set; }
     internal QueueConsumptionCounter Counters { get; private set; }
     internal string Name { get; private set; }
-    internal int MainChannelCount => MainChannel.Count;
-    internal int RetryChannelCount => RetryChannel.Count;
+    internal int MainChannelCount => MainQueue.Count;
+    internal int RetryChannelCount => RetryQueue.Count;
     internal IReadOnlyCollection<QueueConsumerInfo> Consumers =>
         (IReadOnlyCollection<QueueConsumerInfo>)_readers.Values;
     #endregion
@@ -43,14 +43,14 @@ public sealed class InMemoryQueue : IInMemoryQueue
 
     public InMemoryQueue(string queueName, ILoggerFactory loggerFactory)
     {
+        _logger = loggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, queueName));
         LoggerFactory = loggerFactory;
-        _logger = LoggerFactory.CreateLogger(string.Format(LOGGER_CATEGORY, queueName));
         Name = queueName;
 
         Counters = new();
-        MainChannel = new();
-        RetryChannel = new();
 
+        MainQueue = new();
+        RetryQueue = new();
         _inMemoryQueueInfoService = new InMemoryQueueInfo(this);
     }
 
@@ -74,7 +74,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
     public async Task EnqueueAsync(string item, CancellationToken token = default)
     {
         var queueItem = new QueueItem(item);
-        if (await MainChannel.SendAsync(queueItem, token))
+        if (await MainQueue.SendAsync(queueItem, token).ConfigureAwait(false))
         {
             Counters.Publish();
             _logger.LogTrace(LOGMSG_TRACE_ITEM_QUEUED, queueItem);
@@ -84,7 +84,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
     public async ValueTask<QueueItem?> TryPeekMainQueueAsync()
     {
         var ts = Stopwatch.GetTimestamp();
-        if (MainChannel.TryReceive(out var item))
+        if (MainQueue.TryReceive(out var item))
         {
             await AddToRetryQueueAsync(item.Retrying, item, ts).ConfigureAwait(false);
             return item;
@@ -95,7 +95,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
     public async ValueTask<QueueItem?> TryPeekRetryQueueAsync()
     {
         var ts = Stopwatch.GetTimestamp();
-        if (RetryChannel.TryReceive(out var item))
+        if (RetryQueue.TryReceive(out var item))
         {
             await AddToRetryQueueAsync(item.Retrying, item, ts).ConfigureAwait(false);
             return item;
@@ -111,7 +111,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
 
     private async Task AddToRetryQueueAsync(bool isRetrying, QueueItem item, long ts)
     {
-        await RetryChannel.SendAsync(item.Retry());
+        await RetryQueue.SendAsync(item.Retry()).ConfigureAwait(false);
         Counters.UpdateCounters(isRetrying, false, ts);
     }
 }
