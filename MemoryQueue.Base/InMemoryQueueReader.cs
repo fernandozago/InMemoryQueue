@@ -31,7 +31,6 @@ namespace MemoryQueue.Base
             _consumerCallBack = callBack;
 
             _counters = consumerInfo.Counters = new ReaderConsumptionCounter(inMemoryQueue.Counters);
-
             _queueBlock = new InMemoryQueueBlock(DeliverItemAsync, inMemoryQueue, token);
         }
 

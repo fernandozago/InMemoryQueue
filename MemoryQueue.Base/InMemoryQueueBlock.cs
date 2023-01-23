@@ -14,22 +14,23 @@ namespace MemoryQueue.Base
         private readonly IDisposable _retryChannelLink;
         private readonly IDisposable _mainChannelLink;
 
-
         public InMemoryQueueBlock(Func<QueueItem, Task<bool>> action, InMemoryQueue inMemoryQueue, CancellationToken token)
         {
-            _actionBlock = new ActionBlock<QueueItem>(ProcessItemAsync, new ExecutionDataflowBlockOptions()
-            {
-                BoundedCapacity = 1
-            });
-
-            _tokenRegistration = token.Register(_actionBlock.Complete);
             _callback = action;
             _token = token;
             _retryBlock = inMemoryQueue.RetryQueue;
 
+            _actionBlock = CreateConfiguredTargetBlock();
+            _tokenRegistration = token.Register(_actionBlock.Complete);
             _retryChannelLink = inMemoryQueue.RetryQueue.LinkTo(this);
             _mainChannelLink = inMemoryQueue.MainQueue.LinkTo(this);
         }
+
+        private ITargetBlock<QueueItem> CreateConfiguredTargetBlock() =>
+            new ActionBlock<QueueItem>(ProcessItemAsync, new ExecutionDataflowBlockOptions()
+            {
+                BoundedCapacity = 1
+            });
 
         public Task Completion => 
             _actionBlock.Completion;
@@ -42,17 +43,22 @@ namespace MemoryQueue.Base
 
         public DataflowMessageStatus OfferMessage(DataflowMessageHeader messageHeader, QueueItem messageValue, ISourceBlock<QueueItem>? source, bool consumeToAccept)
         {
-            CompleteIfCancelled();
+            if (CompleteIfCancelled())
+            {
+                return DataflowMessageStatus.DecliningPermanently;
+            }
             return _actionBlock.OfferMessage(messageHeader, messageValue, source, consumeToAccept);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CompleteIfCancelled()
+        private bool CompleteIfCancelled()
         {
             if (_token.IsCancellationRequested)
             {
                 Complete();
             }
+
+            return _token.IsCancellationRequested;
         }
 
         private async Task ProcessItemAsync(QueueItem item)
