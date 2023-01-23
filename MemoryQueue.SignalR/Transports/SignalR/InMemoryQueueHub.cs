@@ -34,6 +34,12 @@ namespace MemoryQueue.SignalR.Transports.SignalR
                 .GetOrCreateQueue(queue)
                 .EnqueueAsync(item);
 
+        public Task ResetCounters(string? queue)
+        {
+            _queueManager.GetOrCreateQueue(queue).ResetCounters();
+            return Task.CompletedTask;
+        }
+
         public ChannelReader<QueueItemReply> Consume(string clientName, string? queue, CancellationToken token)
         {
             var channel = Channel.CreateBounded<QueueItemReply>(1);
