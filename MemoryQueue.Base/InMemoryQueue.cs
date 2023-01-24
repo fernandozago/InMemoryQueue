@@ -21,7 +21,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
 
     #region Fields
     private readonly ILogger _logger;
-    private readonly InMemoryQueueInfo _inMemoryQueueInfoService;
+    private readonly InMemoryQueueInfo _inMemoryQueueInfo;
     private readonly ConcurrentDictionary<IInMemoryQueueReader, QueueConsumerInfo> _readers = new();
     #endregion
 
@@ -48,10 +48,9 @@ public sealed class InMemoryQueue : IInMemoryQueue
         Name = queueName;
 
         Counters = new();
-
         MainQueue = new();
         RetryQueue = new();
-        _inMemoryQueueInfoService = new InMemoryQueueInfo(this);
+        _inMemoryQueueInfo = new InMemoryQueueInfo(this);
     }
 
     public IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, CancellationToken, Task<bool>> callBack, CancellationToken token)
@@ -107,7 +106,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
         Counters.ResetCounters();
 
     public QueueInfo GetInfo(bool forceUpdate = false) =>
-        _inMemoryQueueInfoService.GetQueueInfo(forceUpdate);
+        _inMemoryQueueInfo.GetQueueInfo(forceUpdate);
 
     private async Task AddToRetryQueueAsync(bool isRetrying, QueueItem item, long ts)
     {

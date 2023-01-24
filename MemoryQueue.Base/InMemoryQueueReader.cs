@@ -78,14 +78,15 @@ namespace MemoryQueue.Base
                 {
                     _counters.SetThrottled(false);
                 }
-                return;
             }
-
-            NotAckedStreak++;
-            if (_inMemoryQueue.ConsumersCount > 1 && NotAckedStreak > 1)
+            else
             {
-                _counters.SetThrottled(true);
-                await TaskEx.SafeDelay(NotAckedStreak * 25, _token).ConfigureAwait(false);
+                NotAckedStreak++;
+                if (_inMemoryQueue.ConsumersCount > 1 && NotAckedStreak > 1)
+                {
+                    _counters.SetThrottled(true);
+                    await TaskEx.SafeDelay(NotAckedStreak * 25, _token).ConfigureAwait(false);
+                }
             }
         }
 

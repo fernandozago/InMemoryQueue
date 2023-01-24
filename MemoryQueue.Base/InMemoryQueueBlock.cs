@@ -21,7 +21,7 @@ namespace MemoryQueue.Base
             _retryBlock = inMemoryQueue.RetryQueue;
 
             _actionBlock = CreateConfiguredTargetBlock();
-            _tokenRegistration = token.Register(_actionBlock.Complete);
+            _tokenRegistration = _token.Register(_actionBlock.Complete);
             _retryChannelLink = inMemoryQueue.RetryQueue.LinkTo(this);
             _mainChannelLink = inMemoryQueue.MainQueue.LinkTo(this);
         }
@@ -53,12 +53,13 @@ namespace MemoryQueue.Base
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool CompleteIfCancelled()
         {
-            if (_token.IsCancellationRequested)
+            if (!_token.IsCancellationRequested)
             {
-                Complete();
+                return false;
             }
 
-            return _token.IsCancellationRequested;
+            Complete();
+            return true;
         }
 
         private async Task ProcessItemAsync(QueueItem item)

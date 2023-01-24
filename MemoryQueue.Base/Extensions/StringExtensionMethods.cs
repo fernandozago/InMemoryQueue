@@ -2,7 +2,7 @@
 
 namespace MemoryQueue.Base.Extensions;
 
-public static class QueueNameHashesGenerator
+internal static class QueueNameHashesGenerator
 {
     private static readonly ConcurrentDictionary<string, Lazy<int>> _cachedHashes = new();
 
@@ -11,7 +11,7 @@ public static class QueueNameHashesGenerator
     /// </summary>
     /// <param name="queueName"></param>
     /// <returns></returns>
-    public static int GenerateHash(string queueName) =>
+    internal static int GenerateHash(string queueName) =>
         _cachedHashes.GetOrAdd(queueName.ToUpper(), new Lazy<int>(() => GetHash(queueName.ToUpper()))).Value;
 
     private static int GetHash(string str)
