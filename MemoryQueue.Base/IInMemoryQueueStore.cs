@@ -1,17 +1,11 @@
 ﻿using Azure.Identity;
 using Dapper;
-using Dapper.Contrib.Extensions;
 using MemoryQueue.Base.Models;
 using MemoryQueue.Base.Utils;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Diagnostics;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks.Dataflow;
-using System.Xml.Schema;
 using Z.Dapper.Plus;
 
 namespace MemoryQueue.Base
