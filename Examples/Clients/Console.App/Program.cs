@@ -28,6 +28,7 @@ var producer = Task.Run(async () =>
         {
             //Ignore any exception -- server may not be available
         }
+        return;
     }
 });
 
@@ -37,8 +38,9 @@ cts.Cancel();
 await consumer;
 
 
-static Task<bool> CallBack(QueueItemReply queueItem, CancellationToken arg2)
+static async Task<bool> CallBack(QueueItemReply queueItem, CancellationToken arg2)
 {
+    await Task.Delay(10);
     Console.WriteLine(queueItem);
-    return Task.FromResult(true);
+    return false;
 }

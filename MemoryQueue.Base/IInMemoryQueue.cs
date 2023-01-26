@@ -12,7 +12,7 @@ public interface IInMemoryQueue
     ValueTask<QueueItem?> TryPeekRetryQueueAsync();
     QueueInfo GetInfo(bool forceUpdate = false);
     void ResetCounters();
-    Task DeleteItem(Guid id);
+    Task DeleteItem(QueueItem id);
 }
 
 public interface IInMemoryQueueReader : IDisposable

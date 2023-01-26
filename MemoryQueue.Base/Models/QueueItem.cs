@@ -1,6 +1,9 @@
-﻿namespace MemoryQueue.Base.Models;
+﻿using Dapper.Contrib.Extensions;
+using System.Diagnostics;
 
-public record QueueItem
+namespace MemoryQueue.Base.Models;
+
+public sealed record QueueItem
 {
     public QueueItem(string message)
     {
@@ -15,13 +18,12 @@ public record QueueItem
 
     public int RetryCount { get; set; }
 
-
     public QueueItem Retry()
     {
         return this with
         {
-            Retrying = true,
-            RetryCount = RetryCount + 1
+            RetryCount = RetryCount + 1,
+            Retrying = true
         };
     }
 }

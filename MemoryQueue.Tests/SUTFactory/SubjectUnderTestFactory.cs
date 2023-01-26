@@ -13,5 +13,8 @@ namespace MemoryQueue.Tests.SUTFactory
 
         public static ConsumerServiceImpl CreateGrpcConsumer() =>
             new (CreateInMemoryQueueManager(), new Mock<IConfiguration>().Object, new NullLoggerFactory());
+
+        public static InMemoryQueueStore CreateInMemoryQueueStore(string queueName) =>
+            new InMemoryQueueStore(queueName, new NullLoggerFactory());
     }
 }

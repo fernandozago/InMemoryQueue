@@ -32,7 +32,7 @@ public sealed class InMemoryQueue : IInMemoryQueue
     internal QueueConsumptionCounter Counters { get; private set; }
     internal string Name { get; private set; }
 
-    private InMemoryQueueStore _inMemoryQueueStore;
+    private readonly InMemoryQueueStore _inMemoryQueueStore;
 
     internal int MainChannelCount => MainChannel.InputCount;
     internal int RetryChannelCount => MainChannel.OutputCount;
@@ -67,8 +67,8 @@ public sealed class InMemoryQueue : IInMemoryQueue
         _inMemoryQueueInfoService = new InMemoryQueueInfo(this);
     }
 
-    public Task DeleteItem(Guid id) =>
-        _inMemoryQueueStore.DeleteAsync(id);
+    public Task DeleteItem(QueueItem item) =>
+        _inMemoryQueueStore.DeleteAsync(item);
 
     public IInMemoryQueueReader AddQueueReader(QueueConsumerInfo consumerInfo, Func<QueueItem, CancellationToken, Task<bool>> callBack, CancellationToken token)
     {
