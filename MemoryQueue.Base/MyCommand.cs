@@ -2,35 +2,36 @@
 
 namespace MemoryQueue.Base
 {
-    public sealed record MyCommandKey
+    public enum QueueItemDbChangeType
     {
-        public Guid Id { get; set; }
-
-        public int Balance { get; set; } = 0;
-
-        public MyCommand Command { get; set; }
-
-        public MyCommandKey(Guid id)
-        {
-            Id = id;
-        }
+        Insert,
+        Update,
+        Delete
     }
 
-    public sealed record MyCommand
+    public sealed record QueueItemDbChange
     {
         public Guid Id { get; set; }
         public QueueItem Item { get; set; }
-        public bool Upsert { get; set; }
-        public bool CountAsAnInsert { get; set; }
+        public QueueItemDbChangeType ChangeType { get; set; }
+        public bool Upsert => ChangeType != QueueItemDbChangeType.Delete;
+        public int Balance { get; set; }
 
         public override string ToString()
         {
-            return $"MessageId: {Id} || Upsert? {Upsert}";
+            return $"MessageId: {Id} || Upsert? {ChangeType}";
         }
 
-        public MyCommand(QueueItem item, bool upsert)
+        public QueueItemDbChange(QueueItem item, bool upsert)
         {
-            Upsert = upsert;
+            if (upsert)
+            {
+                ChangeType = item.Retrying ? QueueItemDbChangeType.Update : QueueItemDbChangeType.Insert;
+            }
+            else
+            {
+                ChangeType = QueueItemDbChangeType.Delete;
+            }
             Item = item;
             Id = item.Id;
         }

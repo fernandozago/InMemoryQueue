@@ -1,11 +1,15 @@
 ﻿using Azure.Identity;
 using Dapper;
+using Dapper.Contrib.Extensions;
 using MemoryQueue.Base.Models;
 using MemoryQueue.Base.Utils;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Diagnostics;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks.Dataflow;
 using System.Xml.Schema;
 using Z.Dapper.Plus;
@@ -14,12 +18,12 @@ namespace MemoryQueue.Base
 {
     public class InMemoryQueueStore
     {
-        private readonly BatchBlock<MyCommand> _batchBlock;
-        private readonly TransformBlock<MyCommand[], (List<MyCommandKey>, List<MyCommandKey>, double)> _transformBlock;
-        private readonly ActionBlock<(List<MyCommandKey>, List<MyCommandKey>, double)> _actionBlockUpsert;
+        private readonly BatchBlock<QueueItemDbChange> _batchBlock;
+        private readonly TransformBlock<QueueItemDbChange[], (QueueItemDbChange[], QueueItemDbChange[], double)> _transformBlock;
+        private readonly ActionBlock<(QueueItemDbChange[], QueueItemDbChange[], double)> _actionBlockUpsert;
         private readonly CancellationTokenSource _cts;
         private readonly Timer _t;
-        private readonly StreamWriter _logFile;
+        //private readonly StreamWriter _logFile;
         private readonly ILogger<InMemoryQueueStore> _logger;
         private readonly string _queueName;
         private readonly SqlConnection _connection;
@@ -31,25 +35,21 @@ namespace MemoryQueue.Base
 
         public InMemoryQueueStore(string queueName, ILoggerFactory loggerFactory)
         {
-            _logFile = new StreamWriter(new FileStream("E:\\Output.log", FileMode.Truncate));
-            _logFile.AutoFlush = true;
+            //_logFile = new StreamWriter(new FileStream("E:\\Output.log", FileMode.Truncate));
+            //_logFile.AutoFlush = true;
             _logger = loggerFactory.CreateLogger<InMemoryQueueStore>();
             _queueName = queueName;
 
-            _batchBlock = new BatchBlock<MyCommand>(5_000, new GroupingDataflowBlockOptions());
-            _transformBlock = new TransformBlock<MyCommand[], (List<MyCommandKey>, List<MyCommandKey>, double)>(TransformBatch, new ExecutionDataflowBlockOptions()
+            _batchBlock = new BatchBlock<QueueItemDbChange>(15_000, new GroupingDataflowBlockOptions());
+            _transformBlock = new TransformBlock<QueueItemDbChange[], (QueueItemDbChange[], QueueItemDbChange[], double)>(TransformBatch, new ExecutionDataflowBlockOptions()
             {
                 EnsureOrdered = true,
-                MaxDegreeOfParallelism = 8
+                MaxDegreeOfParallelism = 4
             });
-            _actionBlockUpsert = new (ExecuteUpsertDelete, new ExecutionDataflowBlockOptions()
-            {
-                BoundedCapacity = 1
-            });
+            _actionBlockUpsert = new(ExecuteUpsertDelete);
 
             _t = new Timer(new TimerCallback(_ =>
             {
-                //_logger.LogInformation($"Pending Batches: {_transformBlock.OutputCount}");
                 if (_batchBlockInputCount > 0 && StopwatchEx.GetElapsedTime(_lastTrigger).TotalSeconds > 5)
                 {
                     _logger.LogInformation($"Triggered from Timer {DateTime.Now}");
@@ -59,7 +59,7 @@ namespace MemoryQueue.Base
             }), null, 1000, 1000);
 
             _batchBlock.LinkTo(_transformBlock);
-            _transformBlock.LinkTo(_actionBlockUpsert);//, x => x.Item1.Count > 0 || x.Item2.Count > 0);
+            _transformBlock.LinkTo(_actionBlockUpsert, x => x.Item1.Length > 0 || x.Item2.Length > 0);
 
             if (!File.Exists(@$"E:\{_queueName}_log.ldf"))
             {
@@ -80,72 +80,75 @@ namespace MemoryQueue.Base
             TruncateAsync().GetAwaiter().GetResult();
         }
 
-        private (List<MyCommandKey>, List<MyCommandKey>, double) TransformBatch(MyCommand[] batch)
+        private (QueueItemDbChange[], QueueItemDbChange[], double) TransformBatch(QueueItemDbChange[] batch)
         {
             var lt = Stopwatch.GetTimestamp();
             _lastTrigger = lt;
 
-            Interlocked.Add(ref _batchBlockInputCount, batch.Count() * -1);
+            Interlocked.Add(ref _batchBlockInputCount, batch.Length * -1);
 
             var groupAndSplit = batch
+                .GroupBy(x => x.Id, x => x)
                 .AsParallel()
-                .GroupBy(x => new MyCommandKey(x.Id), x => x)
                 .Where(FilterItems)
-                .Select(x => x.Key)
-                .GroupBy(x => x.Command.Upsert)
-                .ToDictionary(x => x.Key, x => x.Select(x => x).ToList());
+                .Select(SelectItem)
+                .GroupBy(x => x.Upsert)
+                .ToDictionary(x => x.Key, x => x.ToArray());
 
-            var toUpsert = groupAndSplit.GetValueOrDefault(true, new List<MyCommandKey>());
-            var toDelete = groupAndSplit.GetValueOrDefault(false, new List<MyCommandKey>());
+            var toUpsert = groupAndSplit.GetValueOrDefault(true, Array.Empty<QueueItemDbChange>());
+            var toDelete = groupAndSplit.GetValueOrDefault(false, Array.Empty<QueueItemDbChange>());
             //_logger.LogInformation($"Processed Batch {batch.Length} -- {toUpsert.Count}|{toDelete.Count} -- {StopwatchEx.GetElapsedTime(lt).TotalMilliseconds:N15} ms");
             return (toUpsert, toDelete, StopwatchEx.GetElapsedTime(lt).TotalMilliseconds);
         }
 
-        private bool FilterItems(IGrouping<MyCommandKey, MyCommand> items)
+        private static bool FilterItems(IGrouping<Guid, QueueItemDbChange> items)
         {
-            int insertCount = items.Count(x => x.Upsert && !x.Item.Retrying); //Items to be inserted
-
-            if (items.Count() == 1 || (items.Count(x => !x.Upsert) is int deleteCount && deleteCount == 0))
+            if (items.Count() == 1)
             {
-                if (items.Last().Upsert && insertCount != 0)
-                {
-                    items.Key.Balance = 1;
-                }
-                else
-                {
-                    items.Key.Balance = -1;
-                }
-
-                items.Key.Command = items.Last();
                 return true;
             }
 
-            if (insertCount == 1 && deleteCount == 1)
+            bool haveInsert = items.Any(x => x.ChangeType == QueueItemDbChangeType.Insert);
+            bool haveDelete = items.Any(x => x.ChangeType == QueueItemDbChangeType.Delete);
+            if (haveInsert && haveDelete)
             {
                 return false;
             }
 
-            items.Key.Balance = -1;
-            items.Key.Command = items.Last();
             return true;
         }
 
-        private async Task ExecuteUpsertDelete((List<MyCommandKey> upsert, List<MyCommandKey> delete, double processBatch) triple)
+        private static QueueItemDbChange SelectItem(IGrouping<Guid, QueueItemDbChange> groupedCommands)
         {
+            var lastCommand = groupedCommands.Last();
+            if (groupedCommands.Any(x => x.ChangeType == QueueItemDbChangeType.Insert))
+            {
+                lastCommand.Balance++;
+            }
+
+            if (lastCommand.ChangeType == QueueItemDbChangeType.Delete)
+            {
+                lastCommand.Balance--;
+            }
+            return lastCommand;
+        }
+
+        //int packageId = 0;
+        private async Task ExecuteUpsertDelete((QueueItemDbChange[] upsert, QueueItemDbChange[] delete, double processBatch) triple)
+        {
+            //packageId++;
+            //_logFile.WriteLine($"Starting Save Package {packageId}");
             _lastTrigger = Stopwatch.GetTimestamp();
             var saveTs = Stopwatch.GetTimestamp();
             var changes = 0;
-            if (triple.upsert.Count > 0)
+            if (triple.upsert.Length > 0)
             {
                 await Task.Factory.StartNew(() =>
                 {
                     try
                     {
-                        _dapperPlusContext.BulkMerge(triple.upsert.Select(x => x.Command.Item));
-
-                        var insertChanges = triple.upsert.Sum(x => x.Balance);
-                        changes += insertChanges;
-                        Interlocked.Add(ref _balance, insertChanges);
+                        _dapperPlusContext.BulkMerge(triple.upsert.Select(x => x.Item));
+                        changes += triple.upsert.Sum(x => x.Balance);
                     }
                     catch (Exception ex)
                     {
@@ -155,18 +158,15 @@ namespace MemoryQueue.Base
                 });
             }
 
-            if (triple.delete.Count > 0)
+            if (triple.delete.Length > 0)
             {
                 await Task.Factory.StartNew(() =>
                 {
 
                     try
                     {
-                        _dapperPlusContext.BulkDelete(triple.delete.Select(x => x.Command.Item));
-
-                        var deleteChanges = triple.delete.Sum(x => x.Balance);
-                        changes += Math.Abs(deleteChanges);
-                        Interlocked.Add(ref _balance, deleteChanges);
+                        _dapperPlusContext.BulkDelete(triple.delete.Select(x => x.Item));
+                        changes += triple.delete.Sum(x => x.Balance);
                     }
                     catch (Exception ex)
                     {
@@ -174,8 +174,10 @@ namespace MemoryQueue.Base
                     }
                 });
             }
-            _logger.LogInformation($"Completed Batches: {_transformBlock.InputCount}|{_transformBlock.OutputCount} -> " +
-                $"Db Batch Changes: {changes} - StoredItems: {_balance} -- ProcessBatch Took: {triple.processBatch:N5}ms -- SaveToDb Took: {StopwatchEx.GetElapsedTime(saveTs).TotalMilliseconds:N5}ms");
+            //_logFile.WriteLine($"Save Package Done {packageId}");
+            Interlocked.Add(ref _balance, changes);
+            _logger.LogInformation($"Pending Batches To Save: {_actionBlockUpsert.InputCount} -> " +
+                $"Db Changes Diff: {changes} - StoredItems: {_balance} -- ProcessBatch Took: {triple.processBatch:N5}ms -- SaveToDb Took: {StopwatchEx.GetElapsedTime(saveTs).TotalMilliseconds:N5}ms");
         }
 
         public async Task TruncateAsync()
@@ -186,14 +188,16 @@ namespace MemoryQueue.Base
 
         public async Task<QueueItem> UpsertAsync(QueueItem item)
         {
-            await _batchBlock.SendAsync(new MyCommand(item, true)).ConfigureAwait(false);
+            var command = new QueueItemDbChange(item, true);
+            await _batchBlock.SendAsync(command).ConfigureAwait(false);
             Interlocked.Increment(ref _batchBlockInputCount);
             return item;
         }
 
         public async Task DeleteAsync(QueueItem item)
         {
-            await _batchBlock.SendAsync(new MyCommand(item, false)).ConfigureAwait(false);
+            var command = new QueueItemDbChange(item, false);
+            await _batchBlock.SendAsync(command).ConfigureAwait(false);
             Interlocked.Increment(ref _batchBlockInputCount);
         }
 

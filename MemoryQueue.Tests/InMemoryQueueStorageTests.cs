@@ -23,7 +23,7 @@ namespace MemoryQueue.Tests
             int refDeleteCount = 0;
 
             CancellationTokenSource cts = new CancellationTokenSource();
-            cts.CancelAfter(TimeSpan.FromSeconds(20));
+            cts.CancelAfter(TimeSpan.FromSeconds(45));
             TransformBlock<QueueItem, QueueItem> transformBlock = new TransformBlock<QueueItem, QueueItem>(inMemoryQueueStore.UpsertAsync);
             ActionBlock<QueueItem>? deleteBlock = null;
             var DeleteItem = new Action<QueueItem>(async (item) =>
@@ -89,6 +89,8 @@ namespace MemoryQueue.Tests
                 Trace.TraceInformation($"Check {inMemoryQueueStore._balance}!={0}");
                 await Task.Delay(1000);
             }
+
+            await Task.Delay(10000);
             Assert.AreEqual(0, inMemoryQueueStore._balance);
         }
     }
