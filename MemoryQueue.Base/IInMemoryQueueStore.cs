@@ -12,7 +12,7 @@ namespace MemoryQueue.Base
 {
     public class InMemoryQueueStore
     {
-        private readonly BatchBlock<QueueItemDbChange> _batchBlock;
+        private readonly AutoTriggerBatchBlock<QueueItemDbChange> _batchBlock;
         private readonly TransformBlock<QueueItemDbChange[], (QueueItemDbChange[], QueueItemDbChange[], double)> _transformBlock;
         private readonly ActionBlock<(QueueItemDbChange[], QueueItemDbChange[], double)> _actionBlockUpsert;
         private readonly Timer _t;
@@ -32,7 +32,7 @@ namespace MemoryQueue.Base
             _logger = loggerFactory.CreateLogger<InMemoryQueueStore>();
             _queueName = queueName;
 
-            _batchBlock = new BatchBlock<QueueItemDbChange>(15_000, new GroupingDataflowBlockOptions());
+            _batchBlock = new AutoTriggerBatchBlock<QueueItemDbChange>(15_000, TimeSpan.FromSeconds(5), new GroupingDataflowBlockOptions());
             _transformBlock = new TransformBlock<QueueItemDbChange[], (QueueItemDbChange[], QueueItemDbChange[], double)>(TransformBatch, new ExecutionDataflowBlockOptions()
             {
                 EnsureOrdered = true,
@@ -40,15 +40,15 @@ namespace MemoryQueue.Base
             });
             _actionBlockUpsert = new(ExecuteUpsertDelete);
 
-            _t = new Timer(new TimerCallback(_ =>
-            {
-                if (_batchBlockInputCount > 0 && StopwatchEx.GetElapsedTime(_lastTrigger).TotalSeconds > 5)
-                {
-                    _logger.LogInformation($"Triggered from Timer {DateTime.Now}");
-                    _lastTrigger = Stopwatch.GetTimestamp();
-                    _batchBlock.TriggerBatch();
-                }
-            }), null, 1000, 1000);
+            //_t = new Timer(new TimerCallback(_ =>
+            //{
+            //    if (_batchBlockInputCount > 0 && StopwatchEx.GetElapsedTime(_lastTrigger).TotalSeconds > 5)
+            //    {
+            //        _logger.LogInformation($"Triggered from Timer {DateTime.Now}");
+            //        _lastTrigger = Stopwatch.GetTimestamp();
+            //        _batchBlock.TriggerBatch();
+            //    }
+            //}), null, 1000, 1000);
 
             _batchBlock.LinkTo(_transformBlock);
             _transformBlock.LinkTo(_actionBlockUpsert, x => x.Item1.Length > 0 || x.Item2.Length > 0);
@@ -194,10 +194,10 @@ namespace MemoryQueue.Base
             Interlocked.Increment(ref _batchBlockInputCount);
         }
 
-        public void TriggerBatch()
-        {
-            _batchBlock.TriggerBatch();
-        }
+        //public void TriggerBatch()
+        //{
+        //    _batchBlock.TriggerBatch();
+        //}
     }
 }
 
