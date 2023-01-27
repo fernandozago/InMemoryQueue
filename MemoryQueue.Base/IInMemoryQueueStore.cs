@@ -15,13 +15,11 @@ namespace MemoryQueue.Base
         private readonly BatchBlock<QueueItemDbChange> _batchBlock;
         private readonly TransformBlock<QueueItemDbChange[], (QueueItemDbChange[], QueueItemDbChange[], double)> _transformBlock;
         private readonly ActionBlock<(QueueItemDbChange[], QueueItemDbChange[], double)> _actionBlockUpsert;
-        private readonly CancellationTokenSource _cts;
         private readonly Timer _t;
         //private readonly StreamWriter _logFile;
         private readonly ILogger<InMemoryQueueStore> _logger;
         private readonly string _queueName;
         private readonly SqlConnection _connection;
-        private readonly SemaphoreSlim _semaphore = new(1);
         private readonly DapperPlusContext _dapperPlusContext;
         private int _batchBlockInputCount = 0;
         public int _balance = 0;
