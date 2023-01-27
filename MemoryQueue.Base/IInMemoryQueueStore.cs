@@ -174,8 +174,9 @@ namespace MemoryQueue.Base
 
         public async Task TruncateAsync()
         {
-            _logger.LogInformation("Truncating Table");
+            _logger.LogInformation("Truncating and Shrinking Table");
             await _connection.ExecuteAsync("TRUNCATE TABLE QueueItems");
+            await _connection.ExecuteAsync("DBCC SHRINKDATABASE(0)");
         }
 
         public async Task<QueueItem> UpsertAsync(QueueItem item)
