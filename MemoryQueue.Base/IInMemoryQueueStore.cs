@@ -50,7 +50,7 @@ namespace MemoryQueue.Base
             //    }
             //}), null, 1000, 1000);
 
-            _batchBlock.LinkTo(_transformBlock);
+            _batchBlock.LinkTo(_transformBlock, x => x.Length > 0);
             _transformBlock.LinkTo(_actionBlockUpsert, x => x.Item1.Length > 0 || x.Item2.Length > 0);
 
             if (!File.Exists(@$"E:\{_queueName}_log.ldf"))

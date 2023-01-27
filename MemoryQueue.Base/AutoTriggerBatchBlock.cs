@@ -5,11 +5,10 @@ using System.Threading.Tasks.Dataflow;
 
 namespace MemoryQueue.Base
 {
-    public class AutoTriggerBatchBlock<T> : IPropagatorBlock<T, T[]>, IReceivableSourceBlock<T[]>
+    public class AutoTriggerBatchBlock<T> : IPropagatorBlock<T, T[]>
     {
         private readonly BatchBlock<T> _batchBlock;
         private readonly IPropagatorBlock<T, T[]> _propagator;
-        private readonly IReceivableSourceBlock<T[]> _receivable;
         private readonly Timer _timer;
         private readonly TimeSpan _timeout;
 
@@ -18,7 +17,6 @@ namespace MemoryQueue.Base
         {
             _batchBlock = new BatchBlock<T>(batchSize, dataflowBlockOptions);
             _propagator = _batchBlock;
-            _receivable = _batchBlock;
             _timer = new Timer(new TimerCallback(AutoTriggerCallback));
             _timeout = timeout;
         }
@@ -63,13 +61,13 @@ namespace MemoryQueue.Base
         }
 
         T[]? ISourceBlock<T[]>.ConsumeMessage(DataflowMessageHeader messageHeader, ITargetBlock<T[]> target, out bool messageConsumed) =>
-            _receivable.ConsumeMessage(messageHeader, target, out messageConsumed);
+            throw new NotImplementedException(); //_receivable.ConsumeMessage(messageHeader, target, out messageConsumed);
 
         bool ISourceBlock<T[]>.ReserveMessage(DataflowMessageHeader messageHeader, ITargetBlock<T[]> target) =>
-            _receivable.ReserveMessage(messageHeader, target);
+            throw new NotImplementedException(); //_receivable.ReserveMessage(messageHeader, target);
 
         void ISourceBlock<T[]>.ReleaseReservation(DataflowMessageHeader messageHeader, ITargetBlock<T[]> target) =>
-            _receivable.ReleaseReservation(messageHeader, target);
+            throw new NotImplementedException(); //_receivable.ReleaseReservation(messageHeader, target);
 
     }
 }
